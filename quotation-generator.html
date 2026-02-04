@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onsite Quotation Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Onsite Brand Colors - exact match */
+      --primary: #1a0b50;        /* Violent Violet - exact brand color */
+      --primary-light: #2a1b70;  /* Lighter violet */
+      --accent: #c73e5a;         /* Reddish-pink - logo color */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(135deg, #1a0b50 0%, #2a1b70 50%, #1a0b50 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      padding: 30px 0;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 1rem;
+    }
+    
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      margin-bottom: 20px;
+    }
+    
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .form-grid.three-col {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .form-group {
+      margin-bottom: 0;
+    }
+    
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    
+    .form-group label .required {
+      color: var(--accent);
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+      background: white;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      padding: 8px 0;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+    
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 8px 0;
+    }
+    
+    .checkbox-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 10px 14px;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      transition: all 0.2s;
+    }
+    
+    .checkbox-option:hover {
+      border-color: var(--primary-light);
+    }
+    
+    .checkbox-option.checked {
+      border-color: var(--primary);
+      background: rgba(30, 58, 95, 0.05);
+    }
+    
+    .checkbox-option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+    
+    .checkbox-option .addon-price {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+    
+    .duration-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .duration-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    
+    .duration-btn:hover {
+      border-color: var(--primary-light);
+    }
+    
+    .duration-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+    
+    .duration-btn .years {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .duration-btn .discount {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    
+    .plan-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .plan-card {
+      padding: 20px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      background: var(--bg);
+    }
+    
+    .plan-card:hover {
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+    }
+    
+    .plan-card.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(30, 58, 95, 0.05), rgba(45, 90, 138, 0.1));
+    }
+    
+    .plan-card.popular {
+      position: relative;
+    }
+    
+    .plan-card.popular::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    
+    .plan-card .plan-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    
+    .plan-card .plan-price {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+    
+    .summary-box {
+      background: linear-gradient(135deg, #1a0b50, #2a1b70);
+      color: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    
+    .summary-box h3 {
+      font-size: 1rem;
+      margin-bottom: 16px;
+      opacity: 0.9;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+    
+    .summary-row.total {
+      font-size: 1.3rem;
+      font-weight: 700;
+      padding-top: 16px;
+      margin-top: 8px;
+      border-top: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer !important;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      z-index: 100;
+      pointer-events: auto !important;
+      user-select: none;
+    }
+    
+    .btn:active {
+      transform: scale(0.98);
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+    }
+    
+    /* Make sure nothing overlays buttons */
+    .btn-group {
+      position: relative;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    
+    /* Ensure button is above everything */
+    #sendButton {
+      position: relative !important;
+      z-index: 9999 !important;
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    /* Make sure card doesn't block */
+    .card {
+      position: relative;
+      overflow: visible;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(30, 58, 95, 0.3);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #059669;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    .loading {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 16px 24px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--accent); }
+    
+    .ref-number {
+      font-family: monospace;
+      background: var(--bg);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 1px;
+    }
+    
+    @media (max-width: 768px) {
+      .form-grid,
+      .form-grid.three-col,
+      .plan-cards,
+      .checkbox-group {
+        grid-template-columns: 1fr;
+      }
+      
+      .duration-buttons {
+        flex-direction: column;
+      }
+      
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <!-- Onsite Logo SVG - exact S-arrow shape -->
+        <svg width="48" height="48" viewBox="0 0 100 100" style="vertical-align: middle;">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#c73e5a" stroke-width="6"/>
+          <path d="M60 25 L32 50 L48 50 L38 75 L68 50 L52 50 Z" fill="#c73e5a"/>
+        </svg>
+        Onsite Quotation Generator
+      </h1>
+      <p>Generate professional quotations in seconds</p>
+    </div>
+    
+    <form id="quotationForm">
+      <!-- Reference & Salesperson -->
+      <div class="card">
+        <div class="section-title">📋 Quotation Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Reference Number</label>
+            <div class="ref-number" id="refNumber">ONS-2026-0001</div>
+          </div>
+          <div class="form-group">
+            <label>Salesperson Name <span class="required">*</span></label>
+            <input type="text" id="salespersonName" placeholder="Enter salesperson name" list="salespersonNames" required>
+            <datalist id="salespersonNames">
+              <option value="Dhruv"></option>
+              <option value="Bhavya"></option>
+              <option value="Anjali"></option>
+              <option value="Sunil"></option>
+              <option value="Amit U"></option>
+              <option value="Mohan"></option>
+              <option value="Gayatri"></option>
+              <option value="Shailendra"></option>
+              <option value="Amit M"></option>
+              <option value="Hitangi"></option>
+              <option value="Shruti"></option>
+              <option value="Jyoti"></option>
+            </datalist>
+          </div>
+        </div>
+        
+        <div class="form-grid" style="margin-top: 20px;">
+          <div class="form-group">
+            <label>Salesperson Email <span class="required">*</span></label>
+            <input type="email" id="salespersonEmail" placeholder="name@onsiteteams.com" list="salespersonEmails" required>
+            <datalist id="salespersonEmails">
+              <option value="dhruv.tomar@onsiteteams.com"></option>
+              <option value="bhavya.j@onsiteteams.com"></option>
+              <option value="anjali.b@onsiteteams.com"></option>
+              <option value="sunil.kumar@onsiteteams.com"></option>
+              <option value="amit.u@onsiteteams.com"></option>
+              <option value="mohan.c@onsiteteams.com"></option>
+              <option value="gayatri.surlkar@onsiteteams.com"></option>
+              <option value="shailendra.g@onsiteteams.com"></option>
+              <option value="amit.k@onsiteteams.com"></option>
+              <option value="hitangi.a@onsiteteams.com"></option>
+              <option value="shruti.a@onsiteteams.com"></option>
+              <option value="jyoti264pandey@gmail.com"></option>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="form-grid three-col" style="margin-top: 20px;">
+          <div class="form-group">
+            <label>Region <span class="required">*</span></label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="region" value="national" checked onchange="updatePricing()">
+                <span>🇮🇳 National (INR)</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="region" value="international" onchange="updatePricing()">
+                <span>🌍 International (USD)</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Quotation Valid For</label>
+            <select id="validDays">
+              <option value="7">7 Days</option>
+              <option value="15">15 Days</option>
+              <option value="30">30 Days</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Document Type</label>
+            <select id="docType">
+              <option value="quotation">Quotation</option>
+              <option value="proforma">Proforma Invoice</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Client Details -->
+      <div class="card">
+        <div class="section-title">👤 Client Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Client Name <span class="required">*</span></label>
+            <input type="text" id="clientName" placeholder="Mr. Rahul Parekh" required>
+          </div>
+          <div class="form-group">
+            <label>Company Name <span class="required">*</span></label>
+            <input type="text" id="companyName" placeholder="Star Electric Pvt Ltd" required>
+          </div>
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" id="clientEmail" placeholder="rahul@starelectric.com" required>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="clientPhone" placeholder="+91 98765 43210">
+          </div>
+          <div class="form-group full-width">
+            <label>City / State</label>
+            <select id="clientLocationSelect">
+              <option value="">Select city / state</option>
+            </select>
+            <input type="text" id="clientLocationOther" placeholder="Other city / state" style="margin-top: 8px; display: none;">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Plan Selection -->
+      <div class="card">
+        <div class="section-title">📦 Plan Selection</div>
+        
+        <div class="form-group">
+          <label>Select Plan <span class="required">*</span></label>
+          <div class="plan-cards">
+            <div class="plan-card" data-plan="business" onclick="selectPlan('business')">
+              <div class="plan-name">Business</div>
+              <div class="plan-price" id="businessPrice">₹12,000/user/year</div>
+            </div>
+            <div class="plan-card popular active" data-plan="business_plus" onclick="selectPlan('business_plus')">
+              <div class="plan-name">Business+</div>
+              <div class="plan-price" id="businessPlusPrice">₹15,000/user/year</div>
+            </div>
+            <div class="plan-card" data-plan="enterprise" onclick="selectPlan('enterprise')">
+              <div class="plan-name">Enterprise</div>
+              <div class="plan-price" id="enterprisePrice">Starting ₹12L+</div>
+            </div>
+          </div>
+          <input type="hidden" id="selectedPlan" value="business_plus">
+        </div>
+        
+        <div class="form-grid" style="margin-top: 24px;" id="standardPlanOptions">
+          <div class="form-group">
+            <label>Number of Users <span class="required">*</span></label>
+            <input type="number" id="numUsers" value="3" min="3" required onchange="calculateTotal()">
+            <small style="color: var(--text-light); font-size: 0.8rem;">Minimum 3 users</small>
+          </div>
+          <div class="form-group">
+            <label>Duration</label>
+            <div class="duration-buttons">
+              <button type="button" class="duration-btn active" data-years="1" onclick="selectDuration(1)">
+                <div class="years">1 Year</div>
+              </button>
+      <button type="button" class="duration-btn" data-years="2" onclick="selectDuration(2)">
+                <div class="years">2 Years</div>
+        <div class="discount">20%</div>
+              </button>
+              <button type="button" class="duration-btn" data-years="3" onclick="selectDuration(3)">
+                <div class="years">3 Years</div>
+        <div class="discount">30%</div>
+              </button>
+            </div>
+            <input type="hidden" id="duration" value="1">
+          </div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 24px; display: none;" id="enterpriseAmount">
+          <label>Custom Amount <span class="required">*</span></label>
+          <input type="number" id="customAmount" placeholder="1200000" onchange="calculateTotal()">
+        </div>
+      </div>
+      
+      <!-- Add-ons -->
+      <div class="card" id="addonsSection">
+        <div class="section-title">➕ Add-Ons</div>
+        <div class="checkbox-group">
+          <label class="checkbox-option" onclick="toggleAddon(this)">
+            <input type="checkbox" name="addons" value="gps">
+            <span>GPS + Facial Recognition</span>
+            <span class="addon-price" id="gpsPrice">₹20,000/yr</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleAddon(this)">
+            <input type="checkbox" name="addons" value="company">
+            <span>Additional Company</span>
+            <span class="addon-price" id="companyPrice">₹20,000/yr</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleAddon(this)">
+            <input type="checkbox" name="addons" value="tally">
+            <span>Tally Integration</span>
+            <span class="addon-price" id="tallyPrice">₹20,000 + ₹5K AMC</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleAddon(this)">
+            <input type="checkbox" name="addons" value="zoho">
+            <span>Zoho Books Integration</span>
+            <span class="addon-price" id="zohoPrice">₹20,000 + ₹5K AMC</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Discount & Notes -->
+      <div class="card">
+        <div class="section-title">💰 Discount & Notes</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Discount %</label>
+            <input type="number" id="discount" value="0" min="0" max="50" onchange="calculateTotal()">
+          </div>
+          <div class="form-group">
+            <label>Payment Terms</label>
+            <select id="paymentTerms">
+              <option value="100_upfront">100% Upfront</option>
+              <option value="75_25">75% Upfront, 25% in 45 days</option>
+              <option value="50_50">50% Upfront, 50% on Delivery</option>
+            </select>
+          </div>
+          <div class="form-group" id="paymentAccountGroup" style="display: none;">
+            <label>Payment Account (International)</label>
+            <select id="paymentAccount">
+              <option value="international_swift">International SWIFT (default)</option>
+              <option value="indian">Indian ICICI (secondary)</option>
+            </select>
+            <small style="color: var(--text-light); font-size: 0.8rem;">Default is SWIFT for international quotes.</small>
+          </div>
+          <div class="form-group full-width">
+            <label>Special Notes (Optional)</label>
+            <textarea id="specialNotes" placeholder="Any special terms or notes for this quotation..."></textarea>
+          </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="summary-box">
+          <h3>📊 Quotation Summary</h3>
+          <div class="summary-row">
+            <span>Plan</span>
+            <span id="summaryPlan">Business+ × 3 users × 1 year</span>
+          </div>
+          <div class="summary-row">
+            <span>Sub-Total</span>
+            <span id="summarySubtotal">₹45,000</span>
+          </div>
+          <div class="summary-row" id="summaryAddonsRow" style="display: none;">
+            <span>Add-ons</span>
+            <span id="summaryAddons">₹0</span>
+          </div>
+          <div class="summary-row" id="summaryDiscountRow" style="display: none;">
+            <span>Discount</span>
+            <span id="summaryDiscount">-₹0</span>
+          </div>
+          <div class="summary-row">
+            <span>GST (18%)</span>
+            <span id="summaryGst">₹8,100</span>
+          </div>
+          <div class="summary-row total">
+            <span>PAYABLE AMOUNT</span>
+            <span id="summaryTotal">₹53,100</span>
+          </div>
+        </div>
+      </div>
+      
+    </form>
+    
+    <!-- Actions - Outside form to avoid conflicts -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="btn-group">
+        <button type="button" class="btn btn-primary" onclick="generateQuotation('preview')">
+          <span>👁️ Preview (Opens in New Tab)</span>
+          <div class="loading" id="previewLoading"></div>
+        </button>
+        <button type="button" class="btn btn-success" id="sendButton">
+          <span>📧 Send to Client & Salesperson</span>
+          <div class="loading" id="sendLoading"></div>
+        </button>
+      </div>
+      
+      <!-- Email Info -->
+      <div style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: #1a0b50; background: rgba(26, 11, 80, 0.1); padding: 12px; border-radius: 8px;">
+        📧 <strong>Send</strong> will email PDF to: <span style="color: #c73e5a; font-weight: 600;">Client Email</span> + <span style="color: #c73e5a; font-weight: 600;">Salesperson Email</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    // Apps Script Web App URL (update if you redeploy)
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGB5sA34u_0HVDsdfeAZZNMWF46c2eAX19nmqGAi_Fl3OnjrpLsVuo93UajwudKXCL/exec';
+
+    // Salespeople list (auto-fill email when name matches)
+    const SALESPEOPLE = {
+      'Dhruv': 'dhruv.tomar@onsiteteams.com',
+      'Bhavya': 'bhavya.j@onsiteteams.com',
+      'Anjali': 'anjali.b@onsiteteams.com',
+      'Sunil': 'sunil.kumar@onsiteteams.com',
+      'Amit U': 'amit.u@onsiteteams.com',
+      'Mohan': 'mohan.c@onsiteteams.com',
+      'Gayatri': 'gayatri.surlkar@onsiteteams.com',
+      'Shailendra': 'shailendra.g@onsiteteams.com',
+      'Amit M': 'amit.k@onsiteteams.com',
+      'Hitangi': 'hitangi.a@onsiteteams.com',
+      'Shruti': 'shruti.a@onsiteteams.com',
+      'Jyoti': 'jyoti264pandey@gmail.com'
+    };
+
+    // Location lists (dropdown)
+    const NATIONAL_LOCATIONS = [
+      'New Delhi, Delhi',
+      'Mumbai, Maharashtra',
+      'Bengaluru, Karnataka',
+      'Chennai, Tamil Nadu',
+      'Kolkata, West Bengal',
+      'Hyderabad, Telangana',
+      'Pune, Maharashtra',
+      'Ahmedabad, Gujarat',
+      'Jaipur, Rajasthan',
+      'Lucknow, Uttar Pradesh',
+      'Chandigarh, Chandigarh',
+      'Bhopal, Madhya Pradesh',
+      'Indore, Madhya Pradesh',
+      'Patna, Bihar',
+      'Ranchi, Jharkhand',
+      'Bhubaneswar, Odisha',
+      'Guwahati, Assam',
+      'Thiruvananthapuram, Kerala',
+      'Kochi, Kerala',
+      'Visakhapatnam, Andhra Pradesh',
+      'Nagpur, Maharashtra',
+      'Surat, Gujarat',
+      'Vadodara, Gujarat',
+      'Coimbatore, Tamil Nadu',
+      'Noida, Uttar Pradesh',
+      'Gurugram, Haryana'
+    ];
+
+    const INTERNATIONAL_LOCATIONS = [
+      'Dubai, UAE',
+      'Abu Dhabi, UAE',
+      'Sharjah, UAE',
+      'Riyadh, Saudi Arabia',
+      'Jeddah, Saudi Arabia',
+      'Dammam, Saudi Arabia',
+      'Doha, Qatar',
+      'Muscat, Oman',
+      'London, UK',
+      'Manchester, UK',
+      'Birmingham, UK',
+      'New York, USA',
+      'Los Angeles, USA',
+      'Chicago, USA',
+      'Houston, USA',
+      'San Francisco, USA',
+      'Toronto, Canada',
+      'Vancouver, Canada',
+      'Montreal, Canada',
+      'Sydney, Australia',
+      'Melbourne, Australia',
+      'Brisbane, Australia',
+      'Perth, Australia',
+      'Johannesburg, South Africa',
+      'Cape Town, South Africa',
+      'Lagos, Nigeria',
+      'Nairobi, Kenya',
+      'Singapore',
+      'Kuala Lumpur, Malaysia',
+      'Jakarta, Indonesia',
+      'Manila, Philippines',
+      'Bangkok, Thailand',
+      'Ho Chi Minh City, Vietnam'
+    ];
+
+    // Pricing Data
+    const PRICING = {
+      national: {
+        currency: '₹',
+        currencyCode: 'INR',
+        business: 12000,
+        business_plus: 15000,
+        enterprise: 1200000,
+        addons: {
+          gps: 20000,
+          company: 20000,
+          tally: 20000,
+          tallyAmc: 5000,
+          zoho: 20000,
+          zohoAmc: 5000
+        }
+      },
+      international: {
+        currency: '$',
+        currencyCode: 'USD',
+        business: 200,
+        business_plus: 250,
+        enterprise: 15000,
+        addons: {
+          gps: 300,
+          company: 300,
+          tally: 300,
+          tallyAmc: 100,
+          zoho: 300,
+          zohoAmc: 100
+        }
+      }
+    };
+    
+    const DURATION_DISCOUNT = { 1: 0, 2: 0.20, 3: 0.30 };
+    
+    let selectedPlan = 'business_plus';
+    let selectedDuration = 1;
+    let selectedRegion = 'national';
+    
+    // Generate Reference Number
+    function generateRefNumber() {
+      const date = new Date();
+      const year = date.getFullYear();
+      const random = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+      return `ONS-${year}-${random}`;
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('refNumber').textContent = generateRefNumber();
+      updatePricing();
+      calculateTotal();
+
+      const salespersonNameInput = document.getElementById('salespersonName');
+      const salespersonEmailInput = document.getElementById('salespersonEmail');
+      const locationSelect = document.getElementById('clientLocationSelect');
+      const locationOther = document.getElementById('clientLocationOther');
+
+      // Restore last used salesperson from localStorage
+      const lastSalespersonName = localStorage.getItem('lastSalespersonName');
+      const lastSalespersonEmail = localStorage.getItem('lastSalespersonEmail');
+      if (lastSalespersonName && salespersonNameInput) {
+        salespersonNameInput.value = lastSalespersonName;
+      }
+      if (lastSalespersonEmail && salespersonEmailInput) {
+        salespersonEmailInput.value = lastSalespersonEmail;
+      }
+
+      // Auto-fill email when name matches
+      if (salespersonNameInput && salespersonEmailInput) {
+        salespersonNameInput.addEventListener('input', () => {
+          const name = salespersonNameInput.value.trim();
+          if (SALESPEOPLE[name]) {
+            salespersonEmailInput.value = SALESPEOPLE[name];
+          }
+        });
+
+        salespersonEmailInput.addEventListener('input', () => {
+          const email = salespersonEmailInput.value.trim().toLowerCase();
+          const match = Object.keys(SALESPEOPLE).find(key => SALESPEOPLE[key].toLowerCase() === email);
+          if (match) {
+            salespersonNameInput.value = match;
+          }
+        });
+      }
+
+      if (locationSelect && locationOther) {
+        locationSelect.addEventListener('change', () => {
+          locationOther.style.display = locationSelect.value === '__OTHER__' ? 'block' : 'none';
+        });
+      }
+
+      // Attach click handler to send button
+      const sendButton = document.getElementById('sendButton');
+      if (sendButton) {
+        sendButton.onclick = null;
+        sendButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSendClick(e);
+          return false;
+        }, true);
+
+        sendButton.style.pointerEvents = 'auto';
+        sendButton.style.cursor = 'pointer';
+        sendButton.style.position = 'relative';
+        sendButton.style.zIndex = '9999';
+      }
+    });
+    
+    // Update Pricing Display
+    function updatePricing() {
+      selectedRegion = document.querySelector('input[name="region"]:checked').value;
+      const p = PRICING[selectedRegion];
+      const c = p.currency;
+      
+      document.getElementById('businessPrice').textContent = `${c}${p.business.toLocaleString()}/user/year`;
+      document.getElementById('businessPlusPrice').textContent = `${c}${p.business_plus.toLocaleString()}/user/year`;
+      document.getElementById('enterprisePrice').textContent = `Starting ${c}${(p.enterprise/100000).toFixed(0)}L+`;
+      
+      document.getElementById('gpsPrice').textContent = `${c}${p.addons.gps.toLocaleString()}/yr`;
+      document.getElementById('companyPrice').textContent = `${c}${p.addons.company.toLocaleString()}/yr`;
+      document.getElementById('tallyPrice').textContent = `${c}${p.addons.tally.toLocaleString()} + ${c}${p.addons.tallyAmc.toLocaleString()} AMC`;
+      document.getElementById('zohoPrice').textContent = `${c}${p.addons.zoho.toLocaleString()} + ${c}${p.addons.zohoAmc.toLocaleString()} AMC`;
+      
+      updatePaymentAccountVisibility();
+      populateLocationOptions();
+      calculateTotal();
+    }
+
+    function populateLocationOptions() {
+      const select = document.getElementById('clientLocationSelect');
+      const otherInput = document.getElementById('clientLocationOther');
+      if (!select) return;
+
+      const locations = selectedRegion === 'international' ? INTERNATIONAL_LOCATIONS : NATIONAL_LOCATIONS;
+      select.innerHTML = '';
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Select city / state';
+      select.appendChild(placeholder);
+
+      locations.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = loc;
+        opt.textContent = loc;
+        select.appendChild(opt);
+      });
+
+      const otherOpt = document.createElement('option');
+      otherOpt.value = '__OTHER__';
+      otherOpt.textContent = 'Other (type manually)';
+      select.appendChild(otherOpt);
+
+      if (otherInput) {
+        otherInput.style.display = select.value === '__OTHER__' ? 'block' : 'none';
+      }
+    }
+
+    function getClientLocation() {
+      const select = document.getElementById('clientLocationSelect');
+      const otherInput = document.getElementById('clientLocationOther');
+      if (!select) return '';
+      if (select.value === '__OTHER__') {
+        return otherInput ? otherInput.value.trim() : '';
+      }
+      return select.value || (otherInput ? otherInput.value.trim() : '');
+    }
+
+    function updatePaymentAccountVisibility() {
+      const group = document.getElementById('paymentAccountGroup');
+      const select = document.getElementById('paymentAccount');
+      if (!group || !select) return;
+
+      if (selectedRegion === 'international') {
+        group.style.display = 'block';
+        // Auto-set to International SWIFT for international quotes
+        select.value = 'international_swift';
+      } else {
+        group.style.display = 'none';
+        // Auto-set to ICICI for national quotes
+        select.value = 'indian';
+      }
+    }
+    
+    // Select Plan
+    function selectPlan(plan) {
+      selectedPlan = plan;
+      document.getElementById('selectedPlan').value = plan;
+      
+      document.querySelectorAll('.plan-card').forEach(card => {
+        card.classList.remove('active');
+        if (card.dataset.plan === plan) card.classList.add('active');
+      });
+      
+      // Show/hide options based on plan
+      const standardOptions = document.getElementById('standardPlanOptions');
+      const enterpriseAmount = document.getElementById('enterpriseAmount');
+      const addonsSection = document.getElementById('addonsSection');
+      
+      if (plan === 'enterprise') {
+        standardOptions.style.display = 'none';
+        enterpriseAmount.style.display = 'block';
+        addonsSection.style.display = 'none';
+      } else {
+        standardOptions.style.display = 'grid';
+        enterpriseAmount.style.display = 'none';
+        addonsSection.style.display = 'block';
+      }
+      
+      calculateTotal();
+    }
+    
+    // Select Duration
+    function selectDuration(years) {
+      selectedDuration = years;
+      document.getElementById('duration').value = years;
+      
+      document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.dataset.years) === years) btn.classList.add('active');
+      });
+      
+      calculateTotal();
+    }
+    
+    // Toggle Addon
+    function toggleAddon(el) {
+      el.classList.toggle('checked');
+      calculateTotal();
+    }
+    
+    // Calculate Total
+    function calculateTotal() {
+      const p = PRICING[selectedRegion];
+      const c = p.currency;
+      
+      let subtotal = 0;
+      let addonsTotal = 0;
+      let planDesc = '';
+      
+      if (selectedPlan === 'enterprise') {
+        subtotal = parseFloat(document.getElementById('customAmount').value) || p.enterprise;
+        planDesc = `Enterprise Plan`;
+      } else {
+        const users = parseInt(document.getElementById('numUsers').value) || 3;
+        const pricePerUser = p[selectedPlan];
+        const durationDiscount = DURATION_DISCOUNT[selectedDuration];
+        
+        subtotal = pricePerUser * users * selectedDuration;
+        if (durationDiscount > 0) {
+          subtotal = subtotal * (1 - durationDiscount);
+        }
+        
+        const planName = selectedPlan === 'business' ? 'Business' : 'Business+';
+        planDesc = `${planName} × ${users} users × ${selectedDuration} year${selectedDuration > 1 ? 's' : ''}`;
+      }
+      
+      // Calculate addons
+      const addons = document.querySelectorAll('input[name="addons"]:checked');
+      addons.forEach(addon => {
+        const val = addon.value;
+        if (val === 'gps') addonsTotal += p.addons.gps;
+        if (val === 'company') addonsTotal += p.addons.company;
+        if (val === 'tally') addonsTotal += p.addons.tally + p.addons.tallyAmc;
+        if (val === 'zoho') addonsTotal += p.addons.zoho + p.addons.zohoAmc;
+      });
+      
+      // Apply discount
+      const discountPct = parseFloat(document.getElementById('discount').value) || 0;
+      const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
+      
+      const afterDiscount = subtotal + addonsTotal - discountAmt;
+      const gst = afterDiscount * 0.18;
+      const total = afterDiscount + gst;
+      
+      // Update UI
+      document.getElementById('summaryPlan').textContent = planDesc;
+      document.getElementById('summarySubtotal').textContent = `${c}${subtotal.toLocaleString()}`;
+      
+      if (addonsTotal > 0) {
+        document.getElementById('summaryAddonsRow').style.display = 'flex';
+        document.getElementById('summaryAddons').textContent = `${c}${addonsTotal.toLocaleString()}`;
+      } else {
+        document.getElementById('summaryAddonsRow').style.display = 'none';
+      }
+      
+      if (discountAmt > 0) {
+        document.getElementById('summaryDiscountRow').style.display = 'flex';
+        document.getElementById('summaryDiscount').textContent = `-${c}${discountAmt.toLocaleString()}`;
+      } else {
+        document.getElementById('summaryDiscountRow').style.display = 'none';
+      }
+      
+      document.getElementById('summaryGst').textContent = `${c}${Math.round(gst).toLocaleString()}`;
+      document.getElementById('summaryTotal').textContent = `${c}${Math.round(total).toLocaleString()}`;
+    }
+    
+    // Handle Send Button Click
+    function handleSendClick(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      const form = document.getElementById('quotationForm');
+      
+      // Validate form
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+      }
+      
+      const salespersonName = document.getElementById('salespersonName').value.trim();
+      const salespersonEmail = document.getElementById('salespersonEmail').value.trim();
+      
+      if (!salespersonName || !salespersonEmail) {
+        showToast('❌ Please enter salesperson name and email', 'error');
+        if (!salespersonName) document.getElementById('salespersonName').focus();
+        else document.getElementById('salespersonEmail').focus();
+        return false;
+      }
+      
+      generateQuotation('send');
+      return false;
+    }
+    
+    // Form Submission - disabled since we handle button separately
+    // document.getElementById('quotationForm').addEventListener('submit', function(e) {
+    //   e.preventDefault();
+    // });
+    
+    // Generate Quotation
+    function generateQuotation(action) {
+      // Validate
+      const form = document.getElementById('quotationForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      
+      const loadingEl = document.getElementById(action === 'send' ? 'sendLoading' : 'previewLoading');
+      loadingEl.style.display = 'block';
+      
+      // Get salesperson details
+      const salespersonName = document.getElementById('salespersonName').value.trim();
+      const salespersonEmail = document.getElementById('salespersonEmail').value.trim();
+      
+      // Gather data
+      const formData = {
+        refNumber: document.getElementById('refNumber').textContent,
+        salesperson: `${salespersonName}|${salespersonEmail}`,
+        salespersonName: salespersonName,
+        salespersonEmail: salespersonEmail,
+        region: selectedRegion,
+        validDays: document.getElementById('validDays').value,
+        clientName: document.getElementById('clientName').value,
+        companyName: document.getElementById('companyName').value,
+        clientEmail: document.getElementById('clientEmail').value,
+        clientPhone: document.getElementById('clientPhone').value,
+        clientLocation: getClientLocation(),
+        plan: selectedPlan,
+        numUsers: document.getElementById('numUsers').value,
+        duration: selectedDuration,
+        customAmount: document.getElementById('customAmount').value,
+        addons: Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value),
+        discount: document.getElementById('discount').value,
+        paymentTerms: document.getElementById('paymentTerms').value,
+        paymentAccount: document.getElementById('paymentAccount') ? document.getElementById('paymentAccount').value : '',
+        docType: document.getElementById('docType') ? document.getElementById('docType').value : 'quotation',
+        specialNotes: document.getElementById('specialNotes').value,
+        action: action
+      };
+      
+      // If PREVIEW - open in new window without sending emails
+      if (action === 'preview') {
+        loadingEl.style.display = 'none';
+        openPreviewWindow(formData);
+        return;
+      }
+      
+      // If SEND - call Google Apps Script to generate PDF and send emails
+      // Validate salesperson is selected
+      if (!salespersonName || !salespersonEmail) {
+        loadingEl.style.display = 'none';
+        showToast('❌ Please enter salesperson name and email', 'error');
+        document.getElementById('salespersonName').focus();
+        return;
+      }
+      
+      // Log what we're sending
+      console.log('=== SENDING QUOTATION ===');
+      console.log('Salesperson:', salespersonName, salespersonEmail);
+      console.log('Client:', formData.clientName, formData.clientEmail);
+      console.log('Full data:', formData);
+      
+      // Show loading
+      loadingEl.style.display = 'block';
+      
+      // Use form submission method (more reliable for Google Apps Script)
+      console.log('Submitting via form method...');
+      submitViaForm(formData, salespersonEmail, loadingEl);
+    }
+    
+    // Form submission method using hidden iframe (no new tab)
+    function submitViaForm(data, salespersonEmail, loadingEl) {
+      console.log('=== Using form submission method ===');
+      console.log('Data being sent:', JSON.stringify(data, null, 2));
+      console.log('Script URL:', SCRIPT_URL);
+      
+      // Create hidden iframe to receive response (no new tab)
+      let iframe = document.getElementById('hidden-submit-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hidden-submit-iframe';
+        iframe.name = 'hidden-submit-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      
+      // Create hidden form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SCRIPT_URL;
+      form.target = 'hidden-submit-iframe'; // Submit to hidden iframe (no new tab)
+      form.style.display = 'none';
+      
+      // Add data as hidden input (Apps Script expects this)
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = JSON.stringify(data);
+      form.appendChild(input);
+      
+      document.body.appendChild(form);
+      console.log('Form created, submitting to:', SCRIPT_URL);
+      
+      // Listen for iframe load (response received)
+      iframe.onload = function() {
+        console.log('✅ Response received from Apps Script');
+        loadingEl.style.display = 'none';
+        
+        // Show success message with names
+        showToast(`✅ Email sent successfully!\n\n📧 Sent to:\n• ${data.clientName} (${data.clientEmail})\n• ${data.salespersonName} (${salespersonEmail})\n\n📁 PDF saved to Google Drive`, 'success');
+        
+        // Save salesperson to localStorage for next time
+        localStorage.setItem('lastSalespersonName', data.salespersonName);
+        localStorage.setItem('lastSalespersonEmail', salespersonEmail);
+        
+        // Generate new reference number for next quotation
+        document.getElementById('refNumber').textContent = generateRefNumber();
+        
+        // Clear form fields for next entry
+        document.getElementById('clientName').value = '';
+        document.getElementById('companyName').value = '';
+        document.getElementById('clientEmail').value = '';
+        document.getElementById('clientPhone').value = '';
+        document.getElementById('specialNotes').value = '';
+        
+        // Clean up form
+        if (document.body.contains(form)) {
+          document.body.removeChild(form);
+        }
+      };
+      
+      // Submit form
+      try {
+        form.submit();
+        console.log('✅ Form submitted');
+        
+        // Fallback: If iframe doesn't load in 10 seconds, show message anyway
+        setTimeout(() => {
+          if (loadingEl && loadingEl.style.display !== 'none') {
+            loadingEl.style.display = 'none';
+            showToast(`✅ Email sent successfully!\n\n📧 Sent to:\n• ${data.clientName} (${data.clientEmail})\n• ${data.salespersonName} (${salespersonEmail})\n\n📁 PDF saved to Google Drive`, 'success');
+            document.getElementById('refNumber').textContent = generateRefNumber();
+            // Save salesperson to localStorage
+            localStorage.setItem('lastSalespersonName', data.salespersonName);
+            localStorage.setItem('lastSalespersonEmail', salespersonEmail);
+          }
+        }, 10000);
+      } catch (err) {
+        console.error('❌ Form submission error:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        showToast('❌ Error submitting form. Check console (F12) for details.', 'error');
+      }
+    }
+    
+    // Open Preview Window - shows quotation without sending
+    function openPreviewWindow(data) {
+      const p = PRICING[data.region];
+      const c = p.currency;
+      const docTypeLabel = data.docType === 'proforma' ? 'PROFORMA INVOICE' : 'QUOTATION';
+      
+      // Calculate amounts
+      let subtotal = 0;
+      let addonsTotal = 0;
+      let planDesc = '';
+      let itemsHTML = '';
+      
+      if (data.plan === 'enterprise') {
+        subtotal = parseFloat(data.customAmount) || p.enterprise;
+        planDesc = 'Enterprise Plan';
+        itemsHTML = `<tr><td>Enterprise Plan - Unlimited Users</td><td style="text-align:center;">Unlimited</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td></tr>`;
+      } else {
+        const users = parseInt(data.numUsers) || 3;
+        const pricePerUser = p[data.plan];
+        const duration = parseInt(data.duration) || 1;
+        const durationDiscount = { 1: 0, 2: 0.20, 3: 0.10 }[duration];
+        
+        subtotal = pricePerUser * users * duration;
+        if (durationDiscount > 0) subtotal = subtotal * (1 - durationDiscount);
+        
+        const planName = data.plan === 'business' ? 'Business' : 'Business+';
+        planDesc = `${planName} Plan - ${users} Users`;
+        itemsHTML = `<tr><td>${planName} Plan License</td><td style="text-align:center;">${users}</td><td style="text-align:right;">${c}${pricePerUser.toLocaleString()}/user/year</td><td style="text-align:center;">${duration} Year${duration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td></tr>`;
+      }
+      
+      // Add-ons
+      const addonNames = { gps: 'GPS + Facial Recognition', company: 'Additional Company', tally: 'Tally Integration', zoho: 'Zoho Books Integration' };
+      (data.addons || []).forEach(addon => {
+        let amt = p.addons[addon];
+        if (addon === 'tally' || addon === 'zoho') amt += p.addons[addon + 'Amc'];
+        addonsTotal += amt;
+        itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+      });
+      
+      const discountPct = parseFloat(data.discount) || 0;
+      const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
+      const afterDiscount = subtotal + addonsTotal - discountAmt;
+      const gst = afterDiscount * 0.18;
+      const total = afterDiscount + gst;
+      
+      const validDate = new Date();
+      validDate.setDate(validDate.getDate() + parseInt(data.validDays));
+      
+      const paymentTermsText = {
+        '100_upfront': '100% Upfront before service activation',
+        '75_25': '75% Upfront, 25% within 45 days',
+        '50_50': '50% Upfront, 50% on Delivery'
+      };
+
+      const paymentAccount = data.paymentAccount || (data.region === 'international' ? 'international_swift' : 'indian');
+      
+      // Features
+      const features = {
+        business: ['Payments & Expenses', 'File Management', 'Labor Attendance & Salary', 'CRM (Leads & Quotation)', 'Material Request & Inventory', 'Task & Sub-task Hierarchy', 'Issue/Snag List', 'Subcon Work Order & RA Billing', 'Multiple Roles & Permission'],
+        business_plus: ['Everything in Business +', 'Design Management', 'BOQ & RA Bills', 'Budget Control', 'Central Warehouse', 'RFQ', 'Purchase Orders', 'Assets & Tools', 'Equipment & Machinery', 'Staff Payroll', 'Site Inspection', 'Multi-Level Approval'],
+        enterprise: ['Everything in Business+ +', 'Unlimited Users', 'GPS Attendance', 'Custom Roles', 'Custom Dashboard', 'Accounting Integration', 'Vendor Portal', 'Client Portal', 'White Label (Add-on)', 'SAP Integration (Add-on)']
+      };
+      
+      let featuresHTML = '';
+      const f = features[data.plan] || features.business_plus;
+      for (let i = 0; i < f.length; i += 2) {
+        featuresHTML += `<tr><td style="padding:6px 10px;">✓ ${f[i]}</td><td style="padding:6px 10px;">${f[i+1] ? '✓ ' + f[i+1] : ''}</td></tr>`;
+      }
+      
+      const previewHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Quotation Preview - ${data.refNumber}</title>
+  <style>
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } @page { margin: 40px; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px; background: #f5f5f5; }
+    .page { background: white; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a0b50; padding-bottom: 15px; margin-bottom: 20px; }
+    .logo { font-size: 22px; font-weight: 700; color: #1a0b50; }
+    .tagline { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .company-details { font-size: 10px; color: #64748b; margin-top: 8px; line-height: 1.5; }
+    .doc-type { text-align: right; background: #1a0b50; color: white; padding: 15px 20px; border-radius: 8px; }
+    .doc-type h1 { font-size: 18px; margin-bottom: 5px; }
+    .doc-type p { font-size: 10px; opacity: 0.9; }
+    .client-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .client-box h3 { font-size: 10px; text-transform: uppercase; color: #64748b; margin-bottom: 8px; }
+    .client-name { font-size: 14px; font-weight: 600; color: #1a0b50; }
+    .client-company { font-size: 12px; color: #334155; }
+    .client-location { font-size: 11px; color: #64748b; }
+    .section-title { font-size: 12px; font-weight: 600; color: #1a0b50; margin: 20px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #e2e8f0; }
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    table.items th { background: #1a0b50; color: white; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
+    table.items td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+    table.items tr:nth-child(even) { background: #f8fafc; }
+    .totals { width: 320px; margin-left: auto; margin-top: 15px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+    .totals-row.total { background: #1a0b50; color: white; padding: 12px 15px; border-radius: 6px; font-size: 14px; font-weight: 700; margin-top: 10px; }
+    .features-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin: 20px 0; }
+    .features-box h4 { font-size: 11px; color: #1a0b50; margin-bottom: 10px; }
+    table.features { width: 100%; }
+    table.features td { font-size: 10px; color: #334155; width: 50%; }
+    .terms-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px; margin: 20px 0; }
+    .terms-box h4 { font-size: 11px; color: #92400e; margin-bottom: 8px; }
+    .terms-box ul { font-size: 10px; color: #78350f; padding-left: 15px; }
+    .terms-box li { margin-bottom: 4px; }
+    .bank-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 15px; margin: 20px 0; }
+    .bank-box h4 { font-size: 11px; color: #166534; margin-bottom: 8px; }
+    .bank-details { font-size: 10px; color: #14532d; line-height: 1.6; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #e2e8f0; font-size: 9px; color: #64748b; text-align: center; }
+    .footer a { color: #1a0b50; text-decoration: none; }
+    .highlight { color: #c73e5a; font-weight: 600; }
+    .print-btn { position: fixed; top: 20px; right: 20px; background: #1a0b50; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+    .print-btn:hover { background: #2a1b70; }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="logo">
+          <svg width="36" height="36" viewBox="0 0 100 100" style="vertical-align: middle; margin-right: 8px;">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#c73e5a" stroke-width="6"/>
+            <path d="M60 25 L32 50 L48 50 L38 75 L68 50 L52 50 Z" fill="#c73e5a"/>
+          </svg>
+          Onsite
+        </div>
+        <div class="tagline">Construction Management Software</div>
+        <div class="company-details">
+          ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED<br>
+          C-93, 3rd Floor, C Block, Sector 2, Noida, UP 201301<br>
+          GSTIN: 09AAVCA0250E1ZR | PAN: AAVCA0250E<br>
+          📞 +91 9560209605 | ✉️ sumit@onsiteteams.com
+        </div>
+      </div>
+        <div class="doc-type">
+        <h1>${docTypeLabel}</h1>
+        <p><strong>Ref:</strong> ${data.refNumber}</p>
+        <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        <p><strong>Valid Till:</strong> ${validDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+      </div>
+    </div>
+    
+    <div class="client-box">
+      <h3>Quotation For</h3>
+      <div class="client-name">${data.clientName}</div>
+      <div class="client-company">${data.companyName}</div>
+      <div class="client-location">${data.clientLocation || ''}</div>
+      ${data.clientEmail ? `<div class="client-location">✉️ ${data.clientEmail}</div>` : ''}
+    </div>
+    
+    <div class="section-title">📦 ${planDesc}</div>
+    
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width:40%;">Description</th>
+          <th style="width:12%;text-align:center;">Users</th>
+          <th style="width:18%;text-align:right;">Rate</th>
+          <th style="width:12%;text-align:center;">Duration</th>
+          <th style="width:18%;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>${itemsHTML}</tbody>
+    </table>
+    
+    <div class="totals">
+      <div class="totals-row"><span>Sub-Total</span><span>${c}${(subtotal + addonsTotal).toLocaleString()}</span></div>
+      ${discountAmt > 0 ? `<div class="totals-row"><span>Discount (${discountPct}%)</span><span class="highlight">-${c}${discountAmt.toLocaleString()}</span></div>` : ''}
+      <div class="totals-row"><span>GST (18%)</span><span>${c}${Math.round(gst).toLocaleString()}</span></div>
+      <div class="totals-row total"><span>PAYABLE AMOUNT</span><span>${c}${Math.round(total).toLocaleString()}</span></div>
+    </div>
+    
+    <div class="features-box">
+      <h4>📋 INCLUDED FEATURES (${data.plan === 'business' ? 'Business' : data.plan === 'business_plus' ? 'Business+' : 'Enterprise'} Plan)</h4>
+      <table class="features">${featuresHTML}</table>
+    </div>
+    
+    <div class="terms-box">
+      <h4>📜 TERMS & CONDITIONS</h4>
+      <ul>
+        <li><strong>Payment:</strong> ${paymentTermsText[data.paymentTerms] || '100% Upfront'}</li>
+        <li><strong>Validity:</strong> This quotation is valid for ${data.validDays} days from the date of issue.</li>
+        <li><strong>Activation:</strong> Premium services activated within 2 hours of receiving payment.</li>
+        <li><strong>Support:</strong> AWS Server, Training, Setup & Onboarding Support included.</li>
+        <li><strong>Renewal:</strong> Auto-renewal unless cancelled 7 days before expiry.</li>
+        ${data.specialNotes ? `<li><strong>Special Notes:</strong> ${data.specialNotes}</li>` : ''}
+      </ul>
+      <div style="margin-top: 8px; font-size: 10px; color: #78350f;">
+        Terms of Service: <a href="https://www.onsiteteams.com/terms/">onsiteteams.com/terms</a>
+      </div>
+    </div>
+    
+    <div class="bank-box">
+      <h4>🏦 BANK DETAILS FOR PAYMENT</h4>
+      <div class="bank-details">
+        ${paymentAccount === 'international_swift' ? `
+          <strong>International SWIFT account</strong><br>
+          <strong>Payment method:</strong> SWIFT (International wire)<br>
+          <strong>IBAN (Account number):</strong> GB89TCCL04140490016036<br>
+          <strong>BIC/SWIFT code:</strong> TCCLGB3L<br>
+          <strong>Account type:</strong> Business checking account<br>
+          <strong>Bank name:</strong> The Currency Cloud Limited<br>
+          <strong>Beneficiary address:</strong> 12 Steward Street, The Steward Building, London, E1 6FQ, GB<br>
+          <strong>Beneficiary bank country:</strong> United Kingdom<br>
+          <strong>Account holder name:</strong> ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED
+        ` : `
+          <strong>Account Name:</strong> ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED<br>
+          <strong>Bank:</strong> ICICI Bank<br>
+          <strong>Account No:</strong> 401705000501<br>
+          <strong>IFSC Code:</strong> ICIC0004017<br>
+          <strong>UPI ID:</strong> ABEYAANTRIXTECHNOLOGYPVTLTD@icici
+        `}
+      </div>
+    </div>
+    
+    <div class="footer">
+      <strong>Onsite</strong> - A product of ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED<br>
+      🌐 <a href="https://www.onsiteteams.com">www.onsiteteams.com</a> | 📞 +91 9560209605 | ✉️ sumit@onsiteteams.com<br><br>
+      <em>Prepared by: ${data.salespersonName || 'Sales Team'}</em>
+    </div>
+  </div>
+</body>
+</html>`;
+      
+      // Open in new window
+      const previewWindow = window.open('', '_blank');
+      previewWindow.document.write(previewHTML);
+      previewWindow.document.close();
+      
+      showToast('👁️ Preview opened in new tab. Use Print to save as PDF.', 'success');
+    }
+    
+    // Toast Notification (5 seconds display)
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 5000);
+    }
+    
+    // Test Connection to Apps Script
+    function testConnection() {
+      console.log('=== Testing Connection ===');
+      console.log('Script URL:', SCRIPT_URL);
+      
+      showToast('Testing connection...', 'success');
+      
+      // Test with doGet (simpler, just checks if URL works)
+      fetch(SCRIPT_URL, {
+        method: 'GET',
+        mode: 'no-cors'
+      })
+      .then(() => {
+        console.log('✅ GET request sent (no-cors mode)');
+        showToast('✅ Connection test sent! Check Apps Script execution logs for "doGet" call.', 'success');
+      })
+      .catch(err => {
+        console.error('❌ Connection test failed:', err);
+        showToast('❌ Connection failed. Check console (F12) for details.', 'error');
+      });
+      
+      // Also try opening in new tab to see response
+      window.open(SCRIPT_URL, '_blank');
+    }
+  </script>
+</body>
+</html>

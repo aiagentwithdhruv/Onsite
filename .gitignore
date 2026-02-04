@@ -1,0 +1,23 @@
+# Temp files
+Quotation_temp/
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Test files
+test-*.html
+
+# Logs
+*.log
+
+# Sensitive
+*.env
+credentials.json
