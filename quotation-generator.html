@@ -516,10 +516,11 @@
               <option value="Arthi"></option>
               <option value="Kiran"></option>
               <option value="Yogyata"></option>
+              <option value="Other"></option>
             </datalist>
           </div>
         </div>
-        
+
         <div class="form-grid" style="margin-top: 20px;">
           <div class="form-group">
             <label>Salesperson Email <span class="required">*</span></label>
@@ -542,6 +543,7 @@
               <option value="k.kiran@onsiteteams.com"></option>
               <option value="yogyata.airi@onsiteteams.com"></option>
             </datalist>
+            <small style="color: var(--text-light); font-size: 0.8rem;">Select or type custom email</small>
           </div>
         </div>
 
@@ -999,6 +1001,12 @@
       if (salespersonNameInput && salespersonEmailInput) {
         salespersonNameInput.addEventListener('input', () => {
           const name = salespersonNameInput.value.trim();
+          if (name === 'Other') {
+            salespersonNameInput.value = '';
+            salespersonEmailInput.value = '';
+            salespersonEmailInput.focus();
+            return;
+          }
           if (SALESPEOPLE[name]) {
             salespersonEmailInput.value = SALESPEOPLE[name];
           }
