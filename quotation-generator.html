@@ -288,7 +288,7 @@
       font-size: 0.85rem;
       color: var(--text-light);
     }
-    
+
     .summary-box {
       background: linear-gradient(135deg, #1a0b50, #2a1b70);
       color: white;
@@ -512,6 +512,10 @@
               <option value="Hitangi"></option>
               <option value="Shruti"></option>
               <option value="Jyoti"></option>
+              <option value="Ravi"></option>
+              <option value="Arthi"></option>
+              <option value="Kiran"></option>
+              <option value="Yogyata"></option>
             </datalist>
           </div>
         </div>
@@ -533,6 +537,10 @@
               <option value="hitangi.a@onsiteteams.com"></option>
               <option value="shruti.a@onsiteteams.com"></option>
               <option value="jyoti264pandey@gmail.com"></option>
+              <option value="ravi.gupta@onsiteteams.com"></option>
+              <option value="aparthivarsha@onsiteteams.com"></option>
+              <option value="k.kiran@onsiteteams.com"></option>
+              <option value="yogyata.airi@onsiteteams.com"></option>
             </datalist>
           </div>
         </div>
@@ -582,6 +590,10 @@
             <input type="text" id="companyName" placeholder="Star Electric Pvt Ltd" required>
           </div>
           <div class="form-group">
+            <label>GST No.</label>
+            <input type="text" id="clientGst" placeholder="22AAAAA0000A1Z5" maxlength="15">
+          </div>
+          <div class="form-group">
             <label>Email <span class="required">*</span></label>
             <input type="email" id="clientEmail" placeholder="rahul@starelectric.com" required>
           </div>
@@ -618,6 +630,10 @@
               <div class="plan-name">Enterprise</div>
               <div class="plan-price" id="enterprisePrice">Starting ₹12L+</div>
             </div>
+            <div class="plan-card" data-plan="white_label" onclick="selectPlan('white_label')">
+              <div class="plan-name">White Label</div>
+              <div class="plan-price" id="whiteLabelPrice">Starting ₹3L</div>
+            </div>
           </div>
           <input type="hidden" id="selectedPlan" value="business_plus">
         </div>
@@ -625,7 +641,7 @@
         <div class="form-grid" style="margin-top: 24px;" id="standardPlanOptions">
           <div class="form-group">
             <label>Number of Users <span class="required">*</span></label>
-            <input type="number" id="numUsers" value="3" min="3" required onchange="calculateTotal()">
+            <input type="number" id="numUsers" value="3" min="1" required onchange="calculateTotal()">
             <small style="color: var(--text-light); font-size: 0.8rem;">Minimum 3 users</small>
           </div>
           <div class="form-group">
@@ -650,6 +666,29 @@
         <div class="form-group" style="margin-top: 24px; display: none;" id="enterpriseAmount">
           <label>Custom Amount <span class="required">*</span></label>
           <input type="number" id="customAmount" placeholder="1200000" onchange="calculateTotal()">
+        </div>
+
+        <div class="form-grid" style="margin-top: 24px; display: none;" id="whiteLabelOptions">
+          <div class="form-group full-width">
+            <label>White Label Platform <span class="required">*</span></label>
+            <div class="checkbox-group">
+              <label class="checkbox-option" onclick="toggleWhiteLabel(this)">
+                <input type="checkbox" name="whiteLabelPlatform" value="web">
+                <span>Web Platform</span>
+                <span class="addon-price" id="webPrice">₹3,00,000</span>
+              </label>
+              <label class="checkbox-option" onclick="toggleWhiteLabel(this)">
+                <input type="checkbox" name="whiteLabelPlatform" value="android">
+                <span>Android App</span>
+                <span class="addon-price" id="androidPrice">₹3,50,000</span>
+              </label>
+              <label class="checkbox-option" onclick="toggleWhiteLabel(this)">
+                <input type="checkbox" name="whiteLabelPlatform" value="ios">
+                <span>iOS App</span>
+                <span class="addon-price" id="iosPrice">₹4,00,000</span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -677,6 +716,30 @@
             <span>Zoho Books Integration</span>
             <span class="addon-price" id="zohoPrice">₹20,000 + ₹5K AMC</span>
           </label>
+          <label class="checkbox-option" onclick="toggleAddon(this)">
+            <input type="checkbox" name="addons" value="additionalUsers">
+            <span>Special Offer (Extra Users)</span>
+            <span class="addon-price" id="additionalUsersPrice">₹15,000/user</span>
+          </label>
+        </div>
+
+        <div class="form-grid" style="margin-top: 20px; display: none;" id="additionalUsersSection">
+          <div class="form-group">
+            <label>Price per User</label>
+            <input type="number" id="specialOfferPerUserPrice" value="0" min="0" onchange="calculateTotal()">
+            <small style="color: var(--text-light); font-size: 0.8rem;">Auto-filled from plan. Edit to give custom price.</small>
+          </div>
+
+          <div class="form-group">
+            <label>Number of Extra Users</label>
+            <input type="number" id="additionalUsersCount" value="0" min="0" onchange="calculateTotal()">
+          </div>
+
+          <div class="form-group">
+            <label>Extra Discount %</label>
+            <input type="number" id="additionalUsersDiscount" value="0" min="0" max="100" onchange="calculateTotal()">
+            <small style="color: var(--text-light); font-size: 0.8rem;">Optional</small>
+          </div>
         </div>
       </div>
       
@@ -721,10 +784,7 @@
             <span>Sub-Total</span>
             <span id="summarySubtotal">₹45,000</span>
           </div>
-          <div class="summary-row" id="summaryAddonsRow" style="display: none;">
-            <span>Add-ons</span>
-            <span id="summaryAddons">₹0</span>
-          </div>
+          <div id="summaryAddonsContainer"></div>
           <div class="summary-row" id="summaryDiscountRow" style="display: none;">
             <span>Discount</span>
             <span id="summaryDiscount">-₹0</span>
@@ -766,7 +826,7 @@
   
   <script>
     // Apps Script Web App URL (update if you redeploy)
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGB5sA34u_0HVDsdfeAZZNMWF46c2eAX19nmqGAi_Fl3OnjrpLsVuo93UajwudKXCL/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVUgwR9r0T2UBHB5R_XtriDjqMRhmwKXixZdCUie_KVt-IGS3ZhwuppOPURXijFDKl/exec';
 
     // Salespeople list (auto-fill email when name matches)
     const SALESPEOPLE = {
@@ -781,7 +841,11 @@
       'Amit M': 'amit.k@onsiteteams.com',
       'Hitangi': 'hitangi.a@onsiteteams.com',
       'Shruti': 'shruti.a@onsiteteams.com',
-      'Jyoti': 'jyoti264pandey@gmail.com'
+      'Jyoti': 'jyoti264pandey@gmail.com',
+      'Ravi': 'ravi.gupta@onsiteteams.com',
+      'Arthi': 'aparthivarsha@onsiteteams.com',
+      'Kiran': 'k.kiran@onsiteteams.com',
+      'Yogyata': 'yogyata.airi@onsiteteams.com'
     };
 
     // Location lists (dropdown)
@@ -858,13 +922,19 @@
         business: 12000,
         business_plus: 15000,
         enterprise: 1200000,
+        white_label: {
+          web: 300000,
+          android: 350000,
+          ios: 400000
+        },
         addons: {
           gps: 20000,
           company: 20000,
           tally: 20000,
           tallyAmc: 5000,
           zoho: 20000,
-          zohoAmc: 5000
+          zohoAmc: 5000,
+          additionalUsers: 5000
         }
       },
       international: {
@@ -873,13 +943,19 @@
         business: 200,
         business_plus: 250,
         enterprise: 15000,
+        white_label: {
+          web: 3600,
+          android: 4200,
+          ios: 4800
+        },
         addons: {
           gps: 300,
           company: 300,
           tally: 300,
           tallyAmc: 100,
           zoho: 300,
-          zohoAmc: 100
+          zohoAmc: 100,
+          additionalUsers: 60
         }
       }
     };
@@ -970,12 +1046,24 @@
       document.getElementById('businessPrice').textContent = `${c}${p.business.toLocaleString()}/user/year`;
       document.getElementById('businessPlusPrice').textContent = `${c}${p.business_plus.toLocaleString()}/user/year`;
       document.getElementById('enterprisePrice').textContent = `Starting ${c}${(p.enterprise/100000).toFixed(0)}L+`;
-      
+      document.getElementById('whiteLabelPrice').textContent = `Starting ${c}${(p.white_label.web/100000).toFixed(2)}L`;
+
       document.getElementById('gpsPrice').textContent = `${c}${p.addons.gps.toLocaleString()}/yr`;
       document.getElementById('companyPrice').textContent = `${c}${p.addons.company.toLocaleString()}/yr`;
       document.getElementById('tallyPrice').textContent = `${c}${p.addons.tally.toLocaleString()} + ${c}${p.addons.tallyAmc.toLocaleString()} AMC`;
       document.getElementById('zohoPrice').textContent = `${c}${p.addons.zoho.toLocaleString()} + ${c}${p.addons.zohoAmc.toLocaleString()} AMC`;
-      
+      // Update additional users price label based on selected plan
+      const planPrice = p[selectedPlan] || 0;
+      document.getElementById('additionalUsersPrice').textContent = `${c}${planPrice.toLocaleString()}/user`;
+
+      // Auto-fill special offer price from selected plan
+      document.getElementById('specialOfferPerUserPrice').value = planPrice;
+
+      // Update white label prices
+      document.getElementById('webPrice').textContent = `${c}${p.white_label.web.toLocaleString()}`;
+      document.getElementById('androidPrice').textContent = `${c}${p.white_label.android.toLocaleString()}`;
+      document.getElementById('iosPrice').textContent = `${c}${p.white_label.ios.toLocaleString()}`;
+
       updatePaymentAccountVisibility();
       populateLocationOptions();
       calculateTotal();
@@ -1050,21 +1138,36 @@
       // Show/hide options based on plan
       const standardOptions = document.getElementById('standardPlanOptions');
       const enterpriseAmount = document.getElementById('enterpriseAmount');
+      const whiteLabelOptions = document.getElementById('whiteLabelOptions');
       const addonsSection = document.getElementById('addonsSection');
-      
+
       if (plan === 'enterprise') {
         standardOptions.style.display = 'none';
         enterpriseAmount.style.display = 'block';
+        whiteLabelOptions.style.display = 'none';
+        addonsSection.style.display = 'none';
+      } else if (plan === 'white_label') {
+        standardOptions.style.display = 'none';
+        enterpriseAmount.style.display = 'none';
+        whiteLabelOptions.style.display = 'grid';
         addonsSection.style.display = 'none';
       } else {
         standardOptions.style.display = 'grid';
         enterpriseAmount.style.display = 'none';
+        whiteLabelOptions.style.display = 'none';
         addonsSection.style.display = 'block';
+
+        // Auto-fill special offer price from selected plan
+        const p = PRICING[selectedRegion];
+        const c = p.currency;
+        const planPrice = p[plan] || 0;
+        document.getElementById('specialOfferPerUserPrice').value = planPrice;
+        document.getElementById('additionalUsersPrice').textContent = `${c}${planPrice.toLocaleString()}/user`;
       }
-      
+
       calculateTotal();
     }
-    
+
     // Select Duration
     function selectDuration(years) {
       selectedDuration = years;
@@ -1081,9 +1184,20 @@
     // Toggle Addon
     function toggleAddon(el) {
       el.classList.toggle('checked');
+      const input = el.querySelector('input[type="checkbox"]');
+      if (input && input.value === 'additionalUsers') {
+        const section = document.getElementById('additionalUsersSection');
+        section.style.display = input.checked ? 'block' : 'none';
+      }
       calculateTotal();
     }
-    
+
+    // Toggle White Label Platform
+    function toggleWhiteLabel(el) {
+      el.classList.toggle('checked');
+      calculateTotal();
+    }
+
     // Calculate Total
     function calculateTotal() {
       const p = PRICING[selectedRegion];
@@ -1093,59 +1207,88 @@
       let addonsTotal = 0;
       let planDesc = '';
       
-      if (selectedPlan === 'enterprise') {
+      if (selectedPlan === 'white_label') {
+        // White Label Plan
+        const platforms = document.querySelectorAll('input[name="whiteLabelPlatform"]:checked');
+        platforms.forEach(platform => {
+          subtotal += p.white_label[platform.value];
+        });
+        planDesc = `White Label Plan - ${Array.from(platforms).map(p => p.value.charAt(0).toUpperCase() + p.value.slice(1)).join(', ')}`;
+      } else if (selectedPlan === 'enterprise') {
         subtotal = parseFloat(document.getElementById('customAmount').value) || p.enterprise;
         planDesc = `Enterprise Plan`;
       } else {
         const users = parseInt(document.getElementById('numUsers').value) || 3;
         const pricePerUser = p[selectedPlan];
         const durationDiscount = DURATION_DISCOUNT[selectedDuration];
-        
+
         subtotal = pricePerUser * users * selectedDuration;
         if (durationDiscount > 0) {
           subtotal = subtotal * (1 - durationDiscount);
         }
-        
+
         const planName = selectedPlan === 'business' ? 'Business' : 'Business+';
         planDesc = `${planName} × ${users} users × ${selectedDuration} year${selectedDuration > 1 ? 's' : ''}`;
       }
-      
-      // Calculate addons
+
+      // Calculate addons + build individual summary rows
       const addons = document.querySelectorAll('input[name="addons"]:checked');
+      const addonLabels = {
+        gps: 'GPS + Facial Recognition',
+        company: 'Additional Company',
+        tally: 'Tally Integration',
+        zoho: 'Zoho Books Integration'
+      };
+      let addonsSummaryHTML = '';
+
       addons.forEach(addon => {
         const val = addon.value;
-        if (val === 'gps') addonsTotal += p.addons.gps;
-        if (val === 'company') addonsTotal += p.addons.company;
-        if (val === 'tally') addonsTotal += p.addons.tally + p.addons.tallyAmc;
-        if (val === 'zoho') addonsTotal += p.addons.zoho + p.addons.zohoAmc;
+        let amt = 0;
+        if (val === 'gps') { amt = p.addons.gps; }
+        if (val === 'company') { amt = p.addons.company; }
+        if (val === 'tally') { amt = p.addons.tally + p.addons.tallyAmc; }
+        if (val === 'zoho') { amt = p.addons.zoho + p.addons.zohoAmc; }
+        if (val === 'additionalUsers') {
+          const count = parseInt(document.getElementById('additionalUsersCount').value) || 0;
+          const additionalUserDiscount = parseFloat(document.getElementById('additionalUsersDiscount').value) || 0;
+          const pricePerUser = parseFloat(document.getElementById('specialOfferPerUserPrice').value) || 0;
+
+          amt = count * pricePerUser;
+          if (additionalUserDiscount > 0) {
+            amt = amt * (1 - additionalUserDiscount / 100);
+          }
+          if (count > 0) {
+            const discLabel = additionalUserDiscount > 0 ? ` (${additionalUserDiscount}% off)` : '';
+            addonsSummaryHTML += `<div class="summary-row"><span>Special Offer: ${count} users${discLabel}</span><span>${c}${Math.round(amt).toLocaleString()}</span></div>`;
+          }
+        } else if (amt > 0) {
+          addonsSummaryHTML += `<div class="summary-row"><span>${addonLabels[val]}</span><span>${c}${amt.toLocaleString()}</span></div>`;
+        }
+        addonsTotal += amt;
       });
-      
+
       // Apply discount
       const discountPct = parseFloat(document.getElementById('discount').value) || 0;
       const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
-      
+
       const afterDiscount = subtotal + addonsTotal - discountAmt;
       const gst = afterDiscount * 0.18;
       const total = afterDiscount + gst;
-      
+
       // Update UI
       document.getElementById('summaryPlan').textContent = planDesc;
       document.getElementById('summarySubtotal').textContent = `${c}${subtotal.toLocaleString()}`;
-      
-      if (addonsTotal > 0) {
-        document.getElementById('summaryAddonsRow').style.display = 'flex';
-        document.getElementById('summaryAddons').textContent = `${c}${addonsTotal.toLocaleString()}`;
-      } else {
-        document.getElementById('summaryAddonsRow').style.display = 'none';
-      }
-      
+
+      // Show individual add-ons
+      document.getElementById('summaryAddonsContainer').innerHTML = addonsSummaryHTML;
+
       if (discountAmt > 0) {
         document.getElementById('summaryDiscountRow').style.display = 'flex';
         document.getElementById('summaryDiscount').textContent = `-${c}${discountAmt.toLocaleString()}`;
       } else {
         document.getElementById('summaryDiscountRow').style.display = 'none';
       }
-      
+
       document.getElementById('summaryGst').textContent = `${c}${Math.round(gst).toLocaleString()}`;
       document.getElementById('summaryTotal').textContent = `${c}${Math.round(total).toLocaleString()}`;
     }
@@ -1210,6 +1353,7 @@
         validDays: document.getElementById('validDays').value,
         clientName: document.getElementById('clientName').value,
         companyName: document.getElementById('companyName').value,
+        clientGst: document.getElementById('clientGst').value,
         clientEmail: document.getElementById('clientEmail').value,
         clientPhone: document.getElementById('clientPhone').value,
         clientLocation: getClientLocation(),
@@ -1217,6 +1361,10 @@
         numUsers: document.getElementById('numUsers').value,
         duration: selectedDuration,
         customAmount: document.getElementById('customAmount').value,
+        whiteLabelPlatforms: Array.from(document.querySelectorAll('input[name="whiteLabelPlatform"]:checked')).map(cb => cb.value),
+        additionalUsersCount: document.getElementById('additionalUsersCount').value || '0',
+        additionalUsersDiscount: document.getElementById('additionalUsersDiscount').value || '0',
+        specialOfferPerUserPrice: document.getElementById('specialOfferPerUserPrice').value || '0',
         addons: Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value),
         discount: document.getElementById('discount').value,
         paymentTerms: document.getElementById('paymentTerms').value,
@@ -1351,8 +1499,17 @@
       let addonsTotal = 0;
       let planDesc = '';
       let itemsHTML = '';
-      
-      if (data.plan === 'enterprise') {
+
+      if (data.plan === 'white_label') {
+        planDesc = 'White Label Plan';
+        const platforms = data.whiteLabelPlatforms || [];
+        platforms.forEach(platform => {
+          const amt = p.white_label[platform];
+          subtotal += amt;
+          const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
+          itemsHTML += `<tr><td>White Label - ${platformName} Platform</td><td style="text-align:center;">1</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+        });
+      } else if (data.plan === 'enterprise') {
         subtotal = parseFloat(data.customAmount) || p.enterprise;
         planDesc = 'Enterprise Plan';
         itemsHTML = `<tr><td>Enterprise Plan - Unlimited Users</td><td style="text-align:center;">Unlimited</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td></tr>`;
@@ -1360,23 +1517,42 @@
         const users = parseInt(data.numUsers) || 3;
         const pricePerUser = p[data.plan];
         const duration = parseInt(data.duration) || 1;
-        const durationDiscount = { 1: 0, 2: 0.20, 3: 0.10 }[duration];
-        
+        const durationDiscount = { 1: 0, 2: 0.20, 3: 0.30 }[duration];
+
         subtotal = pricePerUser * users * duration;
         if (durationDiscount > 0) subtotal = subtotal * (1 - durationDiscount);
-        
+
         const planName = data.plan === 'business' ? 'Business' : 'Business+';
         planDesc = `${planName} Plan - ${users} Users`;
         itemsHTML = `<tr><td>${planName} Plan License</td><td style="text-align:center;">${users}</td><td style="text-align:right;">${c}${pricePerUser.toLocaleString()}/user/year</td><td style="text-align:center;">${duration} Year${duration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${subtotal.toLocaleString()}</td></tr>`;
       }
-      
+
       // Add-ons
-      const addonNames = { gps: 'GPS + Facial Recognition', company: 'Additional Company', tally: 'Tally Integration', zoho: 'Zoho Books Integration' };
+      const addonNames = { gps: 'GPS + Facial Recognition', company: 'Additional Company', tally: 'Tally Integration', zoho: 'Zoho Books Integration', additionalUsers: 'Additional Users' };
       (data.addons || []).forEach(addon => {
-        let amt = p.addons[addon];
-        if (addon === 'tally' || addon === 'zoho') amt += p.addons[addon + 'Amc'];
-        addonsTotal += amt;
-        itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+        if (addon === 'additionalUsers') {
+          const count = parseInt(data.additionalUsersCount) || 0;
+          const additionalUserDiscount = parseFloat(data.additionalUsersDiscount) || 0;
+          const pricePerUser = parseFloat(data.specialOfferPerUserPrice) || 0;
+
+          let amt = count * pricePerUser;
+          let discountedAmt = amt;
+          let discountLabel = '';
+          if (additionalUserDiscount > 0) {
+            discountedAmt = amt * (1 - additionalUserDiscount / 100);
+            discountLabel = ` (${additionalUserDiscount}% off)`;
+          }
+          if (count > 0) {
+            addonsTotal += discountedAmt;
+            const displayPrice = additionalUserDiscount > 0 ? `${c}${(pricePerUser * (1 - additionalUserDiscount / 100)).toLocaleString()}/user${discountLabel}` : `${c}${pricePerUser.toLocaleString()}/user`;
+            itemsHTML += `<tr><td>Special Offer - Extra Users</td><td style="text-align:center;">${count}</td><td style="text-align:right;">${displayPrice}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${discountedAmt.toLocaleString()}</td></tr>`;
+          }
+        } else {
+          let amt = p.addons[addon];
+          if (addon === 'tally' || addon === 'zoho') amt += p.addons[addon + 'Amc'];
+          addonsTotal += amt;
+          itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+        }
       });
       
       const discountPct = parseFloat(data.discount) || 0;
@@ -1491,6 +1667,7 @@
       <h3>Quotation For</h3>
       <div class="client-name">${data.clientName}</div>
       <div class="client-company">${data.companyName}</div>
+      ${data.clientGst ? `<div class="client-location">GSTIN: ${data.clientGst}</div>` : ''}
       <div class="client-location">${data.clientLocation || ''}</div>
       ${data.clientEmail ? `<div class="client-location">✉️ ${data.clientEmail}</div>` : ''}
     </div>

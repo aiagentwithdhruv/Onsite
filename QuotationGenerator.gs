@@ -48,6 +48,7 @@ const PRICING = {
     business: 12000,
     business_plus: 15000,
     enterprise: 1200000,
+    white_label: { web: 300000, android: 350000, ios: 400000 },
     addons: { gps: 20000, company: 20000, tally: 20000, tallyAmc: 5000, zoho: 20000, zohoAmc: 5000 }
   },
   international: {
@@ -56,6 +57,7 @@ const PRICING = {
     business: 200,
     business_plus: 250,
     enterprise: 15000,
+    white_label: { web: 3600, android: 4200, ios: 4800 },
     addons: { gps: 300, company: 300, tally: 300, tallyAmc: 100, zoho: 300, zohoAmc: 100 }
   }
 };
@@ -262,13 +264,28 @@ function generateQuotation(data) {
 function calculateAmounts(data) {
   const p = PRICING[data.region];
   const c = p.currency;
-  
+
   let subtotal = 0;
   let addonsTotal = 0;
   let planDesc = '';
   let items = [];
-  
-  if (data.plan === 'enterprise') {
+
+  if (data.plan === 'white_label') {
+    planDesc = 'White Label Plan';
+    const platforms = data.whiteLabelPlatforms || [];
+    platforms.forEach(platform => {
+      const amt = p.white_label[platform];
+      subtotal += amt;
+      const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
+      items.push({
+        description: `White Label - ${platformName} Platform`,
+        users: '1',
+        rate: `${c}${amt.toLocaleString()}`,
+        duration: '1 Year',
+        amount: amt
+      });
+    });
+  } else if (data.plan === 'enterprise') {
     subtotal = parseFloat(data.customAmount) || p.enterprise;
     planDesc = 'Enterprise Plan';
     items.push({
@@ -283,15 +300,15 @@ function calculateAmounts(data) {
     const pricePerUser = p[data.plan];
     const duration = parseInt(data.duration) || 1;
     const durationDiscount = DURATION_DISCOUNT[duration];
-    
+
     subtotal = pricePerUser * users * duration;
     if (durationDiscount > 0) {
       subtotal = subtotal * (1 - durationDiscount);
     }
-    
+
     const planName = data.plan === 'business' ? 'Business' : 'Business+';
     planDesc = `${planName} Plan - ${users} Users`;
-    
+
     items.push({
       description: `${planName} Plan License`,
       users: users,
@@ -300,7 +317,7 @@ function calculateAmounts(data) {
       amount: subtotal
     });
   }
-  
+
   // Calculate addons
   const addons = data.addons || [];
   const addonNames = {
@@ -309,9 +326,37 @@ function calculateAmounts(data) {
     tally: 'Tally Integration',
     zoho: 'Zoho Books Integration'
   };
-  
+
   addons.forEach(addon => {
+    if (addon === 'additionalUsers') {
+      const count = parseInt(data.additionalUsersCount) || 0;
+      const discount = parseFloat(data.additionalUsersDiscount) || 0;
+      const pricePerUser = parseFloat(data.specialOfferPerUserPrice) || 0;
+
+      if (count > 0 && pricePerUser > 0) {
+        let amt = count * pricePerUser;
+        let discountLabel = '';
+        if (discount > 0) {
+          amt = amt * (1 - discount / 100);
+          discountLabel = ` (${discount}% off)`;
+        }
+        const displayRate = discount > 0
+          ? `${c}${(pricePerUser * (1 - discount / 100)).toLocaleString()}/user${discountLabel}`
+          : `${c}${pricePerUser.toLocaleString()}/user`;
+        addonsTotal += amt;
+        items.push({
+          description: 'Special Offer - Extra Users',
+          users: count,
+          rate: displayRate,
+          duration: '1 Year',
+          amount: amt
+        });
+      }
+      return;
+    }
+
     let addonAmount = p.addons[addon];
+    if (!addonAmount) return;
     let desc = addonNames[addon];
     if (addon === 'tally' || addon === 'zoho') {
       addonAmount += p.addons[addon + 'Amc'];
@@ -635,6 +680,7 @@ function generateHTML(data, calc) {
     <h3>Quotation For</h3>
     <div class="client-name">${data.clientName}</div>
     <div class="client-company">${data.companyName}</div>
+    ${data.clientGst ? `<div class="client-location">GSTIN: ${data.clientGst}</div>` : ''}
     <div class="client-location">${data.clientLocation || ''}</div>
     ${data.clientEmail ? `<div class="client-location">✉️ ${data.clientEmail}</div>` : ''}
   </div>
