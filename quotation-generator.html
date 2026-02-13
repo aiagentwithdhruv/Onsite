@@ -1248,29 +1248,31 @@
         zoho: 'Zoho Books Integration'
       };
       let addonsSummaryHTML = '';
+      const addonDuration = (selectedPlan === 'enterprise' || selectedPlan === 'white_label') ? 1 : selectedDuration;
 
       addons.forEach(addon => {
         const val = addon.value;
         let amt = 0;
-        if (val === 'gps') { amt = p.addons.gps; }
-        if (val === 'company') { amt = p.addons.company; }
-        if (val === 'tally') { amt = p.addons.tally + p.addons.tallyAmc; }
-        if (val === 'zoho') { amt = p.addons.zoho + p.addons.zohoAmc; }
+        if (val === 'gps') { amt = p.addons.gps * addonDuration; }
+        if (val === 'company') { amt = p.addons.company * addonDuration; }
+        if (val === 'tally') { amt = (p.addons.tally + p.addons.tallyAmc) * addonDuration; }
+        if (val === 'zoho') { amt = (p.addons.zoho + p.addons.zohoAmc) * addonDuration; }
         if (val === 'additionalUsers') {
           const count = parseInt(document.getElementById('additionalUsersCount').value) || 0;
           const additionalUserDiscount = parseFloat(document.getElementById('additionalUsersDiscount').value) || 0;
           const pricePerUser = parseFloat(document.getElementById('specialOfferPerUserPrice').value) || 0;
 
-          amt = count * pricePerUser;
+          amt = count * pricePerUser * addonDuration;
           if (additionalUserDiscount > 0) {
             amt = amt * (1 - additionalUserDiscount / 100);
           }
           if (count > 0) {
             const discLabel = additionalUserDiscount > 0 ? ` (${additionalUserDiscount}% off)` : '';
-            addonsSummaryHTML += `<div class="summary-row"><span>Special Offer: ${count} users${discLabel}</span><span>${c}${Math.round(amt).toLocaleString()}</span></div>`;
+            addonsSummaryHTML += `<div class="summary-row"><span>Special Offer: ${count} users × ${addonDuration}yr${discLabel}</span><span>${c}${Math.round(amt).toLocaleString()}</span></div>`;
           }
         } else if (amt > 0) {
-          addonsSummaryHTML += `<div class="summary-row"><span>${addonLabels[val]}</span><span>${c}${amt.toLocaleString()}</span></div>`;
+          const durationLabel = addonDuration > 1 ? ` (${addonDuration} yrs)` : '';
+          addonsSummaryHTML += `<div class="summary-row"><span>${addonLabels[val]}${durationLabel}</span><span>${c}${amt.toLocaleString()}</span></div>`;
         }
         addonsTotal += amt;
       });
@@ -1537,13 +1539,15 @@
 
       // Add-ons
       const addonNames = { gps: 'GPS + Facial Recognition', company: 'Additional Company', tally: 'Tally Integration', zoho: 'Zoho Books Integration', additionalUsers: 'Additional Users' };
+      const duration = parseInt(data.duration) || 1;
+      const addonDuration = (data.plan === 'enterprise' || data.plan === 'white_label') ? 1 : duration;
       (data.addons || []).forEach(addon => {
         if (addon === 'additionalUsers') {
           const count = parseInt(data.additionalUsersCount) || 0;
           const additionalUserDiscount = parseFloat(data.additionalUsersDiscount) || 0;
           const pricePerUser = parseFloat(data.specialOfferPerUserPrice) || 0;
 
-          let amt = count * pricePerUser;
+          let amt = count * pricePerUser * addonDuration;
           let discountedAmt = amt;
           let discountLabel = '';
           if (additionalUserDiscount > 0) {
@@ -1553,13 +1557,14 @@
           if (count > 0) {
             addonsTotal += discountedAmt;
             const displayPrice = additionalUserDiscount > 0 ? `${c}${(pricePerUser * (1 - additionalUserDiscount / 100)).toLocaleString()}/user${discountLabel}` : `${c}${pricePerUser.toLocaleString()}/user`;
-            itemsHTML += `<tr><td>Special Offer - Extra Users</td><td style="text-align:center;">${count}</td><td style="text-align:right;">${displayPrice}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${discountedAmt.toLocaleString()}</td></tr>`;
+            itemsHTML += `<tr><td>Special Offer - Extra Users</td><td style="text-align:center;">${count}</td><td style="text-align:right;">${displayPrice}</td><td style="text-align:center;">${addonDuration} Year${addonDuration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${discountedAmt.toLocaleString()}</td></tr>`;
           }
         } else {
           let amt = p.addons[addon];
           if (addon === 'tally' || addon === 'zoho') amt += p.addons[addon + 'Amc'];
+          amt = amt * addonDuration;
           addonsTotal += amt;
-          itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+          itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${(amt / addonDuration).toLocaleString()}/yr</td><td style="text-align:center;">${addonDuration} Year${addonDuration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
         }
       });
       

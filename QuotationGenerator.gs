@@ -326,6 +326,8 @@ function calculateAmounts(data) {
     tally: 'Tally Integration',
     zoho: 'Zoho Books Integration'
   };
+  const duration = parseInt(data.duration) || 1;
+  const addonDuration = (data.plan === 'enterprise' || data.plan === 'white_label') ? 1 : duration;
 
   addons.forEach(addon => {
     if (addon === 'additionalUsers') {
@@ -334,7 +336,7 @@ function calculateAmounts(data) {
       const pricePerUser = parseFloat(data.specialOfferPerUserPrice) || 0;
 
       if (count > 0 && pricePerUser > 0) {
-        let amt = count * pricePerUser;
+        let amt = count * pricePerUser * addonDuration;
         let discountLabel = '';
         if (discount > 0) {
           amt = amt * (1 - discount / 100);
@@ -348,7 +350,7 @@ function calculateAmounts(data) {
           description: 'Special Offer - Extra Users',
           users: count,
           rate: displayRate,
-          duration: '1 Year',
+          duration: `${addonDuration} Year${addonDuration > 1 ? 's' : ''}`,
           amount: amt
         });
       }
@@ -362,13 +364,14 @@ function calculateAmounts(data) {
       addonAmount += p.addons[addon + 'Amc'];
       desc += ' (incl. AMC)';
     }
-    addonsTotal += addonAmount;
+    const totalAddonAmount = addonAmount * addonDuration;
+    addonsTotal += totalAddonAmount;
     items.push({
       description: desc,
       users: '-',
-      rate: `${c}${addonAmount.toLocaleString()}`,
-      duration: '1 Year',
-      amount: addonAmount
+      rate: `${c}${addonAmount.toLocaleString()}/yr`,
+      duration: `${addonDuration} Year${addonDuration > 1 ? 's' : ''}`,
+      amount: totalAddonAmount
     });
   });
   
