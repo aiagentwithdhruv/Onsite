@@ -356,16 +356,19 @@ function calculateAmounts(data) {
     let addonAmount = p.addons[addon];
     if (!addonAmount) return;
     let desc = addonNames[addon];
+    let totalAddonAmount;
     if (addon === 'tally' || addon === 'zoho') {
-      addonAmount += p.addons[addon + 'Amc'];
+      // Year 1 = setup fee, Year 2+ = AMC renewal only
+      totalAddonAmount = addonAmount + (p.addons[addon + 'Amc'] * (addonDuration - 1));
       desc += ' (incl. AMC)';
+    } else {
+      totalAddonAmount = addonAmount * addonDuration;
     }
-    const totalAddonAmount = addonAmount * addonDuration;
     addonsTotal += totalAddonAmount;
     items.push({
       description: desc,
       users: '-',
-      rate: `${c}${addonAmount.toLocaleString()}/yr`,
+      rate: `${c}${totalAddonAmount.toLocaleString()}`,
       duration: `${addonDuration} Year${addonDuration > 1 ? 's' : ''}`,
       amount: totalAddonAmount
     });

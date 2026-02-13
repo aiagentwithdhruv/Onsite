@@ -1251,8 +1251,9 @@
         let amt = 0;
         if (val === 'gps') { amt = p.addons.gps * addonDuration; }
         if (val === 'company') { amt = p.addons.company * addonDuration; }
-        if (val === 'tally') { amt = (p.addons.tally + p.addons.tallyAmc) * addonDuration; }
-        if (val === 'zoho') { amt = (p.addons.zoho + p.addons.zohoAmc) * addonDuration; }
+        // Tally/Zoho: Year 1 = setup fee, Year 2+ = AMC renewal only
+        if (val === 'tally') { amt = p.addons.tally + (p.addons.tallyAmc * (addonDuration - 1)); }
+        if (val === 'zoho') { amt = p.addons.zoho + (p.addons.zohoAmc * (addonDuration - 1)); }
         if (val === 'additionalUsers') {
           const count = parseInt(document.getElementById('additionalUsersCount').value) || 0;
           const additionalUserDiscount = parseFloat(document.getElementById('additionalUsersDiscount').value) || 0;
@@ -1555,10 +1556,14 @@
           }
         } else {
           let amt = p.addons[addon];
-          if (addon === 'tally' || addon === 'zoho') amt += p.addons[addon + 'Amc'];
-          amt = amt * addonDuration;
+          if (addon === 'tally' || addon === 'zoho') {
+            // Year 1 = setup fee, Year 2+ = AMC renewal only
+            amt = amt + (p.addons[addon + 'Amc'] * (addonDuration - 1));
+          } else {
+            amt = amt * addonDuration;
+          }
           addonsTotal += amt;
-          itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${(amt / addonDuration).toLocaleString()}/yr</td><td style="text-align:center;">${addonDuration} Year${addonDuration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
+          itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">${addonDuration} Year${addonDuration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
         }
       });
       
