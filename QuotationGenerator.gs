@@ -62,7 +62,7 @@ const PRICING = {
   }
 };
 
-const DURATION_DISCOUNT = { 1: 0, 2: 0.20, 3: 0.30 };
+// No auto duration discount - team applies discount manually via Discount % field
 
 // Features by Plan
 const FEATURES = {
@@ -299,12 +299,8 @@ function calculateAmounts(data) {
     const users = parseInt(data.numUsers) || 3;
     const pricePerUser = p[data.plan];
     const duration = parseInt(data.duration) || 1;
-    const durationDiscount = DURATION_DISCOUNT[duration];
 
     subtotal = pricePerUser * users * duration;
-    if (durationDiscount > 0) {
-      subtotal = subtotal * (1 - durationDiscount);
-    }
 
     const planName = data.plan === 'business' ? 'Business' : 'Business+';
     planDesc = `${planName} Plan - ${users} Users`;

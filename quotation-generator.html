@@ -962,7 +962,7 @@
       }
     };
     
-    const DURATION_DISCOUNT = { 1: 0, 2: 0.20, 3: 0.30 };
+    // No auto duration discount - team applies discount manually via Discount % field
     
     let selectedPlan = 'business_plus';
     let selectedDuration = 1;
@@ -1228,12 +1228,8 @@
       } else {
         const users = parseInt(document.getElementById('numUsers').value) || 3;
         const pricePerUser = p[selectedPlan];
-        const durationDiscount = DURATION_DISCOUNT[selectedDuration];
 
         subtotal = pricePerUser * users * selectedDuration;
-        if (durationDiscount > 0) {
-          subtotal = subtotal * (1 - durationDiscount);
-        }
 
         const planName = selectedPlan === 'business' ? 'Business' : 'Business+';
         planDesc = `${planName} × ${users} users × ${selectedDuration} year${selectedDuration > 1 ? 's' : ''}`;
@@ -1527,10 +1523,8 @@
         const users = parseInt(data.numUsers) || 3;
         const pricePerUser = p[data.plan];
         const duration = parseInt(data.duration) || 1;
-        const durationDiscount = { 1: 0, 2: 0.20, 3: 0.30 }[duration];
 
         subtotal = pricePerUser * users * duration;
-        if (durationDiscount > 0) subtotal = subtotal * (1 - durationDiscount);
 
         const planName = data.plan === 'business' ? 'Business' : 'Business+';
         planDesc = `${planName} Plan - ${users} Users`;
@@ -1539,8 +1533,8 @@
 
       // Add-ons
       const addonNames = { gps: 'GPS + Facial Recognition', company: 'Additional Company', tally: 'Tally Integration', zoho: 'Zoho Books Integration', additionalUsers: 'Additional Users' };
-      const duration = parseInt(data.duration) || 1;
-      const addonDuration = (data.plan === 'enterprise' || data.plan === 'white_label') ? 1 : duration;
+      const addonDur = parseInt(data.duration) || 1;
+      const addonDuration = (data.plan === 'enterprise' || data.plan === 'white_label') ? 1 : addonDur;
       (data.addons || []).forEach(addon => {
         if (addon === 'additionalUsers') {
           const count = parseInt(data.additionalUsersCount) || 0;
