@@ -6,6 +6,7 @@ import {
   BarChart3,
   Bell,
   Settings,
+  Wrench,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ const navItems = [
 ]
 
 const adminItem = { to: '/admin', icon: Settings, label: 'Admin' }
+const settingsItem = { to: '/settings', icon: Wrench, label: 'Settings' }
 
 const adminRoles = new Set(['manager', 'founder', 'admin'])
 
@@ -94,21 +96,38 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
           ))}
 
           {showAdmin && (
-            <li>
-              <NavLink
-                to={adminItem.to}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  } ${collapsed ? 'justify-center' : ''}`
-                }
-              >
-                <adminItem.icon className="h-5 w-5" />
-                {!collapsed && <span>{adminItem.label}</span>}
-              </NavLink>
-            </li>
+            <>
+              <li>
+                <NavLink
+                  to={adminItem.to}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    } ${collapsed ? 'justify-center' : ''}`
+                  }
+                >
+                  <adminItem.icon className="h-5 w-5" />
+                  {!collapsed && <span>{adminItem.label}</span>}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to={settingsItem.to}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    } ${collapsed ? 'justify-center' : ''}`
+                  }
+                >
+                  <settingsItem.icon className="h-5 w-5" />
+                  {!collapsed && <span>{settingsItem.label}</span>}
+                </NavLink>
+              </li>
+            </>
           )}
         </ul>
       </nav>

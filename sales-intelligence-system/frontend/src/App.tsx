@@ -12,6 +12,7 @@ const BriefsPage = React.lazy(() => import('./pages/BriefsPage'))
 const AnalyticsPage = React.lazy(() => import('./pages/AnalyticsPage'))
 const AlertsPage = React.lazy(() => import('./pages/AlertsPage'))
 const AdminPage = React.lazy(() => import('./pages/AdminPage'))
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
 
 function LoadingSpinner() {
   return (
@@ -138,6 +139,14 @@ function AppRoutes() {
           element={
             <Suspense fallback={<LoadingSpinner />}>
               <AdminPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <SettingsPage />
             </Suspense>
           }
         />
