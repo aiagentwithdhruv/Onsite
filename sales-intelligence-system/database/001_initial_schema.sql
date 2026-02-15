@@ -14,6 +14,7 @@ CREATE EXTENSION IF NOT EXISTS "vector";
 -- Users (sales reps, managers, founder, admin)
 CREATE TABLE users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  auth_id UUID UNIQUE,  -- links to Supabase Auth user ID
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('rep', 'team_lead', 'manager', 'founder', 'admin')),

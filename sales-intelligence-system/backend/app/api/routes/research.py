@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.auth import get_current_user
@@ -27,9 +27,8 @@ class ResearchTriggerResponse(BaseModel):
 
 class ResearchStatusResponse(BaseModel):
     lead_id: str
-    status: str  # in_progress, completed, failed, not_found
-    started_at: str | None = None
-    completed_at: str | None = None
+    status: str
+    researched_at: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -37,37 +36,42 @@ class ResearchStatusResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 async def _run_research_background(lead_id: str, user_id: str):
-    """Run the research agent in the background and update status on completion."""
+    """Run the research agent in the background."""
     db = get_supabase_admin()
     try:
-        # Import here to avoid circular imports and allow graceful failure
         from app.agents.research_agent import run_research_agent
 
         result = await run_research_agent(lead_id=lead_id, triggered_by=user_id)
 
-        # Update research status to completed
-        db.table("research_results").update({
-            "status": "completed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
-            "results": result if isinstance(result, dict) else {"summary": str(result)},
-        }).eq("lead_id", lead_id).eq("status", "in_progress").execute()
+        # Update research record with results
+        update_data = {
+            "status": "complete",
+            "researched_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if isinstance(result, dict):
+            for key in ["company_info", "web_research", "notes_summary", "close_strategy", "pricing_suggestion"]:
+                if key in result:
+                    update_data[key] = result[key]
+            if "pain_points" in result:
+                update_data["pain_points"] = result["pain_points"]
+            if "talking_points" in result:
+                update_data["talking_points"] = result["talking_points"]
 
+        db.table("lead_research").update(update_data).eq("lead_id", lead_id).eq("status", "in_progress").execute()
         log.info(f"Research completed for lead {lead_id}")
 
     except ImportError:
         log.warning("research_agent not yet implemented, marking research as failed")
-        db.table("research_results").update({
+        db.table("lead_research").update({
             "status": "failed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
-            "error_message": "Research agent not yet implemented",
+            "researched_at": datetime.now(timezone.utc).isoformat(),
         }).eq("lead_id", lead_id).eq("status", "in_progress").execute()
 
     except Exception as e:
         log.error(f"Research failed for lead {lead_id}: {e}")
-        db.table("research_results").update({
+        db.table("lead_research").update({
             "status": "failed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
-            "error_message": str(e)[:500],
+            "researched_at": datetime.now(timezone.utc).isoformat(),
         }).eq("lead_id", lead_id).eq("status", "in_progress").execute()
 
 
@@ -77,28 +81,22 @@ async def _run_research_background(lead_id: str, user_id: str):
 
 @router.post("/{lead_id}", response_model=ResearchTriggerResponse)
 async def trigger_research(lead_id: str, user: dict = Depends(get_current_user)):
-    """Trigger AI research for a lead. Runs asynchronously in the background.
-
-    Returns immediately with a status of 'in_progress'. Poll GET /{lead_id}/status
-    to check completion.
-    """
+    """Trigger AI research for a lead. Runs asynchronously in the background."""
     try:
         db = get_supabase_admin()
 
-        # Verify lead exists
-        lead_result = db.table("leads").select("id, name, assigned_to").eq("id", lead_id).single().execute()
+        lead_result = db.table("leads").select("id, contact_name, assigned_rep_id").eq("id", lead_id).single().execute()
         if not lead_result.data:
             raise HTTPException(status_code=404, detail="Lead not found")
 
         lead = lead_result.data
 
-        # Reps can only research their own leads
-        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_to") != user["id"]:
+        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_rep_id") != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to research this lead")
 
         # Check if research is already in progress
         existing = (
-            db.table("research_results")
+            db.table("lead_research")
             .select("id, status")
             .eq("lead_id", lead_id)
             .eq("status", "in_progress")
@@ -113,16 +111,16 @@ async def trigger_research(lead_id: str, user: dict = Depends(get_current_user))
 
         now = datetime.now(timezone.utc).isoformat()
 
-        # Create a research_results record with in_progress status
-        db.table("research_results").insert({
+        # Upsert research record (lead_id is UNIQUE in lead_research)
+        # Delete any existing failed/complete record first, then insert fresh
+        db.table("lead_research").delete().eq("lead_id", lead_id).execute()
+        db.table("lead_research").insert({
             "lead_id": lead_id,
             "status": "in_progress",
-            "triggered_by": user["id"],
-            "started_at": now,
-            "created_at": now,
+            "model_used": "claude-sonnet",
+            "researched_at": now,
         }).execute()
 
-        # Kick off background research
         asyncio.create_task(_run_research_background(lead_id, user["id"]))
 
         return ResearchTriggerResponse(
@@ -140,24 +138,21 @@ async def trigger_research(lead_id: str, user: dict = Depends(get_current_user))
 
 @router.get("/{lead_id}")
 async def get_research(lead_id: str, user: dict = Depends(get_current_user)):
-    """Get the latest completed research results for a lead."""
+    """Get the latest research results for a lead."""
     try:
         db = get_supabase_admin()
 
-        # Verify lead exists and user has access
-        lead_result = db.table("leads").select("id, assigned_to").eq("id", lead_id).single().execute()
+        lead_result = db.table("leads").select("id, assigned_rep_id").eq("id", lead_id).single().execute()
         if not lead_result.data:
             raise HTTPException(status_code=404, detail="Lead not found")
 
-        if user["role"] in ("rep", "sales_rep") and lead_result.data.get("assigned_to") != user["id"]:
+        if user["role"] in ("rep", "sales_rep") and lead_result.data.get("assigned_rep_id") != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to view this lead's research")
 
-        # Get the most recent research result (completed or in_progress)
         result = (
-            db.table("research_results")
+            db.table("lead_research")
             .select("*")
             .eq("lead_id", lead_id)
-            .order("created_at", desc=True)
             .limit(1)
             .execute()
         )
@@ -187,40 +182,33 @@ async def get_research(lead_id: str, user: dict = Depends(get_current_user)):
 
 @router.get("/{lead_id}/status", response_model=ResearchStatusResponse)
 async def research_status(lead_id: str, user: dict = Depends(get_current_user)):
-    """Check the status of research for a lead (in_progress, completed, failed, not_found)."""
+    """Check the status of research for a lead."""
     try:
         db = get_supabase_admin()
 
-        # Verify lead exists
-        lead_result = db.table("leads").select("id, assigned_to").eq("id", lead_id).single().execute()
+        lead_result = db.table("leads").select("id, assigned_rep_id").eq("id", lead_id).single().execute()
         if not lead_result.data:
             raise HTTPException(status_code=404, detail="Lead not found")
 
-        if user["role"] in ("rep", "sales_rep") and lead_result.data.get("assigned_to") != user["id"]:
-            raise HTTPException(status_code=403, detail="Not authorized to check this lead's research status")
+        if user["role"] in ("rep", "sales_rep") and lead_result.data.get("assigned_rep_id") != user["id"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
-        # Get most recent research record
         result = (
-            db.table("research_results")
-            .select("status, started_at, completed_at")
+            db.table("lead_research")
+            .select("status, researched_at")
             .eq("lead_id", lead_id)
-            .order("created_at", desc=True)
             .limit(1)
             .execute()
         )
 
         if not result.data:
-            return ResearchStatusResponse(
-                lead_id=lead_id,
-                status="not_found",
-            )
+            return ResearchStatusResponse(lead_id=lead_id, status="not_found")
 
         record = result.data[0]
         return ResearchStatusResponse(
             lead_id=lead_id,
             status=record.get("status", "unknown"),
-            started_at=record.get("started_at"),
-            completed_at=record.get("completed_at"),
+            researched_at=record.get("researched_at"),
         )
 
     except HTTPException:

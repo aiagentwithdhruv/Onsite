@@ -30,7 +30,7 @@ class LoginResponse(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: str
-    full_name: str | None = None
+    name: str | None = None
     role: str
     team: str | None = None
     is_active: bool = True
@@ -55,13 +55,33 @@ async def login(payload: LoginRequest):
 
         # Fetch user record from our users table for role info
         db = get_supabase_admin()
+        # Try auth_id first, then id, then email
         user_record = (
             db.table("users")
             .select("*")
-            .eq("id", str(auth_response.user.id))
-            .single()
+            .eq("auth_id", str(auth_response.user.id))
+            .maybe_single()
             .execute()
         )
+        if not user_record.data:
+            user_record = (
+                db.table("users")
+                .select("*")
+                .eq("id", str(auth_response.user.id))
+                .maybe_single()
+                .execute()
+            )
+        if not user_record.data:
+            user_record = (
+                db.table("users")
+                .select("*")
+                .eq("email", payload.email)
+                .maybe_single()
+                .execute()
+            )
+            # Auto-link auth_id if found by email
+            if user_record.data:
+                db.table("users").update({"auth_id": str(auth_response.user.id)}).eq("id", user_record.data["id"]).execute()
 
         if not user_record.data:
             raise HTTPException(
@@ -104,7 +124,7 @@ async def get_me(user: dict = Depends(get_current_user)):
     return UserResponse(
         id=user["id"],
         email=user.get("email", ""),
-        full_name=user.get("full_name"),
+        name=user.get("name"),
         role=user["role"],
         team=user.get("team"),
         is_active=user.get("is_active", True),

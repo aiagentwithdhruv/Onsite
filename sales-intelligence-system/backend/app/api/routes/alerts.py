@@ -39,38 +39,35 @@ async def list_alerts(
     unread_only: bool = Query(False, description="Show only unread alerts"),
     user: dict = Depends(get_current_user),
 ):
-    """List alerts for the current user, ordered with unread first then by recency."""
+    """List alerts for the current user."""
     try:
         db = get_supabase_admin()
         offset = (page - 1) * per_page
 
-        # Build query
         query = (
             db.table("alerts")
             .select("*", count="exact")
-            .eq("user_id", user["id"])
+            .eq("target_user_id", user["id"])
         )
 
         if unread_only:
-            query = query.eq("is_read", False)
+            query = query.is_("read_at", "null")
 
-        # Order: unread first, then most recent
         query = (
             query
-            .order("is_read", desc=False)  # False (unread) before True (read)
-            .order("created_at", desc=True)
+            .order("sent_at", desc=True)
             .range(offset, offset + per_page - 1)
         )
 
         result = query.execute()
         total = result.count if result.count is not None else 0
 
-        # Get unread count separately for the badge
+        # Get unread count
         unread_result = (
             db.table("alerts")
             .select("id", count="exact")
-            .eq("user_id", user["id"])
-            .eq("is_read", False)
+            .eq("target_user_id", user["id"])
+            .is_("read_at", "null")
             .execute()
         )
         unread_count = unread_result.count if unread_result.count is not None else 0
@@ -92,10 +89,9 @@ async def mark_alert_read(alert_id: str, user: dict = Depends(get_current_user))
     try:
         db = get_supabase_admin()
 
-        # Verify the alert belongs to this user
         alert_result = (
             db.table("alerts")
-            .select("id, user_id, is_read")
+            .select("id, target_user_id, read_at")
             .eq("id", alert_id)
             .single()
             .execute()
@@ -104,15 +100,13 @@ async def mark_alert_read(alert_id: str, user: dict = Depends(get_current_user))
         if not alert_result.data:
             raise HTTPException(status_code=404, detail="Alert not found")
 
-        if alert_result.data["user_id"] != user["id"]:
+        if alert_result.data["target_user_id"] != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to modify this alert")
 
-        if alert_result.data.get("is_read"):
+        if alert_result.data.get("read_at"):
             return {"message": "Alert already marked as read", "alert_id": alert_id}
 
-        # Mark as read
         db.table("alerts").update({
-            "is_read": True,
             "read_at": datetime.now(timezone.utc).isoformat(),
         }).eq("id", alert_id).execute()
 
@@ -127,15 +121,15 @@ async def mark_alert_read(alert_id: str, user: dict = Depends(get_current_user))
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
 async def get_unread_count(user: dict = Depends(get_current_user)):
-    """Return the count of unread alerts for the current user (for notification badges)."""
+    """Return the count of unread alerts for the current user."""
     try:
         db = get_supabase_admin()
 
         result = (
             db.table("alerts")
             .select("id", count="exact")
-            .eq("user_id", user["id"])
-            .eq("is_read", False)
+            .eq("target_user_id", user["id"])
+            .is_("read_at", "null")
             .execute()
         )
 

@@ -20,8 +20,10 @@ async def get_current_user(request: Request) -> dict:
 
         supabase_user_id = user_response.user.id
 
-        # Get our user record with role
-        result = db.table("users").select("*").eq("id", str(supabase_user_id)).single().execute()
+        # Get our user record with role (try auth_id first, then id)
+        result = db.table("users").select("*").eq("auth_id", str(supabase_user_id)).maybe_single().execute()
+        if not result.data:
+            result = db.table("users").select("*").eq("id", str(supabase_user_id)).maybe_single().execute()
         if not result.data:
             raise HTTPException(status_code=403, detail="User not found in system")
 

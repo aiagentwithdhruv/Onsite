@@ -24,20 +24,6 @@ class LeadActionRequest(BaseModel):
     note: str | None = None
 
 
-class LeadSummary(BaseModel):
-    id: str
-    name: str
-    company: str | None = None
-    stage: str | None = None
-    score: int | None = None
-    phone: str | None = None
-    email: str | None = None
-    source: str | None = None
-    assigned_to: str | None = None
-    last_activity_at: str | None = None
-    created_at: str | None = None
-
-
 class PaginatedLeadsResponse(BaseModel):
     leads: list[dict]
     total: int
@@ -67,44 +53,31 @@ ACTION_TO_STAGE = {
 async def list_leads(
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
-    score_filter: Optional[str] = Query(None, description="Filter by score range: hot, warm, cold"),
+    score_filter: Optional[str] = Query(None, description="Filter by score: hot, warm, cold"),
     stage_filter: Optional[str] = Query(None, description="Filter by stage"),
     search: Optional[str] = Query(None, description="Search by name, company, email, or phone"),
     user: dict = Depends(get_current_user),
 ):
-    """List leads with pagination, filtering, and role-based access.
-
-    - Reps see only their assigned leads.
-    - Managers / admins see all leads.
-    """
+    """List leads with pagination, filtering, and role-based access."""
     try:
         db = get_supabase_admin()
         offset = (page - 1) * per_page
 
-        # Base query
-        query = db.table("leads").select("*, lead_scores(score, scored_at)", count="exact")
+        # Base query with latest score
+        query = db.table("leads").select("*, lead_scores(score, score_numeric, scored_at)", count="exact")
 
         # Role-based filtering: reps see only their own leads
         if user["role"] in ("rep", "sales_rep"):
-            query = query.eq("assigned_to", user["id"])
-
-        # Score filter (requires join with lead_scores)
-        if score_filter:
-            if score_filter == "hot":
-                query = query.gte("lead_scores.score", 80)
-            elif score_filter == "warm":
-                query = query.gte("lead_scores.score", 50).lt("lead_scores.score", 80)
-            elif score_filter == "cold":
-                query = query.lt("lead_scores.score", 50)
+            query = query.eq("assigned_rep_id", user["id"])
 
         # Stage filter
         if stage_filter:
             query = query.eq("stage", stage_filter)
 
-        # Search across name, company, email, phone
+        # Search across contact_name, company, email, phone
         if search:
             query = query.or_(
-                f"name.ilike.%{search}%,"
+                f"contact_name.ilike.%{search}%,"
                 f"company.ilike.%{search}%,"
                 f"email.ilike.%{search}%,"
                 f"phone.ilike.%{search}%"
@@ -123,11 +96,12 @@ async def list_leads(
         for lead in (result.data or []):
             scores = lead.pop("lead_scores", []) or []
             if scores:
-                # Get the most recent score
                 latest = sorted(scores, key=lambda s: s.get("scored_at", ""), reverse=True)[0]
                 lead["score"] = latest.get("score")
+                lead["score_numeric"] = latest.get("score_numeric")
             else:
                 lead["score"] = None
+                lead["score_numeric"] = None
             leads.append(lead)
 
         return PaginatedLeadsResponse(
@@ -166,7 +140,7 @@ async def get_lead(lead_id: str, user: dict = Depends(get_current_user)):
         lead = lead_result.data
 
         # Reps can only view their own leads
-        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_to") != user["id"]:
+        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_rep_id") != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to view this lead")
 
         # Latest score
@@ -182,7 +156,7 @@ async def get_lead(lead_id: str, user: dict = Depends(get_current_user)):
 
         # Recent activities (last 20)
         activities_result = (
-            db.table("activities")
+            db.table("lead_activities")
             .select("*")
             .eq("lead_id", lead_id)
             .order("activity_date", desc=True)
@@ -193,10 +167,10 @@ async def get_lead(lead_id: str, user: dict = Depends(get_current_user)):
 
         # Notes
         notes_result = (
-            db.table("notes")
+            db.table("lead_notes")
             .select("*")
             .eq("lead_id", lead_id)
-            .order("created_at", desc=True)
+            .order("note_date", desc=True)
             .limit(20)
             .execute()
         )
@@ -204,10 +178,10 @@ async def get_lead(lead_id: str, user: dict = Depends(get_current_user)):
 
         # Research results (latest)
         research_result = (
-            db.table("research_results")
+            db.table("lead_research")
             .select("*")
             .eq("lead_id", lead_id)
-            .order("created_at", desc=True)
+            .order("researched_at", desc=True)
             .limit(1)
             .execute()
         )
@@ -235,41 +209,44 @@ async def lead_action(lead_id: str, payload: LeadActionRequest, user: dict = Dep
         db = get_supabase_admin()
 
         # Verify lead exists and user has access
-        lead_result = db.table("leads").select("id, assigned_to, stage").eq("id", lead_id).single().execute()
+        lead_result = db.table("leads").select("id, assigned_rep_id, stage").eq("id", lead_id).single().execute()
         if not lead_result.data:
             raise HTTPException(status_code=404, detail="Lead not found")
 
         lead = lead_result.data
 
         # Reps can only act on their own leads
-        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_to") != user["id"]:
+        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_rep_id") != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to update this lead")
 
         new_stage = ACTION_TO_STAGE[payload.action]
         now = datetime.now(timezone.utc).isoformat()
 
-        # Update lead stage
+        # Update lead stage + last activity
         db.table("leads").update({
             "stage": new_stage,
+            "last_activity_at": now,
             "updated_at": now,
         }).eq("id", lead_id).execute()
 
         # Log the activity
-        db.table("activities").insert({
+        db.table("lead_activities").insert({
             "lead_id": lead_id,
-            "user_id": user["id"],
-            "activity_type": payload.action,
-            "description": payload.note or f"Marked as {payload.action.replace('_', ' ')}",
+            "activity_type": "call" if payload.action in ("called", "not_reachable") else "meeting",
+            "subject": f"Marked as {payload.action.replace('_', ' ')}",
+            "outcome": payload.action,
+            "performed_by": user["id"],
             "activity_date": now,
         }).execute()
 
-        # If a note was provided, save it separately too
+        # If a note was provided, save it
         if payload.note:
-            db.table("notes").insert({
+            db.table("lead_notes").insert({
                 "lead_id": lead_id,
-                "user_id": user["id"],
-                "content": payload.note,
-                "created_at": now,
+                "note_text": payload.note,
+                "note_source": "manual",
+                "created_by": user["id"],
+                "note_date": now,
             }).execute()
 
         return {
@@ -293,18 +270,18 @@ async def lead_timeline(lead_id: str, user: dict = Depends(get_current_user)):
         db = get_supabase_admin()
 
         # Verify lead exists and user has access
-        lead_result = db.table("leads").select("id, assigned_to, name").eq("id", lead_id).single().execute()
+        lead_result = db.table("leads").select("id, assigned_rep_id, contact_name").eq("id", lead_id).single().execute()
         if not lead_result.data:
             raise HTTPException(status_code=404, detail="Lead not found")
 
         lead = lead_result.data
 
-        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_to") != user["id"]:
+        if user["role"] in ("rep", "sales_rep") and lead.get("assigned_rep_id") != user["id"]:
             raise HTTPException(status_code=403, detail="Not authorized to view this lead's timeline")
 
         # Fetch activities
         activities_result = (
-            db.table("activities")
+            db.table("lead_activities")
             .select("*")
             .eq("lead_id", lead_id)
             .order("activity_date", desc=False)
@@ -313,10 +290,10 @@ async def lead_timeline(lead_id: str, user: dict = Depends(get_current_user)):
 
         # Fetch notes
         notes_result = (
-            db.table("notes")
+            db.table("lead_notes")
             .select("*")
             .eq("lead_id", lead_id)
-            .order("created_at", desc=False)
+            .order("note_date", desc=False)
             .execute()
         )
 
@@ -328,17 +305,17 @@ async def lead_timeline(lead_id: str, user: dict = Depends(get_current_user)):
                 "type": "activity",
                 "timestamp": activity.get("activity_date"),
                 "activity_type": activity.get("activity_type"),
-                "description": activity.get("description"),
-                "user_id": activity.get("user_id"),
+                "description": activity.get("subject") or activity.get("details", ""),
+                "outcome": activity.get("outcome"),
                 "data": activity,
             })
 
         for note in (notes_result.data or []):
             timeline.append({
                 "type": "note",
-                "timestamp": note.get("created_at"),
-                "description": note.get("content"),
-                "user_id": note.get("user_id"),
+                "timestamp": note.get("note_date"),
+                "description": note.get("note_text"),
+                "source": note.get("note_source"),
                 "data": note,
             })
 
@@ -347,7 +324,7 @@ async def lead_timeline(lead_id: str, user: dict = Depends(get_current_user)):
 
         return {
             "lead_id": lead_id,
-            "lead_name": lead.get("name"),
+            "lead_name": lead.get("contact_name"),
             "timeline": timeline,
             "total_events": len(timeline),
         }

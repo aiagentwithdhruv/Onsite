@@ -38,26 +38,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function fetchUser(authId: string) {
-    const { data, error } = await supabase
+    // Try auth_id first
+    let { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('auth_id', authId)
-      .single()
+      .maybeSingle()
 
-    if (error || !data) {
+    if (!data) {
+      // Fallback: try matching by id
+      const res = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authId)
+        .maybeSingle()
+      data = res.data
+    }
+
+    if (!data) {
       // Fallback: try by email from auth session
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser?.email) {
-        const { data: userData } = await supabase
+        const res = await supabase
           .from('users')
           .select('*')
           .eq('email', authUser.email)
-          .single()
-        setUser(userData)
+          .maybeSingle()
+        data = res.data
+        // Auto-link auth_id for future lookups
+        if (data && !data.auth_id) {
+          await supabase
+            .from('users')
+            .update({ auth_id: authId })
+            .eq('id', data.id)
+        }
       }
-    } else {
-      setUser(data)
     }
+
+    setUser(data)
     setLoading(false)
   }
 

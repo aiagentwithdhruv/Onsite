@@ -37,8 +37,12 @@ class Settings(BaseSettings):
     langchain_api_key: str = ""
     langchain_project: str = "sales-intelligence"
 
+    # Direct DB connection (optional, for future use)
+    database_url: str = ""
+
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()

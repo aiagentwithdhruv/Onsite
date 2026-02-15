@@ -16,52 +16,16 @@ router = APIRouter()
 
 
 # ---------------------------------------------------------------------------
-# Response models
-# ---------------------------------------------------------------------------
-
-class RepPerformanceItem(BaseModel):
-    user_id: str
-    full_name: str | None = None
-    total_leads: int = 0
-    contacted: int = 0
-    meetings: int = 0
-    won: int = 0
-    lost: int = 0
-    conversion_rate: float = 0.0
-
-
-class PipelineFunnelItem(BaseModel):
-    stage: str
-    count: int
-
-
-class SourceAnalysisItem(BaseModel):
-    source: str
-    total_leads: int
-    won: int
-    lost: int
-    conversion_rate: float
-
-
-class ConversionTrendItem(BaseModel):
-    week: str
-    total_leads: int
-    won: int
-    conversion_rate: float
-
-
-# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 VALID_STAGES = [
     "new", "contacted", "not_reachable", "meeting_scheduled",
-    "proposal_sent", "negotiation", "won", "lost",
+    "demo", "proposal", "negotiation", "won", "lost",
 ]
 
 
 def _safe_rate(numerator: int, denominator: int) -> float:
-    """Calculate a percentage rate safely, avoiding division by zero."""
     if denominator == 0:
         return 0.0
     return round((numerator / denominator) * 100, 1)
@@ -73,34 +37,27 @@ def _safe_rate(numerator: int, denominator: int) -> float:
 
 @router.get("/rep-performance")
 async def rep_performance(
-    date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     user: dict = Depends(get_current_user),
 ):
-    """Get rep performance metrics.
-
-    - Managers see all reps.
-    - Reps see only their own stats.
-    """
+    """Get rep performance metrics."""
     try:
         db = get_supabase_admin()
-
-        # Determine which users to report on
-        is_manager = user["role"] in ("manager", "founder", "admin")
+        is_manager = user["role"] in ("manager", "team_lead", "founder", "admin")
 
         if is_manager:
-            # Get all active reps
             users_result = (
                 db.table("users")
-                .select("id, full_name, role")
+                .select("id, name, role")
                 .eq("is_active", True)
                 .execute()
             )
             rep_ids = [u["id"] for u in (users_result.data or [])]
-            rep_map = {u["id"]: u.get("full_name", "Unknown") for u in (users_result.data or [])}
+            rep_map = {u["id"]: u.get("name", "Unknown") for u in (users_result.data or [])}
         else:
             rep_ids = [user["id"]]
-            rep_map = {user["id"]: user.get("full_name", "Unknown")}
+            rep_map = {user["id"]: user.get("name", "Unknown")}
 
         if not rep_ids:
             return {"performance": [], "period": {"date_from": date_from, "date_to": date_to}}
@@ -108,8 +65,7 @@ async def rep_performance(
         performance = []
 
         for rep_id in rep_ids:
-            # Base query for this rep's leads
-            query = db.table("leads").select("id, stage", count="exact").eq("assigned_to", rep_id)
+            query = db.table("leads").select("id, stage", count="exact").eq("assigned_rep_id", rep_id)
 
             if date_from:
                 query = query.gte("created_at", date_from)
@@ -120,23 +76,19 @@ async def rep_performance(
             leads = result.data or []
             total = len(leads)
 
-            # Count by stage
             stage_counts = {}
             for lead in leads:
                 stage = lead.get("stage", "new")
                 stage_counts[stage] = stage_counts.get(stage, 0) + 1
 
-            contacted = stage_counts.get("contacted", 0) + stage_counts.get("meeting_scheduled", 0) + \
-                        stage_counts.get("proposal_sent", 0) + stage_counts.get("negotiation", 0) + \
-                        stage_counts.get("won", 0) + stage_counts.get("lost", 0)
-            meetings = stage_counts.get("meeting_scheduled", 0) + stage_counts.get("proposal_sent", 0) + \
-                       stage_counts.get("negotiation", 0) + stage_counts.get("won", 0)
+            contacted = sum(stage_counts.get(s, 0) for s in ["contacted", "demo", "meeting_scheduled", "proposal", "negotiation", "won", "lost"])
+            meetings = sum(stage_counts.get(s, 0) for s in ["demo", "meeting_scheduled", "proposal", "negotiation", "won"])
             won = stage_counts.get("won", 0)
             lost = stage_counts.get("lost", 0)
 
             performance.append({
                 "user_id": rep_id,
-                "full_name": rep_map.get(rep_id, "Unknown"),
+                "name": rep_map.get(rep_id, "Unknown"),
                 "total_leads": total,
                 "contacted": contacted,
                 "meetings": meetings,
@@ -145,7 +97,6 @@ async def rep_performance(
                 "conversion_rate": _safe_rate(won, total),
             })
 
-        # Sort by conversion rate descending
         performance.sort(key=lambda x: x["conversion_rate"], reverse=True)
 
         return {
@@ -160,48 +111,34 @@ async def rep_performance(
 
 @router.get("/pipeline-funnel")
 async def pipeline_funnel(user: dict = Depends(get_current_user)):
-    """Get lead counts by pipeline stage for the funnel view.
-
-    - Managers see all leads.
-    - Reps see only their own.
-    """
+    """Get lead counts by pipeline stage for the funnel view."""
     try:
         db = get_supabase_admin()
 
         query = db.table("leads").select("stage")
 
-        # Reps see only their own leads
         if user["role"] in ("rep", "sales_rep"):
-            query = query.eq("assigned_to", user["id"])
+            query = query.eq("assigned_rep_id", user["id"])
 
         result = query.execute()
         leads = result.data or []
 
-        # Count by stage
         stage_counts = {}
         for lead in leads:
             stage = lead.get("stage", "new")
             stage_counts[stage] = stage_counts.get(stage, 0) + 1
 
-        # Return in funnel order
         funnel = []
         for stage in VALID_STAGES:
-            funnel.append({
-                "stage": stage,
-                "count": stage_counts.get(stage, 0),
-            })
+            funnel.append({"stage": stage, "count": stage_counts.get(stage, 0)})
 
-        # Include any unexpected stages
         for stage, count in stage_counts.items():
             if stage not in VALID_STAGES:
                 funnel.append({"stage": stage, "count": count})
 
         total = sum(item["count"] for item in funnel)
 
-        return {
-            "funnel": funnel,
-            "total_leads": total,
-        }
+        return {"funnel": funnel, "total_leads": total}
 
     except Exception as e:
         log.error(f"Error fetching pipeline funnel: {e}")
@@ -210,29 +147,23 @@ async def pipeline_funnel(user: dict = Depends(get_current_user)):
 
 @router.get("/source-analysis")
 async def source_analysis(user: dict = Depends(get_current_user)):
-    """Get conversion rates broken down by lead source.
-
-    - Managers see all leads.
-    - Reps see only their own.
-    """
+    """Get conversion rates broken down by lead source."""
     try:
         db = get_supabase_admin()
 
         query = db.table("leads").select("source, stage")
 
         if user["role"] in ("rep", "sales_rep"):
-            query = query.eq("assigned_to", user["id"])
+            query = query.eq("assigned_rep_id", user["id"])
 
         result = query.execute()
         leads = result.data or []
 
-        # Aggregate by source
         source_data: dict[str, dict] = {}
         for lead in leads:
             source = lead.get("source") or "unknown"
             if source not in source_data:
                 source_data[source] = {"total": 0, "won": 0, "lost": 0}
-
             source_data[source]["total"] += 1
             stage = lead.get("stage", "")
             if stage == "won":
@@ -240,7 +171,6 @@ async def source_analysis(user: dict = Depends(get_current_user)):
             elif stage == "lost":
                 source_data[source]["lost"] += 1
 
-        # Build response
         sources = []
         for source, data in sorted(source_data.items(), key=lambda x: x[1]["total"], reverse=True):
             sources.append({
@@ -260,19 +190,13 @@ async def source_analysis(user: dict = Depends(get_current_user)):
 
 @router.get("/conversion-trends")
 async def conversion_trends(
-    weeks: int = Query(12, ge=1, le=52, description="Number of weeks to look back"),
+    weeks: int = Query(12, ge=1, le=52),
     user: dict = Depends(get_current_user),
 ):
-    """Get weekly conversion trend data.
-
-    Returns leads created and won per week for the specified lookback period.
-    - Managers see all leads.
-    - Reps see only their own.
-    """
+    """Get weekly conversion trend data."""
     try:
         db = get_supabase_admin()
 
-        # Calculate date range
         now = datetime.now(timezone.utc)
         start_date = (now - timedelta(weeks=weeks)).isoformat()
 
@@ -283,33 +207,28 @@ async def conversion_trends(
         )
 
         if user["role"] in ("rep", "sales_rep"):
-            query = query.eq("assigned_to", user["id"])
+            query = query.eq("assigned_rep_id", user["id"])
 
         result = query.execute()
         leads = result.data or []
 
-        # Group by ISO week
         weekly_data: dict[str, dict] = {}
         for lead in leads:
             created_at = lead.get("created_at", "")
             if not created_at:
                 continue
-
             try:
                 dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-                # ISO week label: "2026-W07"
                 week_label = f"{dt.isocalendar()[0]}-W{dt.isocalendar()[1]:02d}"
             except (ValueError, AttributeError):
                 continue
 
             if week_label not in weekly_data:
                 weekly_data[week_label] = {"total": 0, "won": 0}
-
             weekly_data[week_label]["total"] += 1
             if lead.get("stage") == "won":
                 weekly_data[week_label]["won"] += 1
 
-        # Build sorted response
         trends = []
         for week in sorted(weekly_data.keys()):
             data = weekly_data[week]
@@ -320,10 +239,7 @@ async def conversion_trends(
                 "conversion_rate": _safe_rate(data["won"], data["total"]),
             })
 
-        return {
-            "trends": trends,
-            "weeks_requested": weeks,
-        }
+        return {"trends": trends, "weeks_requested": weeks}
 
     except Exception as e:
         log.error(f"Error fetching conversion trends: {e}")

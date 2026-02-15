@@ -23,7 +23,7 @@ aiohttp==3.11.0
 apscheduler==3.10.4
 
 # WhatsApp + Email
-resend==2.5.0
+resend>=2.5.1
 
 # Utilities
 python-dotenv==1.0.1
