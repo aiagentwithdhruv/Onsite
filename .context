@@ -1,0 +1,116 @@
+# Onsite Project Context
+
+**Last Updated:** February 15, 2026
+**Client:** Onsite Teams (ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED) — Construction Management Software
+**Developer:** Dhruv Tomar (AiwithDhruv)
+
+---
+
+## Project Overview
+
+Two systems built/being built for Onsite Teams:
+
+1. **Quotation Generator** — COMPLETE, in production
+2. **Sales Intelligence System** — IN DEVELOPMENT (active focus)
+3. **Lead & Demo Analysis** — PLANNED (awaiting data)
+
+---
+
+## 1. Quotation Generator (COMPLETE)
+
+- **Status:** Production-ready, fully tested
+- **What:** Auto-generates PDF quotations, emails to client + salesperson, saves to Google Drive
+- **Tech:** HTML/CSS/JS frontend + Google Apps Script backend + Drive/Gmail APIs
+- **Files:** `quotation-generator.html`, `QuotationGenerator.gs`
+- **Plans:** Business (₹12K), Business+ (₹15K), Enterprise, White Label (₹3L+)
+- **Features:** Multi-year discounts, GST calc, special offers, proforma invoices, add-ons (GPS, Tally, Zoho)
+- **Docs:** `QUOTATION-GENERATOR-SETUP.md`, `QUOTATION-SYSTEM-COMPLETE.md`, `SALES-TEAM-QUICK-START.md`, `TROUBLESHOOTING.md`
+
+---
+
+## 2. Sales Intelligence System (ACTIVE DEVELOPMENT)
+
+### What It Is
+AI-powered sales intelligence layer on top of Zoho CRM for 20 sales reps + managers + founder.
+
+### Three Core Functions
+1. **Prioritize** — AI ranks leads (Hot/Warm/Cold) with reasons, daily call list
+2. **Research & Advise** — On-demand company research + CRM analysis + close strategy
+3. **Alert & Report** — Daily morning briefs, stale lead alerts, weekly reports via WhatsApp + Email
+
+### Tech Stack
+| Layer | Tool |
+|-------|------|
+| Agent Brain | LangGraph (Python) |
+| LLM Primary | Claude Sonnet 4.5 |
+| LLM Scoring | Claude Haiku 4.5 |
+| LLM Fallback | GPT-4o |
+| Backend | FastAPI (Python) |
+| Database | Supabase (PostgreSQL + pgvector) |
+| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui |
+| Auth | Supabase Auth |
+| CRM | Zoho CRM REST API v8 |
+| WhatsApp | Gupshup |
+| Email | Resend |
+| Hosting | Railway (backend) + Vercel (frontend) |
+| Monitoring | LangSmith |
+
+### Current State (Feb 15, 2026)
+- **Database:** Schema designed (12 tables), migrations created, pgvector enabled
+- **Backend:** FastAPI scaffolded with all route files, LangGraph agents written (daily pipeline, research, assignment, weekly report), Zoho sync service, email/WhatsApp services, scheduler
+- **Frontend:** React app scaffolded with 10 pages (Login, Dashboard, Manager Dashboard, Leads, Lead Detail, Briefs, Analytics, Alerts, Admin, Settings), layout components (Sidebar, Header), auth context, API client
+- **Docs:** System design v2.0, Zoho integration spec, database schema, LangGraph agents spec, 10-week build plan
+
+### What's NOT Done Yet
+- [ ] Real Zoho CRM credentials + OAuth flow testing
+- [ ] Supabase project setup + schema deployment
+- [ ] Backend deployment to Railway
+- [ ] Frontend deployment to Vercel
+- [ ] WhatsApp Business API approval (Meta verification)
+- [ ] Prompt tuning with real data
+- [ ] End-to-end integration testing
+- [ ] Production launch
+
+### Build Plan (10 Weeks)
+- Week 1-2: Foundation + Zoho sync
+- Week 3-4: AI agents (daily pipeline + research)
+- Week 5-6: Dashboard (frontend)
+- Week 7: Alerts + assignment agent
+- Week 8: Admin + polish
+- Week 9: Testing + prompt tuning
+- Week 10: Launch
+
+### Key Files
+- Design: `sales-intelligence-system/01-SYSTEM-DESIGN-UPDATED.md`
+- Zoho: `sales-intelligence-system/02-ZOHO-INTEGRATION-SPEC.md`
+- DB: `sales-intelligence-system/03-DATABASE-SCHEMA.md`
+- Agents: `sales-intelligence-system/04-LANGGRAPH-AGENTS-SPEC.md`
+- Plan: `sales-intelligence-system/05-BUILD-PLAN-REVISED.md`
+- System design PDF: `sales_agent_system_design.docx.pdf`
+
+### GitHub
+- Repo: https://github.com/aiagentwithdhruv/Onsite.git
+- Branch: main
+
+---
+
+## 3. Lead & Demo Analysis (PLANNED)
+
+- **Data Source:** Google Sheets (single sheet with all lead + demo data)
+- **Analysis Type:** Full funnel - leads, demos, conversion rates, sources, trends
+- **Comparison:** Current month vs last month
+- **Output:** Email report (formatted HTML)
+- **Status:** Awaiting Google Sheet URL/ID to inspect column structure
+- **Files:** Keep under `Lead Analysis/` folder
+
+---
+
+## Reference Templates
+- `Quotation_temp/` — CSV reference templates for quotation formats (not needed for system operation)
+
+---
+
+## Notes
+- n8n instance: self-hosted on Hostinger VPS (n8n.aiwithdhruv.cloud)
+- Google Sheets and Gmail integrations available via n8n
+- Always commit and push changes to GitHub after significant work
