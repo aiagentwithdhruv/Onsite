@@ -38,41 +38,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function fetchUser(authId: string) {
-    // Try auth_id first
-    let { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('auth_id', authId)
-      .maybeSingle()
+    let data: any = null
 
+    // 1. Try auth_id (column may not exist yet — catch errors)
+    try {
+      const res = await supabase.from('users').select('*').eq('auth_id', authId).maybeSingle()
+      if (res.data) data = res.data
+    } catch { /* auth_id column may not exist */ }
+
+    // 2. Try matching by id
     if (!data) {
-      // Fallback: try matching by id
-      const res = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authId)
-        .maybeSingle()
-      data = res.data
+      try {
+        const res = await supabase.from('users').select('*').eq('id', authId).maybeSingle()
+        if (res.data) data = res.data
+      } catch { /* ignore */ }
     }
 
+    // 3. Try by email (most reliable — always works with seed data)
     if (!data) {
-      // Fallback: try by email from auth session
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser?.email) {
-        const res = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', authUser.email)
-          .maybeSingle()
-        data = res.data
-        // Auto-link auth_id for future lookups
-        if (data && !data.auth_id) {
-          await supabase
-            .from('users')
-            .update({ auth_id: authId })
-            .eq('id', data.id)
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser?.email) {
+          const res = await supabase.from('users').select('*').eq('email', authUser.email).maybeSingle()
+          if (res.data) data = res.data
         }
-      }
+      } catch { /* ignore */ }
     }
 
     setUser(data)

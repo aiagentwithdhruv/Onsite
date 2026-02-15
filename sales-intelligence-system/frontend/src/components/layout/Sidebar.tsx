@@ -49,6 +49,13 @@ function getRoleBadgeColor(role: string): string {
 
 export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: SidebarProps) {
   const showAdmin = user && adminRoles.has(user.role)
+  const displayName = user?.full_name || user?.name || user?.email || 'User'
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <aside
@@ -77,7 +84,7 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                 className={({ isActive }) =>
                   `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
+                      ? 'border-l-4 border-blue-600 bg-blue-50 text-blue-700'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   } ${collapsed ? 'justify-center' : ''}`
                 }
@@ -103,7 +110,7 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                   className={({ isActive }) =>
                     `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-l-4 border-blue-600 bg-blue-50 text-blue-700'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     } ${collapsed ? 'justify-center' : ''}`
                   }
@@ -118,7 +125,7 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                   className={({ isActive }) =>
                     `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'border-l-3 border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-l-4 border-blue-600 bg-blue-50 text-blue-700'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     } ${collapsed ? 'justify-center' : ''}`
                   }
@@ -137,15 +144,10 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
         <div className="border-t border-slate-200 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
-              {user.full_name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)}
+              {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{user.full_name}</p>
+              <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
               <span
                 className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getRoleBadgeColor(
                   user.role
@@ -161,12 +163,7 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
       {user && collapsed && (
         <div className="border-t border-slate-200 p-2">
           <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
-            {user.full_name
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2)}
+            {initials}
           </div>
         </div>
       )}

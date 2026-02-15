@@ -33,7 +33,7 @@ export const logout = () => supabase.auth.signOut()
 
 // Leads
 export const getLeads = (params?: Record<string, string>) =>
-  api.get('/leads', { params })
+  api.get('/leads/', { params })
 
 export const getLeadDetail = (id: string) =>
   api.get(`/leads/${id}`)
@@ -66,7 +66,7 @@ export const getRepBrief = (repId: string) =>
 
 // Alerts
 export const getAlerts = (params?: Record<string, string>) =>
-  api.get('/alerts', { params })
+  api.get('/alerts/', { params })
 
 export const markAlertRead = (alertId: string) =>
   api.patch(`/alerts/${alertId}/read`)

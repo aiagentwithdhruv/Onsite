@@ -18,16 +18,42 @@ async def get_current_user(request: Request) -> dict:
         if not user_response or not user_response.user:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        supabase_user_id = user_response.user.id
+        supabase_user_id = str(user_response.user.id)
+        supabase_email = user_response.user.email
 
-        # Get our user record with role (try auth_id first, then id)
-        result = db.table("users").select("*").eq("auth_id", str(supabase_user_id)).maybe_single().execute()
-        if not result.data:
-            result = db.table("users").select("*").eq("id", str(supabase_user_id)).maybe_single().execute()
-        if not result.data:
+        # Try multiple lookup strategies (auth_id column may not exist yet)
+        result = None
+
+        # 1. Try auth_id
+        try:
+            r = db.table("users").select("*").eq("auth_id", supabase_user_id).maybe_single().execute()
+            if r.data:
+                result = r.data
+        except Exception:
+            pass  # auth_id column may not exist
+
+        # 2. Try matching by id
+        if not result:
+            try:
+                r = db.table("users").select("*").eq("id", supabase_user_id).maybe_single().execute()
+                if r.data:
+                    result = r.data
+            except Exception:
+                pass
+
+        # 3. Try matching by email (most reliable fallback)
+        if not result and supabase_email:
+            try:
+                r = db.table("users").select("*").eq("email", supabase_email).maybe_single().execute()
+                if r.data:
+                    result = r.data
+            except Exception:
+                pass
+
+        if not result:
             raise HTTPException(status_code=403, detail="User not found in system")
 
-        return result.data
+        return result
 
     except HTTPException:
         raise

@@ -14,6 +14,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
   const [searchValue, setSearchValue] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const displayName = user?.full_name || user?.name || user?.email || 'User'
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -31,7 +32,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
   }
 
   const initials = user
-    ? user.full_name
+    ? displayName
         .split(' ')
         .map((n) => n[0])
         .join('')
@@ -82,7 +83,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
             </div>
             {user && (
               <div className="hidden items-center gap-1 md:flex">
-                <span className="text-sm font-medium text-slate-700">{user.full_name}</span>
+                <span className="text-sm font-medium text-slate-700">{displayName}</span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
               </div>
             )}
@@ -92,7 +93,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
             <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
               {user && (
                 <div className="border-b border-slate-100 px-4 py-2">
-                  <p className="text-sm font-medium text-slate-900">{user.full_name}</p>
+                  <p className="text-sm font-medium text-slate-900">{displayName}</p>
                   <p className="text-xs capitalize text-slate-500">{user.role.replace('_', ' ')}</p>
                 </div>
               )}
