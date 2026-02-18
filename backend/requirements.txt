@@ -1,0 +1,32 @@
+# FastAPI Backend
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+pydantic==2.10.0
+pydantic-settings==2.6.0
+
+# Supabase
+supabase==2.11.0
+
+# AI / LLM
+langchain==0.3.13
+langchain-anthropic==0.3.3
+langchain-openai==0.3.0
+langgraph==0.2.60
+langsmith==0.2.6
+
+# HTTP + Async
+httpx==0.28.0
+aiohttp==3.11.0
+
+# Scheduling
+apscheduler==3.10.4
+
+# WhatsApp + Email
+resend>=2.5.1
+
+# Utilities
+python-dotenv==1.0.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+tenacity==9.0.0

@@ -1,8 +1,33 @@
+# Dependencies
+node_modules/
+
+# Env and secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Next.js
+.next/
+out/
+
+# IDE / OS
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Large data (keep repo light)
 *.csv
+!**/fixtures/*.csv
 *.pdf
 *.ogg
-*.DS_Store
-node_modules/
-__pycache__/
-venv/
-.env
