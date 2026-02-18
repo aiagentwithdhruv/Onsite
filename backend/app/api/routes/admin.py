@@ -297,3 +297,40 @@ async def get_ai_usage(user: dict = Depends(require_manager)):
     except Exception as e:
         log.error(f"Error fetching AI usage: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch AI usage data")
+
+
+# ---------------------------------------------------------------------------
+# Telegram Bot Token (set via UI, stored in app_config)
+# ---------------------------------------------------------------------------
+
+class TelegramConfigResponse(BaseModel):
+    configured: bool
+
+
+class TelegramConfigUpdate(BaseModel):
+    telegram_bot_token: Optional[str] = None
+
+
+@router.get("/telegram-config", response_model=TelegramConfigResponse)
+async def get_telegram_config(user: dict = Depends(require_manager)):
+    """Return whether Telegram bot token is configured (env or DB). Never returns the token."""
+    from app.services.telegram import get_telegram_bot_token
+    token = get_telegram_bot_token()
+    return TelegramConfigResponse(configured=bool(token and token.strip()))
+
+
+@router.patch("/telegram-config")
+async def update_telegram_config(body: TelegramConfigUpdate, user: dict = Depends(require_manager)):
+    """Set or clear Telegram bot token (stored in app_config). Manager/Admin only."""
+    try:
+        db = get_supabase_admin()
+        value = (body.telegram_bot_token or "").strip() or None
+        now = datetime.now(timezone.utc).isoformat()
+        if value is None:
+            db.table("app_config").delete().eq("key", "telegram_bot_token").execute()
+            return {"message": "Telegram token cleared", "configured": False}
+        db.table("app_config").upsert({"key": "telegram_bot_token", "value": value, "updated_at": now}, on_conflict="key").execute()
+        return {"message": "Telegram token saved", "configured": True}
+    except Exception as e:
+        log.error("Update telegram config: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to save token")

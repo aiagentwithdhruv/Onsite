@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Bell, CheckCheck, AlertTriangle, Flame, TrendingDown, Users,
   Trophy, DollarSign, Clock, Target, BarChart3, Zap, ShieldAlert,
-  Send, Mail, MessageCircle,
+  Send, Mail, MessageCircle, Calendar, FileText,
 } from 'lucide-react'
-import { getAlerts, markAlertRead, getNotificationPreferences, updateNotificationPreferences, getTelegramLinkToken } from '@/lib/api'
+import { getAlerts, markAlertRead, getNotificationPreferences, updateNotificationPreferences, sendTestAlert } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +33,10 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   revenue_milestone: DollarSign,
   pipeline_risk: BarChart3,
   follow_up_needed: AlertTriangle,
+  followup_overdue: Calendar,
+  followup_due_today: Calendar,
+  followup_due_tomorrow: Calendar,
+  notes_need_action: FileText,
   performance_drop: TrendingDown,
   custom: Bell,
 }
@@ -46,8 +50,10 @@ export default function AlertsPage() {
   const [markingId, setMarkingId] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<{ notify_via_telegram: boolean; notify_via_discord: boolean; notify_via_whatsapp: boolean; notify_via_email: boolean; telegram_linked: boolean; discord_linked: boolean } | null>(null)
   const [discordWebhook, setDiscordWebhook] = useState('')
-  const [telegramLink, setTelegramLink] = useState<string | null>(null)
+  const [telegramChatId, setTelegramChatId] = useState('')
   const [prefsSaving, setPrefsSaving] = useState(false)
+  const [testSending, setTestSending] = useState(false)
+  const [testResult, setTestResult] = useState<{ sent?: boolean; channels?: Record<string, { status?: string; reason?: string; error?: string }> } | null>(null)
   const hasFetched = useRef(false)
 
   const fetchAlerts = useCallback(async () => {
@@ -100,18 +106,15 @@ export default function AlertsPage() {
     }
   }
 
-  async function handleLinkTelegram() {
+  async function saveTelegramChatId() {
+    if (!prefs) return
+    setPrefsSaving(true)
     try {
-      const res = await getTelegramLinkToken()
-      const d = res.data as { link?: string; token?: string; instructions?: string }
-      if (d?.link) {
-        setTelegramLink(d.link)
-        window.open(d.link, '_blank')
-      } else {
-        setTelegramLink(d?.token ? `Send /start ${d.token} to the bot` : 'Unable to generate link')
-      }
-    } catch {
-      setTelegramLink('Failed to get link')
+      await updateNotificationPreferences({ telegram_chat_id: telegramChatId.trim() || null })
+      setPrefs(prev => prev ? { ...prev, telegram_linked: !!telegramChatId.trim() } : null)
+      setTelegramChatId('')
+    } finally {
+      setPrefsSaving(false)
     }
   }
 
@@ -124,6 +127,20 @@ export default function AlertsPage() {
       setDiscordWebhook('')
     } finally {
       setPrefsSaving(false)
+    }
+  }
+
+  async function handleSendTestAlert() {
+    setTestSending(true)
+    setTestResult(null)
+    try {
+      const res = await sendTestAlert()
+      const data = res.data as { ok?: boolean; sent?: boolean; channels?: Record<string, { status?: string; reason?: string; error?: string }> }
+      setTestResult({ sent: data?.sent, channels: data?.channels })
+    } catch {
+      setTestResult({ sent: false })
+    } finally {
+      setTestSending(false)
     }
   }
 
@@ -193,11 +210,21 @@ export default function AlertsPage() {
             Alert delivery
           </h3>
           <div className="flex flex-wrap items-center gap-6">
-            <label className="flex cursor-pointer items-center gap-2">
+            <label className="flex flex-wrap items-center gap-2">
               <input type="checkbox" checked={prefs.notify_via_telegram} onChange={() => togglePref('notify_via_telegram')} disabled={prefsSaving} className="h-4 w-4 rounded border-zinc-300 text-amber-500" />
               <MessageCircle className="h-4 w-4 text-sky-500" />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">Telegram</span>
-              {prefs.telegram_linked ? <span className="text-xs text-green-600 dark:text-green-400">Linked</span> : <button type="button" onClick={handleLinkTelegram} className="text-xs font-medium text-amber-600 hover:underline dark:text-amber-400">Link account</button>}
+              {prefs.telegram_linked ? (
+                <span className="flex items-center gap-1">
+                  <span className="text-xs text-green-600 dark:text-green-400">Linked</span>
+                  <button type="button" onClick={() => updateNotificationPreferences({ telegram_chat_id: '' }).then(() => setPrefs(prev => prev ? { ...prev, telegram_linked: false } : null))} className="text-xs text-zinc-500 hover:underline dark:text-zinc-400">Change</button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <input type="text" placeholder="Chat ID" value={telegramChatId} onChange={e => setTelegramChatId(e.target.value)} className="w-32 rounded border border-zinc-300 bg-white px-2 py-0.5 text-xs dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200" />
+                  <button type="button" onClick={saveTelegramChatId} disabled={prefsSaving || !telegramChatId.trim()} className="text-xs font-medium text-amber-600 hover:underline disabled:opacity-50 dark:text-amber-400">Save</button>
+                </span>
+              )}
             </label>
             <label className="flex cursor-pointer items-center gap-2">
               <input type="checkbox" checked={prefs.notify_via_discord} onChange={() => togglePref('notify_via_discord')} disabled={prefsSaving} className="h-4 w-4 rounded border-zinc-300 text-amber-500" />
@@ -226,7 +253,32 @@ export default function AlertsPage() {
               <span className="text-sm text-zinc-700 dark:text-zinc-300">Email</span>
             </label>
           </div>
-          {telegramLink && !prefs.telegram_linked && <p className="mt-2 text-xs text-zinc-500">Opened Telegram. Complete the link there, then refresh this page.</p>}
+          {!prefs?.telegram_linked && <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">Get your Chat ID from @userinfobot on Telegram, then paste it above and Save.</p>}
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+            <button
+              type="button"
+              onClick={handleSendTestAlert}
+              disabled={testSending}
+              className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400 dark:hover:bg-amber-500/20"
+            >
+              {testSending ? 'Sending…' : 'Send test alert'}
+            </button>
+            {testResult !== null && (
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                {testResult.sent
+                  ? '✅ Test sent to your enabled channels. Check Telegram (or Discord/email).'
+                  : (() => {
+                      const ch = testResult.channels?.telegram
+                      const reason = ch?.reason || ch?.error
+                      if (reason === 'no_bot_token') return '❌ Telegram: Bot token not set. Save it in Settings → Telegram Bot. If already saved, run database migration 011_app_config.sql in Supabase and restart the backend.'
+                      if (reason === 'no_chat_id') return '❌ Telegram: Chat ID missing. Enter your Chat ID above and Save.'
+                      if (ch?.error) return `❌ Telegram: ${ch.error}`
+                      if (ch?.reason) return `❌ Telegram: ${ch.reason}`
+                      return '❌ Could not send. Check token in Settings and that you have Chat ID + Telegram enabled.'
+                    })()}
+              </span>
+            )}
+          </div>
         </div>
       )}
 

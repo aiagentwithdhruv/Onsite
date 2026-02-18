@@ -164,6 +164,7 @@ class NotificationPreferencesUpdate(BaseModel):
     notify_via_whatsapp: bool | None = None
     notify_via_email: bool | None = None
     discord_webhook_url: str | None = None
+    telegram_chat_id: str | None = None
 
 
 @router.get("/notification-preferences", response_model=NotificationPreferencesResponse)
@@ -198,6 +199,8 @@ async def update_notification_preferences(
             updates["notify_via_email"] = body.notify_via_email
         if body.discord_webhook_url is not None:
             updates["discord_webhook_url"] = (body.discord_webhook_url or "").strip() or None
+        if body.telegram_chat_id is not None:
+            updates["telegram_chat_id"] = (body.telegram_chat_id or "").strip() or None
         if not updates:
             return {"message": "No changes", "preferences": user}
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -206,6 +209,20 @@ async def update_notification_preferences(
     except Exception as e:
         log.error("Update notification prefs: %s", e)
         raise HTTPException(status_code=500, detail="Failed to update preferences")
+
+
+@router.post("/send-test")
+async def send_test_alert(user: dict = Depends(get_current_user)):
+    """Send a single test message to the current user's enabled channels (Telegram, Discord, etc.) so they can verify delivery."""
+    try:
+        from app.services.alert_delivery import deliver_message_to_user
+        text = "🔔 This is a test alert from Onsite. If you see this, alert delivery is working."
+        result = await deliver_message_to_user(user, text, subject="Test alert")
+        sent = any((result.get(c) or {}).get("status") == "sent" for c in ("telegram", "discord", "whatsapp", "email"))
+        return {"ok": True, "sent": sent, "channels": result}
+    except Exception as e:
+        log.exception("Send test alert failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/telegram-link-token")

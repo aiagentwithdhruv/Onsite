@@ -743,12 +743,12 @@ async def upload_and_compute(file: UploadFile = File(...), user: dict = Depends(
         delivery_result = {}
         try:
             from app.agents.smart_alerts import generate_smart_alerts, save_alerts
-            from app.services.alert_delivery import deliver_alerts_to_users
+            from app.services.alert_delivery import deliver_batched_alerts_to_users
             smart_alerts = generate_smart_alerts(rows, user.get("id", ""))
             alerts_count = save_alerts(smart_alerts)
             log.info(f"Smart alerts generated: {len(smart_alerts)}, saved: {alerts_count}")
             if smart_alerts:
-                delivery_result = await deliver_alerts_to_users(smart_alerts)
+                delivery_result = await deliver_batched_alerts_to_users(smart_alerts)
                 log.info(f"Alert delivery: {delivery_result.get('delivered', 0)} sent, {len(delivery_result.get('errors', []))} errors")
         except Exception as e:
             log.warning(f"Smart alert generation failed (non-fatal): {e}")

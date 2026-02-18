@@ -8,6 +8,7 @@ const apiBase = typeof window !== 'undefined'
 const api = axios.create({
   baseURL: apiBase,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 20000,
 })
 
 api.interceptors.request.use(async (config) => {
@@ -73,7 +74,7 @@ export const markAlertRead = (alertId: string) =>
 export const getNotificationPreferences = () =>
   api.get('/alerts/notification-preferences')
 
-export const updateNotificationPreferences = (prefs: { notify_via_telegram?: boolean; notify_via_discord?: boolean; notify_via_whatsapp?: boolean; notify_via_email?: boolean; discord_webhook_url?: string }) =>
+export const updateNotificationPreferences = (prefs: { notify_via_telegram?: boolean; notify_via_discord?: boolean; notify_via_whatsapp?: boolean; notify_via_email?: boolean; discord_webhook_url?: string; telegram_chat_id?: string | null }) =>
   api.patch('/alerts/notification-preferences', prefs)
 
 export const getTelegramLinkToken = () =>
@@ -81,6 +82,8 @@ export const getTelegramLinkToken = () =>
 
 export const getUnreadCount = () =>
   api.get('/alerts/unread-count')
+export const sendTestAlert = () =>
+  api.post('/alerts/send-test')
 
 export const getRepPerformance = (params?: Record<string, string>) =>
   api.get('/analytics/rep-performance', { params })
@@ -100,6 +103,9 @@ export const updateUser = (userId: string, payload: { role?: string; deal_owner_
 export const getSyncStatus = () => api.get('/admin/sync-status')
 export const triggerSync = () => api.post('/admin/sync/trigger')
 export const getAIUsage = () => api.get('/admin/ai-usage')
+export const getTelegramConfig = () => api.get<{ configured: boolean }>('/admin/telegram-config')
+export const updateTelegramConfig = (body: { telegram_bot_token?: string | null }) =>
+  api.patch('/admin/telegram-config', body)
 
 export const getDashboardSummary = () => api.get('/intelligence/summary')
 export const getDealOwners = () => api.get<{ deal_owners: string[] }>('/intelligence/deal-owners')

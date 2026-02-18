@@ -7,14 +7,30 @@ from app.core.config import get_settings
 log = logging.getLogger(__name__)
 
 
+def get_telegram_bot_token() -> str:
+    """Return bot token from env first, then from app_config in DB (set via Settings UI)."""
+    settings = get_settings()
+    if settings.telegram_bot_token and settings.telegram_bot_token.strip():
+        return settings.telegram_bot_token.strip()
+    try:
+        from app.core.supabase_client import get_supabase_admin
+        db = get_supabase_admin()
+        row = db.table("app_config").select("value").eq("key", "telegram_bot_token").maybe_single().execute()
+        if row.data and row.data.get("value"):
+            return (row.data["value"] or "").strip()
+    except Exception as e:
+        log.debug("Read telegram token from app_config: %s", e)
+    return ""
+
+
 def get_bot_username() -> str | None:
     """Return bot username (without @) for link generation, or None if not configured."""
-    settings = get_settings()
-    if not settings.telegram_bot_token:
+    token = get_telegram_bot_token()
+    if not token:
         return None
     try:
         with httpx.Client(timeout=5) as client:
-            r = client.get(f"https://api.telegram.org/bot{settings.telegram_bot_token}/getMe")
+            r = client.get(f"https://api.telegram.org/bot{token}/getMe")
             if r.status_code == 200 and r.json().get("ok"):
                 return r.json().get("result", {}).get("username")
     except Exception as e:
@@ -32,9 +48,9 @@ async def send_telegram_message(chat_id: str, text: str) -> dict:
     Returns:
         {"status": "sent"} or {"status": "error", "error": "..."}
     """
-    settings = get_settings()
-    if not settings.telegram_bot_token:
-        log.warning("Telegram bot token not configured. Skipping.")
+    token = get_telegram_bot_token()
+    if not token:
+        log.warning("Telegram bot token not configured. Set in .env or Settings → Telegram Bot.")
         return {"status": "skipped", "reason": "no_bot_token"}
 
     if not chat_id or not str(chat_id).strip():
@@ -44,7 +60,7 @@ async def send_telegram_message(chat_id: str, text: str) -> dict:
     if not text:
         return {"status": "skipped", "reason": "empty_message"}
 
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "disable_web_page_preview": True}
 
     try:

@@ -2,46 +2,72 @@
 
 Smart alerts are sent to users on **Telegram**, **Discord**, **WhatsApp**, and **Email** based on their preferences.
 
+---
+
+## When are alerts sent?
+
+Alerts are sent automatically when:
+
+1. **CSV upload (Intelligence)** — After you upload a CSV, the backend generates smart alerts and delivers them to each user’s enabled channels (Telegram, Discord, WhatsApp, Email). So: upload a CSV → alerts are created → they are sent to Telegram (and others) if you have Chat ID + Telegram turned on.
+2. **Afternoon / evening digests** — If you’ve set up cron (see `CRON_AND_DIGESTS.md`), digest messages are also sent to the same channels.
+
+You need both: **Bot Token** (backend) and **Chat ID** (per user in the app). The backend uses the token to call Telegram’s API and send to your chat ID.
+
+---
+
 ## 1. Run migrations 009 and 010
 
 In Supabase SQL Editor, run in order:
 - `database/009_alert_delivery_channels.sql`
 - `database/010_discord_channel.sql`
 
-## 2. Environment variables
+---
 
-Add to `.env`:
+## 2. Telegram: Bot Token + Chat ID
+
+### Step A — Create a bot and get the token (one-time, backend)
+
+1. In Telegram, open **@BotFather**.
+2. Send `/newbot`, follow the prompts, and name your bot (e.g. “Onsite Alerts”).
+3. BotFather will give you a **token** like `123456789:ABCdefGHI...`.
+4. In your **backend** project, add to `.env`:
 
 ```env
-# Telegram (priority) — create bot via @BotFather, then:
-TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGHI...
+```
+
+5. Restart the backend so it loads the new env.
+
+### Step B — Add your Chat ID (per user, in the app)
+
+1. In Telegram, open **@userinfobot** and send any message.
+2. It will reply with your **Id** (e.g. `123456789`). That is your **Chat ID**.
+3. In the app: **Alerts** → **Alert delivery** → paste that number into **Chat ID** → click **Save**.
+4. Turn the **Telegram** checkbox **on**.
+
+After that, when alerts are generated (e.g. after an Intelligence CSV upload), the backend will send them to your Telegram using the Bot Token + your Chat ID. No webhook or “link account” flow is required.
+
+---
+
+## 3. Other environment variables
+
+Add to backend `.env` as needed:
+
+```env
+# Telegram (see Step A above)
+TELEGRAM_BOT_TOKEN=...
 
 # WhatsApp (Gupshup or Business API)
 GUPSHUP_API_KEY=...
 GUPSHUP_APP_NAME=...
 GUPSHUP_SOURCE_NUMBER=...
 
-# Optional: WhatsApp Cloud API (alternative to Gupshup)
-# WHATSAPP_CLOUD_API_TOKEN=...
-# WHATSAPP_PHONE_NUMBER_ID=...
-
 # Email (Resend)
 RESEND_API_KEY=...
 FROM_EMAIL=alerts@onsite.team
 ```
 
-## 3. Telegram webhook (for "Link Telegram")
-
-So that "Link account" on the Alerts page works, Telegram must call your backend when a user sends `/start`:
-
-1. Expose your backend (e.g. `https://your-api.com`) with HTTPS.
-2. Set the webhook (once):
-
-```bash
-curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://your-api.com/api/alerts/telegram-webhook"
-```
-
-3. Users: open Alerts → Alert delivery → **Link account** → open the `t.me/YourBot?start=...` link and tap **Start**. Their Telegram is then linked for alert delivery.
+---
 
 ## 4. Discord (webhook)
 
@@ -54,8 +80,8 @@ Alerts are posted to that channel (max 2000 chars per message).
 
 ## 5. User preferences
 
-- **Alerts page** → "Alert delivery": toggle Telegram / Discord / WhatsApp / Email; link Telegram; paste Discord webhook.
+- **Alerts page** → “Alert delivery”: toggle Telegram / Discord / WhatsApp / Email; for Telegram paste **Chat ID** and Save; for Discord paste **Webhook URL** and Save.
 - **WhatsApp** uses `users.phone` (with country code, e.g. 919876543210).
 - **Email** uses `users.email`.
 
-Delivery order: **Telegram** → **Discord** → **WhatsApp** → **Email**. All enabled channels receive each alert after a CSV upload.
+Delivery order: **Telegram** → **Discord** → **WhatsApp** → **Email**. All enabled channels receive each alert when they are generated (e.g. after a CSV upload in Intelligence).

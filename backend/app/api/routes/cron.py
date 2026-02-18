@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Header, HTTPException
 
 from app.core.config import get_settings
-from app.services.digests import send_afternoon_digests_to_all, send_evening_summaries_to_all
+from app.services.digests import send_morning_digests_to_all, send_afternoon_digests_to_all, send_evening_summaries_to_all
 from app.services.intelligence_brief import generate_and_save_intelligence_briefs
 
 log = logging.getLogger(__name__)
@@ -21,9 +21,17 @@ def _check_cron_secret(x_cron_secret: str | None = Header(None, alias="X-Cron-Se
         raise HTTPException(status_code=403, detail="Invalid or missing X-Cron-Secret")
 
 
+@router.post("/morning-digest")
+async def trigger_morning_digest(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
+    """Send morning 'today's focus' digest. One of 2–3 daily notifications. Schedule e.g. 8 AM."""
+    _check_cron_secret(x_cron_secret)
+    result = await send_morning_digests_to_all()
+    return {"ok": True, **result}
+
+
 @router.post("/afternoon-digest")
 async def trigger_afternoon_digest(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
-    """Send afternoon digest to all users with notification channels enabled. Schedule e.g. 2–3 PM."""
+    """Send afternoon 'rest of day' digest. One of 2–3 daily notifications. Schedule e.g. 2 PM."""
     _check_cron_secret(x_cron_secret)
     result = await send_afternoon_digests_to_all()
     return {"ok": True, **result}
