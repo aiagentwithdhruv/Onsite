@@ -119,6 +119,11 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .insight-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem}
 .insight-box h4{font-size:.85rem;font-weight:600;color:var(--accent-light);margin-bottom:.35rem}
 .insight-box p{font-size:.82rem;color:var(--text-muted);line-height:1.5}
+.smart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.smart-card h4{font-size:.85rem;font-weight:600;color:var(--accent-light);margin-bottom:.35rem}
+.smart-card .metric{font-size:1.1rem;font-weight:700;margin:.2rem 0 .35rem}
+.smart-card p{font-size:.78rem;color:var(--text-muted);line-height:1.4}
+.smart-card .meta{font-size:.72rem;color:var(--text-muted)}
 </style>
 </head>
 <body>
@@ -159,6 +164,13 @@ tr:hover td{background:rgba(99,102,241,.04)}
     <select id="filterSource"><option value="">All Lead Sources</option></select>
     <select id="filterRegion"><option value="">All Regions</option></select>
     <select id="filterStatus"><option value="">All Statuses</option></select>
+    <select id="filterPreQual"><option value="">All Pre-Qualification</option></select>
+    <select id="filterCategory"><option value="">All Category (Lead)</option></select>
+    <select id="filterCategory1"><option value="">All Category-1</option></select>
+    <select id="filterCompanyKeyword">
+      <option value="">All Companies</option>
+      <option value="important">Important Keywords Only</option>
+    </select>
     <select id="filterMonth"><option value="">All Time</option></select>
   </div>
 
@@ -179,6 +191,8 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <!-- Overview Tab -->
   <div class="tab-content active" id="tab-overview">
     <div id="insightsBox"></div>
+    <div class="section-title">Smart Insights</div>
+    <div class="grid-3" id="smartInsights"></div>
     <div class="grid-2">
       <div class="card"><h3>Lead Status Distribution</h3><canvas id="chartStatus"></canvas></div>
       <div class="card"><h3>Sales Pipeline (Post-Demo)</h3><canvas id="chartPipeline"></canvas></div>
@@ -242,6 +256,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
       <div class="card"><h3>Demo Booked But Not Done</h3><div class="table-wrap" id="demoBookedTable"></div></div>
       <div class="card"><h3>Hot Prospects (Very High + High Prospect)</h3><div class="table-wrap" id="hotProspectTable"></div></div>
     </div>
+    <div class="card"><h3>Important Company Leads (Keyword Matches)</h3><div class="table-wrap" id="importantCompanyTable"></div></div>
   </div>
 
   <!-- Trends Tab -->
@@ -274,6 +289,12 @@ const CHART_DEFAULTS = {responsive:true,maintainAspectRatio:true,plugins:{legend
 let allData = [];
 let filteredData = [];
 let charts = {};
+const IMPORTANT_COMPANY_KEYWORDS = [
+  'कन्स्ट्रॅक्शन','studio','fabrica','corpo','indus','energ','&co','civil','hous','found','struc',
+  'limit','agency','contrac','home','servi','trad','eletri','associ','world','space','company','private',
+  'cons','infra','tech','inte','enter','dev','build','engg','constru','plan','proj','arch','des','real',
+  'prop','site','firm','group','hold','estate','pvt','llp','llc','inno','eng','solutiond','decor'
+];
 
 // Upload handlers
 const uploadZone = document.getElementById('uploadZone');
@@ -330,6 +351,9 @@ function populateFilters() {
   fill('filterSource','lead_source');
   fill('filterRegion','region');
   fill('filterStatus','lead_status');
+  fill('filterPreQual','pre_qualification');
+  fill('filterCategory','lead_category');
+  fill('filterCategory1','lead_category_1');
   
   const months = [...new Set(allData.map(r => {
     const d = parseDate(r.user_date);
@@ -338,7 +362,7 @@ function populateFilters() {
   const sel = document.getElementById('filterMonth');
   months.slice(0, 36).forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
   
-  ['filterManager','filterOwner','filterSource','filterRegion','filterStatus','filterMonth'].forEach(id => {
+  ['filterManager','filterOwner','filterSource','filterRegion','filterStatus','filterPreQual','filterCategory','filterCategory1','filterCompanyKeyword','filterMonth'].forEach(id => {
     document.getElementById(id).addEventListener('change', applyFilters);
   });
 }
@@ -349,6 +373,10 @@ function applyFilters() {
   const src = document.getElementById('filterSource').value;
   const reg = document.getElementById('filterRegion').value;
   const sts = document.getElementById('filterStatus').value;
+  const pre = document.getElementById('filterPreQual').value;
+  const cat = document.getElementById('filterCategory').value;
+  const cat1 = document.getElementById('filterCategory1').value;
+  const comp = document.getElementById('filterCompanyKeyword').value;
   const mon = document.getElementById('filterMonth').value;
 
   filteredData = allData.filter(r => {
@@ -357,6 +385,13 @@ function applyFilters() {
     if (src && r.lead_source !== src) return false;
     if (reg && r.region !== reg) return false;
     if (sts && r.lead_status !== sts) return false;
+    if (pre && r.pre_qualification !== pre) return false;
+    if (cat && r.lead_category !== cat) return false;
+    if (cat1 && r.lead_category_1 !== cat1) return false;
+    if (comp === 'important') {
+      const name = (r.company_name || r.lead_name || '').toString();
+      if (!matchesImportantCompany(name)) return false;
+    }
     if (mon) {
       const d = parseDate(r.user_date);
       if (!d) return false;
@@ -376,6 +411,22 @@ function parseDate(str) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function normalizeText(str) {
+  return str.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'');
+}
+
+function matchesImportantCompany(name) {
+  if (!name) return false;
+  const raw = name.toLowerCase();
+  const norm = normalizeText(name);
+  return IMPORTANT_COMPANY_KEYWORDS.some(k => {
+    const key = k.toLowerCase();
+    const keyNorm = normalizeText(k);
+    if (raw.includes(key)) return true;
+    return keyNorm.length >= 3 && norm.includes(keyNorm);
+  });
+}
+
 function daysBetween(d1, d2) {
   return Math.floor((d2 - d1) / 86400000);
 }
@@ -384,6 +435,28 @@ function count(arr, field) {
   const c = {};
   arr.forEach(r => { const v = r[field] || '(empty)'; c[v] = (c[v]||0)+1; });
   return Object.entries(c).sort((a,b) => b[1]-a[1]);
+}
+
+function aggregateStatsByField(arr, field, minCount) {
+  const map = {};
+  arr.forEach(r => {
+    const key = r[field];
+    if (!key) return;
+    if (!map[key]) map[key] = { key, total:0, demo:0, sale:0, purchased:0 };
+    map[key].total += 1;
+    if (r.demo_done === '1') map[key].demo += 1;
+    if (r.sale_done === '1') map[key].sale += 1;
+    if (r.lead_status === 'Purchased') map[key].purchased += 1;
+  });
+  return Object.values(map)
+    .filter(v => v.total >= minCount)
+    .map(v => ({
+      ...v,
+      demoRate: v.demo / Math.max(v.total, 1),
+      saleRate: v.sale / Math.max(v.total, 1),
+      purchaseRate: v.purchased / Math.max(v.total, 1),
+    }))
+    .sort((a,b) => b.saleRate - a.saleRate);
 }
 
 function pct(num, den) {
@@ -424,6 +497,7 @@ function renderKPIs() {
   const qualified = d.filter(r => r.lead_status === 'Qualified').length;
   const prospects = d.filter(r => r.is_prospect === '1' || r.sales_stage?.includes('Prospect')).length;
   const highProspects = d.filter(r => r.is_high_prospect === '1' || r.sales_stage === 'High Prospect' || r.sales_stage === 'Very High Prospect').length;
+  const importantCompanies = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString())).length;
 
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi blue"><div class="label">Total Leads</div><div class="value blue">${total.toLocaleString()}</div><div class="sub">In current view</div></div>
@@ -434,6 +508,7 @@ function renderKPIs() {
     <div class="kpi pink"><div class="label">Priority Leads</div><div class="value pink">${priority.toLocaleString()}</div><div class="sub">Need immediate attention</div></div>
     <div class="kpi accent"><div class="label">All Prospects</div><div class="value accent">${prospects.toLocaleString()}</div><div class="sub">${highProspects.toLocaleString()} are High/Very High</div></div>
     <div class="kpi red"><div class="label">Qualified</div><div class="value red">${qualified.toLocaleString()}</div><div class="sub">${pct(qualified,total)} qualification rate</div></div>
+    <div class="kpi blue"><div class="label">Important Companies</div><div class="value blue">${importantCompanies.toLocaleString()}</div><div class="sub">Keyword-matched leads</div></div>
   `;
 }
 
@@ -456,6 +531,7 @@ function renderOverview() {
     <div class="insight-box"><h4>Key Insight: Conversion Funnel</h4><p>Overall demo conversion is <strong>${demoRate.toFixed(1)}%</strong> and lead-to-sale rate is <strong>${saleRate.toFixed(1)}%</strong>. ${topSource ? `Top lead source is <strong>${topSource[0]}</strong> with ${topSource[1].toLocaleString()} leads.` : ''}</p></div>
     ${stale > 0 ? `<div class="insight-box"><h4>Action Required</h4><p><strong>${stale.toLocaleString()}</strong> active leads haven't been touched in 30+ days. Check the Aging & Action tab for details.</p></div>` : ''}
   `;
+  renderSmartInsights();
 
   // Status pie
   const statusData = count(d, 'lead_status').slice(0, 12);
@@ -516,6 +592,100 @@ function renderOverview() {
     data: { labels: regData.map(x=>x[0]), datasets: [{ data: regData.map(x=>x[1]), backgroundColor: COLORS.slice(4) }] },
     options: { ...CHART_DEFAULTS, plugins: { legend: { position: 'right', labels: { color:'#8b8fa3', font:{size:11}, padding:8 } } } }
   });
+}
+
+function renderSmartInsights() {
+  const d = filteredData;
+  const container = document.getElementById('smartInsights');
+  if (!container) return;
+  if (!d.length) {
+    container.innerHTML = '<div class="smart-card"><h4>No data</h4><p>Upload a CSV to generate insights.</p></div>';
+    return;
+  }
+
+  const now = new Date();
+  const demoBooked = d.filter(r => r.demo_booked === '1').length;
+  const demoDone = d.filter(r => r.demo_done === '1').length;
+  const saleDone = d.filter(r => r.sale_done === '1').length;
+  const bookedNotDone = Math.max(0, demoBooked - demoDone);
+  const demoDropRate = demoBooked ? (bookedNotDone / demoBooked * 100) : 0;
+  const saleDrop = Math.max(0, demoDone - saleDone);
+  const saleDropRate = demoDone ? (saleDrop / demoDone * 100) : 0;
+  const biggestDrop = demoDropRate >= saleDropRate
+    ? { label: 'Booked → Done', drop: bookedNotDone, rate: demoDropRate }
+    : { label: 'Demo → Sale', drop: saleDrop, rate: saleDropRate };
+
+  const MIN_SOURCE = 100;
+  const sourceStats = aggregateStatsByField(d, 'lead_source', MIN_SOURCE);
+  const bestSource = sourceStats[0];
+  const worstSource = sourceStats[sourceStats.length - 1];
+
+  const MIN_OWNER = 100;
+  const ownerStats = aggregateStatsByField(d, 'lead_owner', MIN_OWNER);
+  const topOwner = ownerStats[0];
+  const lowOwner = ownerStats[ownerStats.length - 1];
+
+  const activeStatuses = ['Priority','Follow Up','Qualified','Demo Booked','Demo Done','User not attend session'];
+  const stale30 = d.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 30 && activeStatuses.includes(r.lead_status);
+  }).length;
+  const priorityStale = d.filter(r => r.lead_status === 'Priority').filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 7;
+  }).length;
+  const hotProspects = d.filter(r => r.sales_stage === 'Very High Prospect' || r.sales_stage === 'High Prospect');
+  const hotStale = hotProspects.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 7;
+  }).length;
+  const importantLeads = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString()));
+  const importantSales = importantLeads.filter(r => r.sale_done === '1' || r.lead_status === 'Purchased').length;
+
+  container.innerHTML = `
+    <div class="smart-card">
+      <h4>Biggest Funnel Drop</h4>
+      <div class="metric">${biggestDrop.drop.toLocaleString()} leads</div>
+      <p>${biggestDrop.label} drop-off is ${biggestDrop.rate.toFixed(1)}% of that stage.</p>
+      <div class="meta">Tune messaging and follow-ups here.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Demo Backlog</h4>
+      <div class="metric">${bookedNotDone.toLocaleString()} not done</div>
+      <p>${demoDropRate.toFixed(1)}% of booked demos are still pending.</p>
+      <div class="meta">Push owners to confirm & complete demos.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Best Lead Source</h4>
+      <div class="metric">${bestSource ? bestSource.key : 'N/A'}</div>
+      <p>Sale conversion ${bestSource ? (bestSource.saleRate*100).toFixed(2)+'%' : '0%'} from ${bestSource ? bestSource.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Scale if budget allows.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Weak Lead Source</h4>
+      <div class="metric">${worstSource ? worstSource.key : 'N/A'}</div>
+      <p>Sale conversion ${worstSource ? (worstSource.saleRate*100).toFixed(2)+'%' : '0%'} from ${worstSource ? worstSource.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Refine targeting or qualification.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Top Closer</h4>
+      <div class="metric">${topOwner ? topOwner.key : 'N/A'}</div>
+      <p>Sale conversion ${topOwner ? (topOwner.saleRate*100).toFixed(2)+'%' : '0%'} over ${topOwner ? topOwner.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Share best practices across team.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Important Company Matches</h4>
+      <div class="metric">${importantLeads.length.toLocaleString()} leads</div>
+      <p>Sale conversion ${importantLeads.length ? (importantSales/importantLeads.length*100).toFixed(2)+'%' : '0%'} across keyword-matched companies.</p>
+      <div class="meta">Prioritize these accounts.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Urgent Follow-up</h4>
+      <div class="metric">${stale30.toLocaleString()} stale leads</div>
+      <p>${priorityStale.toLocaleString()} priority + ${hotStale.toLocaleString()} hot prospects untouched 7+ days.</p>
+      <div class="meta">Assign immediately to owners.</div>
+    </div>
+  `;
 }
 
 // Pipeline & Status
@@ -812,6 +982,30 @@ function renderAging() {
   });
   htbl += '</tbody></table>';
   document.getElementById('hotProspectTable').innerHTML = htbl;
+
+  // Important company leads (keyword matches)
+  const importantLeads = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString()));
+  const priorityRank = (r) => {
+    let score = 0;
+    if (r.lead_status === 'Priority') score += 100;
+    if (r.sales_stage === 'Very High Prospect') score += 80;
+    if (r.sales_stage === 'High Prospect') score += 60;
+    if (r.demo_done === '1') score += 40;
+    if (r.demo_booked === '1') score += 20;
+    if (r.sale_done === '1' || r.lead_status === 'Purchased') score += 10;
+    const lt = parseDate(r.last_touched_date_new);
+    if (lt) score += Math.max(0, 30 - Math.min(30, daysBetween(lt, now)));
+    return score;
+  };
+  const rankedImportant = importantLeads.sort((a,b) => priorityRank(b) - priorityRank(a));
+  let itbl = `<table><thead><tr><th>Company</th><th>Lead</th><th>Status</th><th>Stage</th><th>Owner</th><th>Last Touch</th><th>Phone</th><th>Source</th></tr></thead><tbody>`;
+  rankedImportant.slice(0,60).forEach(r => {
+    const status = r.lead_status || '-';
+    const badge = status === 'Priority' ? 'badge-orange' : status === 'Purchased' ? 'badge-green' : status === 'Demo Done' ? 'badge-purple' : 'badge-gray';
+    itbl += `<tr><td><strong>${r.company_name||'-'}</strong></td><td>${r.lead_name||'-'}</td><td><span class="badge ${badge}">${status}</span></td><td>${r.sales_stage||'-'}</td><td>${r.deal_owner||r.lead_owner||'-'}</td><td>${r.last_touched_date_new||'-'}</td><td>${r.lead_phone||'-'}</td><td>${r.lead_source||'-'}</td></tr>`;
+  });
+  itbl += '</tbody></table>';
+  document.getElementById('importantCompanyTable').innerHTML = itbl;
 }
 
 // Trends
