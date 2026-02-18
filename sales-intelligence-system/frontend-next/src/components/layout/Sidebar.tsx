@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Zap,
   Brain,
+  UserCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/types'
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/leads', icon: Users, label: 'Leads' },
   { href: '/briefs', icon: FileText, label: 'Briefs' },
   { href: '/intelligence', icon: Brain, label: 'Intelligence' },
+  { href: '/agents', icon: UserCircle, label: 'Agents' },
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/alerts', icon: Bell, label: 'Alerts', showBadge: true },
 ]

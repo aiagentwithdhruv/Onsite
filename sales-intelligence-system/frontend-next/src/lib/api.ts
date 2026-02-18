@@ -97,4 +97,8 @@ export const uploadIntelligenceCSV = (file: File) => {
 }
 export const clearDashboardSummary = () => api.delete('/intelligence/summary')
 
+export const getAgentProfiles = () => api.get('/agents/')
+export const getAgentProfile = (id: string) => api.get(`/agents/${id}`)
+export const addAgentNote = (id: string, text: string) => api.post(`/agents/${id}/notes`, { text })
+
 export default api

@@ -369,9 +369,18 @@ async def upload_and_compute(file: UploadFile = File(...), user: dict = Depends(
         db = get_supabase_admin()
         db.table("dashboard_summary").upsert(summary).execute()
 
-        log.info(f"Summary saved: {len(rows)} leads → ~{len(json.dumps(summary)) // 1024}KB")
+        # Compute and save agent profiles
+        from app.api.routes.agents import compute_agent_profiles, save_agent_profiles
+        profiles = compute_agent_profiles(rows)
+        try:
+            save_agent_profiles(profiles)
+            log.info(f"Agent profiles saved: {len(profiles)} agents")
+        except Exception as e:
+            log.warning(f"Agent profile save failed (non-fatal): {e}")
 
-        return {"success": True, "total_rows": len(rows), "summary_size_kb": len(json.dumps(summary)) // 1024}
+        log.info(f"Summary saved: {len(rows)} leads → ~{len(json.dumps(summary)) // 1024}KB, {len(profiles)} agents")
+
+        return {"success": True, "total_rows": len(rows), "summary_size_kb": len(json.dumps(summary)) // 1024, "agents_updated": len(profiles)}
 
     except HTTPException:
         raise
