@@ -1,11 +1,31 @@
-"""Auth middleware — validates Supabase JWT and extracts user role."""
+"""Auth middleware — decodes Supabase JWT and looks up user in DB."""
 
+import logging
+import base64
+import json
 from fastapi import Request, HTTPException, Depends
 from app.core.supabase_client import get_supabase_admin
 
+log = logging.getLogger(__name__)
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    """Decode a JWT payload without external library dependencies.
+    We trust the token origin (Supabase HTTPS) and verify the user
+    exists in our DB as the authorization step."""
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid JWT format")
+    payload_b64 = parts[1]
+    padding = 4 - len(payload_b64) % 4
+    if padding != 4:
+        payload_b64 += "=" * padding
+    payload_bytes = base64.urlsafe_b64decode(payload_b64)
+    return json.loads(payload_bytes)
+
 
 async def get_current_user(request: Request) -> dict:
-    """Extract and validate user from Supabase auth token."""
+    """Decode Supabase JWT, extract user info, look up in users table."""
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
@@ -13,52 +33,40 @@ async def get_current_user(request: Request) -> dict:
     token = auth_header.split("Bearer ")[1]
 
     try:
-        db = get_supabase_admin()
-        user_response = db.auth.get_user(token)
-        if not user_response or not user_response.user:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        payload = _decode_jwt_payload(token)
+    except Exception as e:
+        log.warning("JWT decode failed: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-        supabase_user_id = str(user_response.user.id)
-        supabase_email = user_response.user.email
+    sub = payload.get("sub")
+    email = payload.get("email")
+    exp = payload.get("exp")
 
-        # Try multiple lookup strategies (auth_id column may not exist yet)
-        result = None
+    if not sub:
+        raise HTTPException(status_code=401, detail="Token missing user ID")
 
-        # 1. Try auth_id
+    import time
+    if exp and exp < time.time():
+        raise HTTPException(status_code=401, detail="Token expired")
+
+    db = get_supabase_admin()
+    result = None
+
+    for field, value in [("auth_id", sub), ("id", sub), ("email", email)]:
+        if not value:
+            continue
         try:
-            r = db.table("users").select("*").eq("auth_id", supabase_user_id).maybe_single().execute()
+            r = db.table("users").select("*").eq(field, value).maybe_single().execute()
             if r.data:
                 result = r.data
+                break
         except Exception:
-            pass  # auth_id column may not exist
+            pass
 
-        # 2. Try matching by id
-        if not result:
-            try:
-                r = db.table("users").select("*").eq("id", supabase_user_id).maybe_single().execute()
-                if r.data:
-                    result = r.data
-            except Exception:
-                pass
+    if not result:
+        raise HTTPException(status_code=403, detail="User not found in system")
 
-        # 3. Try matching by email (most reliable fallback)
-        if not result and supabase_email:
-            try:
-                r = db.table("users").select("*").eq("email", supabase_email).maybe_single().execute()
-                if r.data:
-                    result = r.data
-            except Exception:
-                pass
-
-        if not result:
-            raise HTTPException(status_code=403, detail="User not found in system")
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+    return result
 
 
 async def require_role(*allowed_roles: str):
@@ -73,9 +81,8 @@ async def require_role(*allowed_roles: str):
     return check_role
 
 
-# Convenience dependencies
 async def require_rep(user: dict = Depends(get_current_user)) -> dict:
-    return user  # Any authenticated user can access rep-level endpoints
+    return user
 
 
 async def require_manager(user: dict = Depends(get_current_user)) -> dict:

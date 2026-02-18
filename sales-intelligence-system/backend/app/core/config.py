@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     secret_key: str = "change-this"
+    supabase_jwt_secret: str = ""
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # LangSmith

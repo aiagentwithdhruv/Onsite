@@ -31,11 +31,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS (strip whitespace so "url1, url2" works)
 settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins.split(","),
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,6 +49,16 @@ app.include_router(briefs.router, prefix="/api/briefs", tags=["briefs"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": "Sales Intelligence API",
+        "docs": "/docs",
+        "health": "/health",
+        "api": "/api",
+    }
 
 
 @app.get("/health")
