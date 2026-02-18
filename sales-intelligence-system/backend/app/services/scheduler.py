@@ -50,6 +50,39 @@ async def _run_weekly_report():
         log.error(f"Weekly report failed: {e}", exc_info=True)
 
 
+async def _run_morning_digest():
+    """Morning digest: today's focus. Part of 2–3 daily notifications."""
+    try:
+        from app.services.digests import send_morning_digests_to_all
+        log.info("Starting morning digest (8 AM)")
+        result = await send_morning_digests_to_all()
+        log.info("Morning digest done: sent=%s", result.get("sent", 0))
+    except Exception as e:
+        log.error("Morning digest failed: %s", e, exc_info=True)
+
+
+async def _run_afternoon_digest():
+    """Afternoon digest: rest of day. Part of 2–3 daily notifications."""
+    try:
+        from app.services.digests import send_afternoon_digests_to_all
+        log.info("Starting afternoon digest (2 PM)")
+        result = await send_afternoon_digests_to_all()
+        log.info("Afternoon digest done: sent=%s", result.get("sent", 0))
+    except Exception as e:
+        log.error("Afternoon digest failed: %s", e, exc_info=True)
+
+
+async def _run_evening_summary():
+    """Evening summary: tomorrow's focus. Part of 2–3 daily notifications."""
+    try:
+        from app.services.digests import send_evening_summaries_to_all
+        log.info("Starting evening summary (6 PM)")
+        result = await send_evening_summaries_to_all()
+        log.info("Evening summary done: sent=%s", result.get("sent", 0))
+    except Exception as e:
+        log.error("Evening summary failed: %s", e, exc_info=True)
+
+
 def start_scheduler():
     """Start all scheduled jobs. Called on app startup."""
     # Daily pipeline: 7:30 AM IST (2:00 AM UTC)
@@ -90,8 +123,34 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 2–3 daily notifications (UTC: 8 AM IST = 2:30, 2 PM IST = 8:30, 6 PM IST = 12:30)
+    scheduler.add_job(
+        _run_morning_digest,
+        "cron",
+        hour=2, minute=30,
+        id="morning_digest",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _run_afternoon_digest,
+        "cron",
+        hour=8, minute=30,
+        id="afternoon_digest",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _run_evening_summary,
+        "cron",
+        hour=12, minute=30,
+        id="evening_summary",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    log.info("Scheduler started: daily_pipeline (7:30AM), delta_sync (every 2h), full_sync (2AM), weekly_report (Mon 8AM)")
+    log.info(
+        "Scheduler started: daily_pipeline, delta_sync, full_sync, weekly_report, "
+        "morning_digest (8AM), afternoon_digest (2PM), evening_summary (6PM)"
+    )
 
 
 def stop_scheduler():

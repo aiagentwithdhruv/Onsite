@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.api.routes import auth, leads, research, briefs, alerts, analytics, admin, intelligence, agents
+from app.api.routes import auth, leads, research, briefs, alerts, analytics, admin, intelligence, agents, cron
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +29,7 @@ app = FastAPI(
     description="AI-powered sales intelligence for Onsite Teams",
     version="1.0.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 # CORS (strip whitespace so "url1, url2" works)
@@ -51,6 +52,7 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(intelligence.router, prefix="/api/intelligence", tags=["intelligence"])
 app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
+app.include_router(cron.router, prefix="/api/cron", tags=["cron"])
 
 
 @app.get("/")

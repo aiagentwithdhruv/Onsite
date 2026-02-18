@@ -50,6 +50,7 @@ ACTION_TO_STAGE = {
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_model=PaginatedLeadsResponse)
+@router.get("", response_model=PaginatedLeadsResponse)
 async def list_leads(
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
