@@ -58,9 +58,33 @@ Help sales team with real-time alerts, performance tracking, and actionable insi
 - [x] Beautiful alert cards with icons, severity colors, agent names
 - [x] Mark as read, filter by severity
 - [x] Alerts saved to Supabase, persist across sessions
+- [x] save_alerts uses base columns only (works with or without migration 007); frontend normalizes message/sent_at when severity/title missing
+
+## Completed — Access & deal-owner scoping
+- [x] users.deal_owner_name: admin sets which deal owner(s) a rep sees (exact match to CSV deal_owner)
+- [x] dashboard_summary.summary_by_owner: per-owner summary on upload; reps get only their summary
+- [x] GET /intelligence/summary: managers/admins get full summary; reps get summary_by_owner[deal_owner_name]; auto-match by first name when deal_owner_name unset (one match only; two Amits require admin to set)
+- [x] Admin page: Role + Deal owner (data access) per user; edit and save; deal owners dropdown from current summary
+- [x] Managers column removed from Team tab and filters; Manager filter removed from Intelligence dashboard
+- [x] Agents list: reps see only their agent profile (by deal_owner_name)
+- [x] Migration 008: users.deal_owner_name, dashboard_summary.summary_by_owner
+
+## Completed — Alert delivery (Telegram, Discord, WhatsApp, Email)
+- [x] Priority: Telegram, then Discord, then WhatsApp (Gupshup), then Email (Resend)
+- [x] Config: TELEGRAM_BOT_TOKEN, gupshup_*, whatsapp_cloud_api_token (optional), resend_api_key
+- [x] Migration 009: users.telegram_chat_id, notify_via_telegram/whatsapp/email; alert_delivery_log; telegram_link_tokens
+- [x] Migration 010: users.discord_webhook_url, notify_via_discord; Discord webhook send (no bot token needed)
+- [x] After CSV upload: save_alerts() then deliver_alerts_to_users() to each user's enabled channels
+- [x] Alerts page: "Alert delivery" toggles (Telegram, WhatsApp, Email) + "Link Telegram" (t.me/Bot?start=TOKEN)
+- [x] Telegram webhook: POST /api/alerts/telegram-webhook — set webhook URL in Telegram (setWebhook) so /start TOKEN links chat_id
+
+## Research & automation
+- [x] docs/RESEARCH_SALES_AUTOMATION_AND_DECISIONS.md: how to make team know what to do morning/afternoon/evening without meetings; manager decisions from lead data; prioritised build list
+- [x] Daily pipeline: save briefs with brief_content + priority_list (was brief_text; DB expects brief_content)
+- [x] Dashboard home: "Your next 3 things" from today's brief + agent next_best_action + Intelligence action_items (reps see their priorities first)
 
 ## Upcoming / Roadmap
-- [ ] Agentic notifications: WhatsApp/email alerts for sales team
+- [ ] WhatsApp Business Cloud API (optional alternative to Gupshup)
 - [ ] Zoho webhook integration: real-time lead updates
 - [ ] Agent chat: sales reps can ask questions about their pipeline
 - [ ] Preferences system: per-user dashboard customization

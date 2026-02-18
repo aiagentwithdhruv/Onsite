@@ -25,6 +25,6 @@ ALTER TABLE alerts DROP CONSTRAINT IF EXISTS alerts_lead_id_fkey;
 -- Make lead_id nullable text (not UUID FK)
 ALTER TABLE alerts ALTER COLUMN lead_id DROP NOT NULL;
 
--- Allow service role to insert alerts
-CREATE POLICY IF NOT EXISTS alerts_insert_service ON alerts FOR INSERT WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS alerts_all_service ON alerts FOR ALL USING (true) WITH CHECK (true);
+-- Allow inserts (e.g. from backend service). PostgreSQL has no IF NOT EXISTS for CREATE POLICY.
+DROP POLICY IF EXISTS alerts_insert_service ON alerts;
+CREATE POLICY alerts_insert_service ON alerts FOR INSERT WITH CHECK (true);

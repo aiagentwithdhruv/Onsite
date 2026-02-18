@@ -77,7 +77,7 @@ export default function AgentsPage() {
 
   if (loading && profiles.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32">
+      <div className="flex min-h-[280px] flex-col items-center justify-center py-32 transition-opacity duration-200">
         <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-500" />
         <p className="text-sm text-zinc-500">Loading agent profiles...</p>
       </div>
@@ -180,6 +180,9 @@ export default function AgentsPage() {
                   <div>
                     <h3 className="font-semibold text-zinc-800 dark:text-white">{profile.name}</h3>
                     <p className="text-xs text-zinc-400">{profile.manager ? `Manager: ${profile.manager}` : 'Deal Owner'}</p>
+                    {p.next_best_action && (
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Next: {p.next_best_action}</p>
+                    )}
                   </div>
                 </div>
 

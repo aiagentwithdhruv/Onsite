@@ -9,7 +9,7 @@ from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_manager
 from app.core.supabase_client import get_supabase_admin
 
 log = logging.getLogger(__name__)
@@ -74,6 +74,136 @@ def _days_since(date_str: str) -> int | None:
 def _top_counts(rows: list[dict], field: str, limit: int = 15) -> list[dict]:
     c = Counter(r.get(field, '').strip() for r in rows if r.get(field, '').strip())
     return [{"name": n, "value": v} for n, v in c.most_common(limit)]
+
+
+def _compute_smart_actions(
+    total: int,
+    insights: dict,
+    team_data: dict,
+    aging_data: dict,
+    sales_data: dict,
+) -> list[dict]:
+    """Build prioritized, actionable recommendations from summary data."""
+    actions: list[dict] = []
+    stale_30 = insights.get("stale_30") or 0
+    booked_not_done = insights.get("booked_not_done") or 0
+    best = insights.get("best_source")
+    worst = insights.get("worst_source")
+    top_closer = insights.get("top_closer")
+    owners = team_data.get("owners") or []
+    region_revenue = sales_data.get("region_revenue") or []
+    hot = (aging_data.get("hot_prospects") or [])[:5]
+
+    if stale_30 > 50:
+        actions.append({
+            "priority": "high",
+            "title": "Clear stale leads",
+            "description": f"{stale_30:,} active leads untouched 30+ days. Assign or follow up to reduce pipeline risk.",
+            "metric": stale_30,
+            "tab": "Aging",
+        })
+    elif stale_30 > 10:
+        actions.append({
+            "priority": "medium",
+            "title": "Follow up stale leads",
+            "description": f"{stale_30:,} leads with no touch in 30+ days. Check Aging tab.",
+            "metric": stale_30,
+            "tab": "Aging",
+        })
+
+    if booked_not_done > 20:
+        actions.append({
+            "priority": "high",
+            "title": "Reduce demo backlog",
+            "description": f"{booked_not_done:,} demos booked but not done. Schedule sessions or reassign.",
+            "metric": booked_not_done,
+            "tab": "Overview",
+        })
+
+    if best and best.get("total", 0) >= 50:
+        actions.append({
+            "priority": "medium",
+            "title": "Double down on best source",
+            "description": f"'{best.get('name')}' converts at {best.get('rate')}% ({best.get('total'):,} leads). Consider increasing spend or focus.",
+            "metric": best.get("rate"),
+            "tab": "Sources",
+        })
+
+    if worst and worst.get("total", 0) >= 100:
+        actions.append({
+            "priority": "low",
+            "title": "Review weak source",
+            "description": f"'{worst.get('name')}' has {worst.get('rate')}% conversion on {worst.get('total'):,} leads. Qualify or reallocate.",
+            "metric": worst.get("rate"),
+            "tab": "Sources",
+        })
+
+    if top_closer and top_closer.get("total", 0) >= 30:
+        actions.append({
+            "priority": "medium",
+            "title": "Learn from top performer",
+            "description": f"{top_closer.get('name')} closes at {top_closer.get('rate')}%. Share playbook with team.",
+            "metric": top_closer.get("rate"),
+            "tab": "Team",
+        })
+
+    # Region opportunity: highest conversion region
+    if region_revenue:
+        top_region = region_revenue[0]
+        if top_region.get("sales", 0) >= 5 and top_region.get("convRate", 0) > 3:
+            actions.append({
+                "priority": "low",
+                "title": "Focus region",
+                "description": f"'{top_region.get('name')}' has {top_region.get('convRate')}% conversion. Prioritize similar leads.",
+                "metric": top_region.get("convRate"),
+                "tab": "Sales",
+            })
+
+    if hot:
+        actions.append({
+            "priority": "medium",
+            "title": "Hot prospects",
+            "description": f"{len(aging_data.get('hot_prospects') or [])} high-value prospects. Contact this week.",
+            "metric": len(aging_data.get("hot_prospects") or []),
+            "tab": "Aging",
+        })
+
+    # Sort: high first, then medium, then low
+    order = {"high": 0, "medium": 1, "low": 2}
+    actions.sort(key=lambda a: (order.get(a["priority"], 3), -(a.get("metric") or 0)))
+    return actions[:8]
+
+
+def _validate_csv(rows: list[dict]) -> dict:
+    """Check CSV quality; return warnings and optional errors."""
+    warnings: list[str] = []
+    required = ["lead_name", "deal_owner", "lead_status"]
+    if not rows:
+        return {"warnings": ["No rows in file."], "valid": False}
+
+    sample = rows[:5000]
+    total = len(sample)
+    missing_lead_name = sum(1 for r in sample if not (r.get("lead_name") or "").strip())
+    missing_deal_owner = sum(1 for r in sample if not (r.get("deal_owner") or "").strip() or (r.get("deal_owner") or "").strip() in ("Onsite", "Offline Campaign"))
+    missing_status = sum(1 for r in sample if not (r.get("lead_status") or "").strip())
+
+    if total:
+        if missing_lead_name > total * 0.1:
+            pct = round(missing_lead_name / total * 100)
+            warnings.append(f"Lead name missing in {pct}% of rows — some rows may be skipped.")
+        if missing_deal_owner > total * 0.2:
+            pct = round(missing_deal_owner / total * 100)
+            warnings.append(f"Deal owner missing or generic in {pct}% of rows — team view may be incomplete.")
+        if missing_status > total * 0.05:
+            pct = round(missing_status / total * 100)
+            warnings.append(f"Lead status missing in {pct}% of rows.")
+
+    headers = list(rows[0].keys()) if rows else []
+    for col in required:
+        if col not in headers and not any(h.strip().lower().replace(" ", "_") == col for h in headers):
+            warnings.append(f"Recommended column '{col}' not found — analytics may be limited.")
+
+    return {"warnings": warnings, "valid": len(warnings) == 0 or "No rows" not in str(warnings)}
 
 
 def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
@@ -201,27 +331,17 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         ],
     }
 
-    # Team data (by deal_owner)
-    manager_data = []
-    mgr_counts = Counter(r.get('lead_owner_manager', '').strip() for r in rows if r.get('lead_owner_manager', '').strip())
-    for mgr, cnt in mgr_counts.most_common(10):
-        ml = [r for r in rows if r.get('lead_owner_manager') == mgr]
-        demos = sum(1 for r in ml if r.get('demo_done') == '1')
-        sales = sum(1 for r in ml if r.get('sale_done') == '1')
-        pri = sum(1 for r in ml if r.get('lead_status') == 'Priority')
-        manager_data.append({"name": mgr, "total": cnt, "demos": demos, "sales": sales, "priority": pri})
-
+    # Team data (by deal_owner only; managers column removed)
     owner_table = []
     for own, cnt in Counter(r.get('deal_owner', '').strip() for r in rows if r.get('deal_owner', '').strip() and r.get('deal_owner', '').strip() not in ('Onsite', 'Offline Campaign')).most_common(20):
         ol = [r for r in rows if r.get('deal_owner') == own]
-        mgr = next((r.get('lead_owner_manager', '') for r in ol if r.get('lead_owner_manager')), '-')
         dd = sum(1 for r in ol if r.get('demo_done') == '1')
         sd = sum(1 for r in ol if r.get('sale_done') == '1')
         pri = sum(1 for r in ol if r.get('lead_status') == 'Priority')
         stale = sum(1 for r in ol if (_days_since(r.get('last_touched_date_new', '')) or 0) > 30 and r.get('lead_status') not in ('Purchased', 'Rejected', 'DTA'))
-        owner_table.append({"name": own, "manager": mgr, "total": cnt, "demos": dd, "sales": sd, "priority": pri, "stale": stale})
+        owner_table.append({"name": own, "total": cnt, "demos": dd, "sales": sd, "priority": pri, "stale": stale})
 
-    team_data = {"managers": manager_data, "owners": owner_table}
+    team_data = {"owners": owner_table}
 
     # Source data
     source_type_dist = _top_counts(rows, 'lead_source_type', 10)
@@ -426,6 +546,15 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         "top_deals": top_deals,
     }
 
+    # Smart action items (prioritized recommendations)
+    action_items = _compute_smart_actions(
+        total=total,
+        insights=insights,
+        team_data=team_data,
+        aging_data=aging_data,
+        sales_data=sales_data,
+    )
+
     return {
         "id": "current",
         "kpis": kpis,
@@ -437,7 +566,7 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         "trend_data": trend_data,
         "deep_dive": deep_dive,
         "sales_data": sales_data,
-        "action_items": [],
+        "action_items": action_items,
         "total_leads": total,
         "file_name": file_name,
         "uploaded_by": user_email,
@@ -445,14 +574,107 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
     }
 
 
+def _first_name_from_user(user: dict) -> str:
+    """Derive first name for deal_owner matching (e.g. Anjali from anjali.b@... or 'Anjali Bhatia')."""
+    name = (user.get("name") or "").strip()
+    if name:
+        return name.split()[0].strip()
+    email = (user.get("email") or "").strip()
+    if email and "@" in email:
+        return (email.split("@")[0].split(".")[0] or "").strip()
+    return ""
+
+
+@router.get("/team-attention")
+async def get_team_attention(user: dict = Depends(require_manager)):
+    """Manager-only: list reps (deal owners) with stale count, demos pending, conversion, next_best_action, suggested_action."""
+    try:
+        db = get_supabase_admin()
+        summary_row = db.table("dashboard_summary").select("*").eq("id", "current").maybe_single().execute()
+        if not summary_row.data:
+            return {"items": []}
+        by_owner = summary_row.data.get("summary_by_owner") or {}
+        profiles_row = db.table("agent_profiles").select("*").order("name").execute()
+        profiles = list(profiles_row.data or [])
+        items = []
+        for p in profiles:
+            name = (p.get("name") or "").strip()
+            perf = p.get("performance") or {}
+            stale = perf.get("stale_30") or 0
+            demo_booked = perf.get("demo_booked") or 0
+            demo_done = perf.get("demos_done") or perf.get("demo_done") or 0
+            pending_demos = max(0, demo_booked - demo_done)
+            sale_rate = perf.get("sale_rate") or 0
+            next_action = (perf.get("next_best_action") or "").strip()
+            suggested = ""
+            if stale >= 10:
+                suggested = "15-min sync: high stale count"
+            elif pending_demos >= 5:
+                suggested = "Focus: complete pending demos"
+            elif sale_rate >= 10 and not suggested:
+                suggested = "Celebrate: strong closer"
+            elif next_action:
+                suggested = next_action[:60] + ("..." if len(next_action) > 60 else "")
+            items.append({
+                "name": name,
+                "deal_owner": name,
+                "stale_count": stale,
+                "demos_pending": pending_demos,
+                "sale_rate": round(sale_rate, 1),
+                "next_best_action": next_action,
+                "suggested_action": suggested or "Keep momentum",
+            })
+        return {"items": items}
+    except Exception as e:
+        log.error(f"Team attention error: {e}")
+        return {"items": []}
+
+
+@router.get("/deal-owners")
+async def list_deal_owners(user: dict = Depends(get_current_user)):
+    """Return deal owner names from current summary (for admin when assigning access)."""
+    try:
+        db = get_supabase_admin()
+        result = db.table("dashboard_summary").select("team_data").eq("id", "current").maybe_single().execute()
+        if not result.data or not result.data.get("team_data"):
+            return {"deal_owners": []}
+        owners = result.data["team_data"].get("owners") or []
+        names = [o.get("name") for o in owners if o.get("name")]
+        return {"deal_owners": names}
+    except Exception as e:
+        log.error(f"List deal owners error: {e}")
+        return {"deal_owners": []}
+
+
 @router.get("/summary")
 async def get_summary(user: dict = Depends(get_current_user)):
-    """Load dashboard summary from Supabase."""
+    """Load dashboard summary. Reps get only their deal_owner data; managers/admins get full."""
     try:
         db = get_supabase_admin()
         result = db.table("dashboard_summary").select("*").eq("id", "current").maybe_single().execute()
-        if result.data:
-            return result.data
+        if not result.data:
+            return {"has_data": False}
+
+        full = result.data
+        role = (user.get("role") or "rep").lower()
+        if role in ("manager", "founder", "admin"):
+            # Don't send summary_by_owner to client
+            out = {k: v for k, v in full.items() if k != "summary_by_owner"}
+            return out
+
+        deal_owner_name = (user.get("deal_owner_name") or "").strip()
+        by_owner = full.get("summary_by_owner") or {}
+
+        if not deal_owner_name:
+            # Auto-match by first name (one match only; two Amits need admin to set)
+            first = _first_name_from_user(user)
+            if first:
+                matches = [name for name in by_owner if name and (name == first or name.startswith(first + " ") or first in name)]
+                if len(matches) == 1:
+                    deal_owner_name = matches[0]
+
+        if deal_owner_name and deal_owner_name in by_owner:
+            return by_owner[deal_owner_name]
         return {"has_data": False}
     except Exception as e:
         log.error(f"Load summary error: {e}")
@@ -475,17 +697,32 @@ async def upload_and_compute(file: UploadFile = File(...), user: dict = Depends(
         if not rows:
             raise HTTPException(status_code=400, detail="No valid rows in CSV")
 
-        log.info(f"Intelligence upload: {len(rows)} rows from {file.filename}")
+        validation = _validate_csv(rows)
+        log.info(f"Intelligence upload: {len(rows)} rows from {file.filename}; warnings: {validation.get('warnings', [])}")
 
         summary = _compute_summary(rows, file.filename or "upload.csv", user.get("email", "unknown"))
+
+        # Per-owner summaries so reps see only their data
+        summary_by_owner: dict = {}
+        owners_seen = {o["name"] for o in summary.get("team_data", {}).get("owners", [])}
+        for owner_name in owners_seen:
+            owner_rows = [r for r in rows if (r.get("deal_owner") or "").strip() == owner_name]
+            if owner_rows:
+                summary_by_owner[owner_name] = _compute_summary(owner_rows, file.filename or "upload.csv", user.get("email", "unknown"))
+        summary["summary_by_owner"] = summary_by_owner
 
         db = get_supabase_admin()
         try:
             db.table("dashboard_summary").upsert(summary).execute()
         except Exception as upsert_err:
-            if 'sales_data' in str(upsert_err):
+            err_str = str(upsert_err)
+            if "sales_data" in err_str:
                 log.warning("sales_data column missing, saving without it")
                 summary.pop("sales_data", None)
+                db.table("dashboard_summary").upsert(summary).execute()
+            elif "summary_by_owner" in err_str:
+                log.warning("summary_by_owner column missing (run migration 008), saving without it")
+                summary.pop("summary_by_owner", None)
                 db.table("dashboard_summary").upsert(summary).execute()
             else:
                 raise
@@ -501,19 +738,40 @@ async def upload_and_compute(file: UploadFile = File(...), user: dict = Depends(
         except Exception as e:
             log.warning(f"Agent profile save failed (non-fatal): {e}")
 
-        # Generate smart alerts
+        # Generate smart alerts and deliver via Telegram / WhatsApp / Email
         alerts_count = 0
+        delivery_result = {}
         try:
             from app.agents.smart_alerts import generate_smart_alerts, save_alerts
+            from app.services.alert_delivery import deliver_alerts_to_users
             smart_alerts = generate_smart_alerts(rows, user.get("id", ""))
             alerts_count = save_alerts(smart_alerts)
             log.info(f"Smart alerts generated: {len(smart_alerts)}, saved: {alerts_count}")
+            if smart_alerts:
+                delivery_result = await deliver_alerts_to_users(smart_alerts)
+                log.info(f"Alert delivery: {delivery_result.get('delivered', 0)} sent, {len(delivery_result.get('errors', []))} errors")
         except Exception as e:
             log.warning(f"Smart alert generation failed (non-fatal): {e}")
 
+        # Generate Intelligence-powered daily briefs (no Zoho) so reps see today's brief after upload
+        try:
+            from app.services.intelligence_brief import generate_and_save_intelligence_briefs
+            brief_result = generate_and_save_intelligence_briefs()
+            log.info(f"Intelligence briefs generated: {brief_result.get('generated', 0)}")
+        except Exception as e:
+            log.warning(f"Intelligence brief generation failed (non-fatal): {e}")
+
         log.info(f"Summary saved: {len(rows)} leads → ~{len(json.dumps(summary)) // 1024}KB, {agents_count} agents, {alerts_count} alerts")
 
-        return {"success": True, "total_rows": len(rows), "summary_size_kb": len(json.dumps(summary)) // 1024, "agents_updated": agents_count, "alerts_generated": alerts_count}
+        return {
+            "success": True,
+            "total_rows": len(rows),
+            "summary_size_kb": len(json.dumps(summary)) // 1024,
+            "agents_updated": agents_count,
+            "alerts_generated": alerts_count,
+            "data_quality_warnings": validation.get("warnings", []),
+            "action_items_count": len(summary.get("action_items") or []),
+        }
 
     except HTTPException:
         raise

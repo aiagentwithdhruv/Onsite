@@ -32,6 +32,7 @@ class UpdateUserRequest(BaseModel):
     team: Optional[str] = None
     is_active: Optional[bool] = None
     name: Optional[str] = None
+    deal_owner_name: Optional[str] = None
 
 
 VALID_ROLES = {"rep", "team_lead", "manager", "founder", "admin"}
@@ -115,8 +116,8 @@ async def create_user(payload: CreateUserRequest, user: dict = Depends(require_a
 
 
 @router.patch("/users/{user_id}")
-async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Depends(require_admin)):
-    """Update a user's role, team, active status, or name. Admin only."""
+async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Depends(require_manager)):
+    """Update a user's role, team, deal owner access, active status, or name. Manager+ only."""
     try:
         db = get_supabase_admin()
 
@@ -142,6 +143,8 @@ async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Dep
             update_data["is_active"] = payload.is_active
         if payload.name is not None:
             update_data["name"] = payload.name
+        if payload.deal_owner_name is not None:
+            update_data["deal_owner_name"] = payload.deal_owner_name or None
 
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")

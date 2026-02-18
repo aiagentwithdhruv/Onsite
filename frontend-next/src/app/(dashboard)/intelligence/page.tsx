@@ -86,6 +86,8 @@ export default function IntelligencePage() {
   const [loadingText, setLoadingText] = useState('Loading dashboard...')
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>([])
+  const [saveError, setSaveError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Load saved summary from Supabase on mount (instant — ~1-2MB)
@@ -123,11 +125,21 @@ export default function IntelligencePage() {
       },
     })
 
-    // Wait for backend save (non-blocking for UI)
-    backendUpload.then(res => {
-      console.log(`Saved to Supabase: ${res.data?.total_rows} leads, ${res.data?.agents_updated} agents, ${res.data?.summary_size_kb}KB`)
-    }).catch(err => {
-      console.warn('Backend save failed:', err?.response?.data || err.message)
+    // Wait for backend save; refetch summary so Smart actions appear on next load; show data quality warnings
+    backendUpload.then(async res => {
+      setSaveError(null)
+      const data = res?.data as { total_rows?: number; agents_updated?: number; summary_size_kb?: number; data_quality_warnings?: string[]; action_items_count?: number }
+      if (data?.data_quality_warnings?.length) setUploadWarnings(data.data_quality_warnings)
+      else setUploadWarnings([])
+      try {
+        const sumRes = await getDashboardSummary()
+        const data = sumRes?.data as { total_leads?: number } | undefined
+        if (data && (data.total_leads ?? 0) > 0) setSummary(data as SummaryData)
+      } catch {
+        // ignore
+      }
+    }).catch(() => {
+      setSaveError('Could not save to database. Your data is still visible here. Try uploading again later.')
     })
   }, [])
 
@@ -141,6 +153,8 @@ export default function IntelligencePage() {
     setSummary(null)
     setMode('empty')
     setFilters({})
+    setUploadWarnings([])
+    setSaveError(null)
     clearDashboardSummary().catch(() => {})
   }, [])
 
@@ -148,7 +162,6 @@ export default function IntelligencePage() {
     if (!allData.length) return {}
     const unique = (field: string) => [...new Set(allData.map(r => r[field]).filter(Boolean))].sort()
     return {
-      lead_owner_manager: unique('lead_owner_manager'),
       deal_owner: unique('deal_owner'),
       lead_source: unique('lead_source'),
       region: unique('region'),
@@ -194,7 +207,7 @@ export default function IntelligencePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32">
+      <div className="flex min-h-[280px] flex-col items-center justify-center py-32 transition-opacity duration-200">
         <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-500" />
         <p className="text-sm text-zinc-500">{loadingText}</p>
       </div>
@@ -235,7 +248,7 @@ export default function IntelligencePage() {
   const now = new Date()
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 opacity-100 transition-opacity duration-200">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -260,11 +273,28 @@ export default function IntelligencePage() {
         </div>
       </div>
 
+      {saveError && (
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-500/30 dark:bg-red-500/10">
+          <p className="text-sm text-red-700 dark:text-red-200">{saveError}</p>
+          <button type="button" onClick={() => setSaveError(null)} className="shrink-0 text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400">Dismiss</button>
+        </div>
+      )}
+      {uploadWarnings.length > 0 && (
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div>
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Data quality</p>
+            <ul className="mt-1 list-inside list-disc text-xs text-amber-700 dark:text-amber-300">
+              {uploadWarnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+          <button type="button" onClick={() => setUploadWarnings([])} className="shrink-0 text-xs font-medium text-amber-600 hover:text-amber-800 dark:text-amber-400">Dismiss</button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <Filter className="h-4 w-4 text-zinc-400" />
         {[
-          { key: 'lead_owner_manager', label: 'Manager' },
           { key: 'deal_owner', label: 'Deal Owner' },
           { key: 'lead_source', label: 'Source' },
           { key: 'region', label: 'Region' },
@@ -650,7 +680,7 @@ function SalesTab({ data }: { data: Row[] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="month" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={50} />
               <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => [`₹${v}L`, '']} />
+              <Tooltip formatter={(v: number | undefined) => [v != null ? `₹${v}L` : '', '']} />
               <Bar dataKey="revenue" name="Revenue (₹L)" fill="#22c55e" radius={[4, 4, 0, 0]} />
               <Bar dataKey="pitched" name="Pitched (₹L)" fill="#a855f7" radius={[4, 4, 0, 0]} />
               <Legend />
@@ -682,7 +712,7 @@ function SalesTab({ data }: { data: Row[] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis type="number" tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, '']} />
+              <Tooltip formatter={(v: number | undefined) => [v != null ? `₹${v.toLocaleString()}` : '', '']} />
               <Bar dataKey="revenue" name="Revenue" fill="#22c55e" radius={[0, 4, 4, 0]}>
                 {regionData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Bar>
@@ -697,7 +727,7 @@ function SalesTab({ data }: { data: Row[] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis type="number" tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => [`₹${v}L`, '']} />
+              <Tooltip formatter={(v: number | undefined) => [v != null ? `₹${v}L` : '', '']} />
               <Bar dataKey="revenue" name="Revenue (₹L)" fill="#6366f1" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -723,7 +753,7 @@ function SalesTab({ data }: { data: Row[] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
               <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => [`₹${v}L`, '']} />
+              <Tooltip formatter={(v: number | undefined) => [v != null ? `₹${v}L` : '', '']} />
               <Bar dataKey="revenue" name="Revenue (₹L)" fill="#22c55e" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -880,41 +910,19 @@ function PipelineTab({ data }: { data: Row[] }) {
 
 // ---- TEAM ----
 function TeamTab({ data, now }: { data: Row[]; now: Date }) {
-  const managers = count(data, 'lead_owner_manager').filter(x => x[0])
   const ownerData = count(data, 'deal_owner').filter(x => x[0] && x[0] !== 'Onsite' && x[0] !== 'Offline Campaign').slice(0, 20)
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {managers.map(([mgr, total]) => {
-          const ml = data.filter(r => r.lead_owner_manager === mgr)
-          const demos = ml.filter(r => r.demo_done === '1').length
-          const sales = ml.filter(r => r.sale_done === '1').length
-          const pri = ml.filter(r => r.lead_status === 'Priority').length
-          return (
-            <Card key={mgr} title={mgr}>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-zinc-500">Total Leads</span><span className="font-semibold text-blue-500">{total.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Demos Done</span><span className="font-semibold text-purple-500">{demos.toLocaleString()} ({pct(demos, total)})</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Sales Done</span><span className="font-semibold text-green-500">{sales.toLocaleString()} ({pct(sales, total)})</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-amber-500">{pri.toLocaleString()}</span></div>
-                <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700"><div className="h-full rounded-full bg-green-500" style={{ width: `${Math.min(sales / Math.max(total, 1) * 100 * 10, 100)}%` }} /></div>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
       <Card title="Team Leaderboard">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead><tr className="border-b border-zinc-200 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-700">
-              <th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Demo</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Priority</th><th className="py-2">Stale 30d+</th>
+              <th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Demo</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Priority</th><th className="py-2">Stale 30d+</th>
             </tr></thead>
             <tbody>
               {ownerData.map(([own, total]) => {
                 const ol = data.filter(r => r.deal_owner === own)
-                const mgr = ol.find(r => r.lead_owner_manager)?.lead_owner_manager || '-'
                 const dd = ol.filter(r => r.demo_done === '1').length
                 const sd = ol.filter(r => r.sale_done === '1').length
                 const pri = ol.filter(r => r.lead_status === 'Priority').length
@@ -922,7 +930,7 @@ function TeamTab({ data, now }: { data: Row[]; now: Date }) {
                 const convPct = total ? (sd / total * 100) : 0
                 return (
                   <tr key={own} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="py-2 pr-3 font-medium">{own}</td><td className="py-2 pr-3 text-zinc-500">{mgr}</td>
+                    <td className="py-2 pr-3 font-medium">{own}</td>
                     <td className="py-2 pr-2">{total.toLocaleString()}</td><td className="py-2 pr-2">{dd.toLocaleString()}</td>
                     <td className="py-2 pr-2">{sd.toLocaleString()}</td>
                     <td className="py-2 pr-2"><Badge color={convPct > 5 ? 'green' : convPct > 2 ? 'amber' : 'red'}>{pct(sd, total)}</Badge></td>
@@ -1271,6 +1279,23 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
 
       {activeTab === 'Overview' && (
         <div className="space-y-4">
+          {(summary.action_items || []).length > 0 && (
+            <Card title="Smart actions" className="border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5">
+              <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">Prioritized recommendations from your data</p>
+              <ul className="space-y-2">
+                {(summary.action_items || []).map((a: { priority?: string; title?: string; description?: string; tab?: string }, i: number) => (
+                  <li key={i} className="flex items-start gap-2 rounded-lg border border-zinc-200/80 bg-white p-2.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${a.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' : a.priority === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-500/20 dark:text-zinc-400'}`}>{a.priority || 'medium'}</span>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{a.title}</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">{a.description}</p>
+                      {a.tab && <span className="mt-1 inline-block text-[10px] text-amber-600 dark:text-amber-400">→ {a.tab} tab</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <InsightBox title="Conversion Funnel">Demo conversion: <strong>{ins.demo_rate || 0}%</strong>, Sale rate: <strong>{ins.sale_rate || 0}%</strong>. {ins.top_source && <>Top source: <strong>{ins.top_source.name}</strong> ({ins.top_source.value?.toLocaleString()} leads).</>}</InsightBox>
           {(ins.stale_30 || 0) > 0 && <InsightBox title="Action Required"><strong>{ins.stale_30?.toLocaleString()}</strong> active leads untouched 30+ days.</InsightBox>}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1289,8 +1314,7 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
 
       {activeTab === 'Team' && (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(team.managers || []).map((m: { name: string; total: number; demos: number; sales: number; priority: number }) => (<Card key={m.name} title={m.name}><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-zinc-500">Total</span><span className="font-semibold text-blue-500">{m.total.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-zinc-500">Sales</span><span className="font-semibold text-green-500">{m.sales.toLocaleString()} ({pct(m.sales, m.total)})</span></div><div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-amber-500">{m.priority}</span></div></div></Card>))}</div>
-          <Card title="Team Leaderboard"><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b text-[10px] font-semibold uppercase text-zinc-400"><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2">Stale</th></tr></thead><tbody>{(team.owners || []).map((o: { name: string; manager: string; total: number; sales: number; stale: number }) => (<tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-2 pr-3 font-medium">{o.name}</td><td className="py-2 pr-3 text-zinc-500">{o.manager}</td><td className="py-2 pr-2">{o.total.toLocaleString()}</td><td className="py-2 pr-2">{o.sales}</td><td className="py-2 pr-2"><Badge color={o.total ? (o.sales / o.total * 100 > 5 ? 'green' : 'red') : 'zinc'}>{pct(o.sales, o.total)}</Badge></td><td className="py-2">{o.stale > 0 ? <Badge color="red">{o.stale}</Badge> : '0'}</td></tr>))}</tbody></table></div></Card>
+          <Card title="Team Leaderboard"><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b text-[10px] font-semibold uppercase text-zinc-400"><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Demo</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2">Stale</th></tr></thead><tbody>{(team.owners || []).map((o: { name: string; total: number; demos?: number; sales: number; stale: number }) => (<tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-2 pr-3 font-medium">{o.name}</td><td className="py-2 pr-2">{o.total.toLocaleString()}</td><td className="py-2 pr-2">{(o.demos ?? 0).toLocaleString()}</td><td className="py-2 pr-2">{o.sales}</td><td className="py-2 pr-2"><Badge color={o.total ? (o.sales / o.total * 100 > 5 ? 'green' : 'red') : 'zinc'}>{pct(o.sales, o.total)}</Badge></td><td className="py-2">{o.stale > 0 ? <Badge color="red">{o.stale}</Badge> : '0'}</td></tr>))}</tbody></table></div></Card>
         </div>
       )}
 

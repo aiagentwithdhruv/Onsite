@@ -60,18 +60,20 @@ export default function BriefsPage() {
   const content = typeof rawContent === 'string' ? rawContent : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Daily Briefs</h2>
-        <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">Daily Briefs</h2>
+        <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
           Your AI-generated morning briefs and history
         </p>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
-        <div className="mb-4 flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-amber-500" />
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Today&apos;s Brief</h3>
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-700/50 dark:bg-zinc-900/40">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+          </span>
+          <h3 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">Today&apos;s Brief</h3>
         </div>
         {content ? (
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
@@ -84,10 +86,12 @@ export default function BriefsPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
-        <div className="flex items-center gap-2 border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
-          <Calendar className="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Brief History</h3>
+      <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-700/50 dark:bg-zinc-900/40">
+        <div className="flex items-center gap-3 border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+            <Calendar className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+          </span>
+          <h3 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">Brief History</h3>
         </div>
         {history.length === 0 ? (
           <div className="flex items-center gap-3 px-6 py-8 text-sm text-zinc-500 dark:text-zinc-400">

@@ -64,21 +64,21 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/5 bg-zinc-900 transition-all duration-300',
+        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/[0.06] bg-gradient-to-b from-zinc-900 to-zinc-900/95 transition-all duration-300',
         collapsed ? 'w-[72px]' : 'w-64'
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
+      <div className="flex h-16 items-center justify-between border-b border-white/[0.06] px-4">
         {!collapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 shadow-inner">
               <Zap className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold tracking-tight text-white">ONSITE</span>
           </Link>
         )}
         {collapsed && (
-          <Link href="/" className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+          <Link href="/" className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
             <Zap className="h-5 w-5" />
           </Link>
         )}
@@ -93,9 +93,9 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                 <Link
                   href={item.href}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-amber-500/10 text-amber-400'
+                      ? 'bg-amber-500/15 text-amber-400 shadow-sm'
                       : 'text-zinc-400 hover:bg-white/5 hover:text-white',
                     collapsed && 'justify-center'
                   )}

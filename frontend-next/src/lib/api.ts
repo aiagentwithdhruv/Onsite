@@ -70,6 +70,15 @@ export const getAlerts = (params?: Record<string, string>) =>
 export const markAlertRead = (alertId: string) =>
   api.patch(`/alerts/${alertId}/read`)
 
+export const getNotificationPreferences = () =>
+  api.get('/alerts/notification-preferences')
+
+export const updateNotificationPreferences = (prefs: { notify_via_telegram?: boolean; notify_via_discord?: boolean; notify_via_whatsapp?: boolean; notify_via_email?: boolean; discord_webhook_url?: string }) =>
+  api.patch('/alerts/notification-preferences', prefs)
+
+export const getTelegramLinkToken = () =>
+  api.get('/alerts/telegram-link-token')
+
 export const getUnreadCount = () =>
   api.get('/alerts/unread-count')
 
@@ -86,11 +95,25 @@ export const getConversionTrends = (params?: Record<string, string>) =>
   api.get('/analytics/conversion-trends', { params })
 
 export const getUsers = () => api.get('/admin/users')
+export const updateUser = (userId: string, payload: { role?: string; deal_owner_name?: string | null; name?: string; team?: string | null; is_active?: boolean }) =>
+  api.patch(`/admin/users/${userId}`, payload)
 export const getSyncStatus = () => api.get('/admin/sync-status')
 export const triggerSync = () => api.post('/admin/sync/trigger')
 export const getAIUsage = () => api.get('/admin/ai-usage')
 
 export const getDashboardSummary = () => api.get('/intelligence/summary')
+export const getDealOwners = () => api.get<{ deal_owners: string[] }>('/intelligence/deal-owners')
+export const getTeamAttention = () => api.get<{ items: TeamAttentionItem[] }>('/intelligence/team-attention')
+
+export type TeamAttentionItem = {
+  name: string
+  deal_owner: string
+  stale_count: number
+  demos_pending: number
+  sale_rate: number
+  next_best_action: string
+  suggested_action: string
+}
 export const uploadIntelligenceCSV = (file: File) => {
   const form = new FormData()
   form.append('file', file)

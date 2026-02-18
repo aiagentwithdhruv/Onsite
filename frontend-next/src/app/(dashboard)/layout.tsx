@@ -78,10 +78,12 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Loading Onsite...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 via-white to-amber-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 shadow-inner">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500/30 border-t-amber-500" />
+          </div>
+          <p className="text-sm font-medium tracking-wide text-zinc-500 dark:text-zinc-400">Loading...</p>
         </div>
       </div>
     )
@@ -92,7 +94,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50/80 via-white to-amber-50/20 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
       {mobileSidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 lg:hidden"
@@ -141,8 +143,10 @@ export default function DashboardLayout({
           </svg>
         </button>
 
-        <main className="p-6">
-          {children}
+        <main className="min-h-[calc(100vh-4rem)] p-6 lg:p-8">
+          <div className="mx-auto max-w-[1600px]">
+            {children}
+          </div>
         </main>
       </div>
     </div>

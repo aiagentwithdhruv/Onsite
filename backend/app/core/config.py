@@ -18,10 +18,17 @@ class Settings(BaseSettings):
     zoho_refresh_token: str = ""
     zoho_api_domain: str = "https://www.zohoapis.in"
 
-    # WhatsApp
+    # Telegram (alerts delivery — priority)
+    telegram_bot_token: str = ""
+
+    # WhatsApp (Gupshup or Business API)
     gupshup_api_key: str = ""
     gupshup_app_name: str = ""
     gupshup_source_number: str = ""
+
+    # WhatsApp Business Cloud API (optional; alternative to Gupshup)
+    whatsapp_cloud_api_token: str = ""
+    whatsapp_phone_number_id: str = ""
 
     # Email
     resend_api_key: str = ""

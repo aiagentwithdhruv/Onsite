@@ -41,8 +41,8 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
     : '?'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/80 px-6 backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-900/80">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">{title}</h1>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/90 px-6 backdrop-blur-md dark:border-zinc-700/50 dark:bg-zinc-900/90">
+      <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">{title}</h1>
 
       <div className="flex items-center gap-4">
         <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
@@ -52,7 +52,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
             placeholder="Search leads, companies..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="h-9 w-64 rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 transition-colors focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className="h-9 w-64 rounded-xl border border-zinc-200 bg-zinc-50/80 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 transition-all focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </form>
 
@@ -86,7 +86,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-2xl border border-zinc-200/80 bg-white py-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
               {user && (
                 <div className="border-b border-zinc-100 px-4 py-2 dark:border-zinc-700">
                   <p className="text-sm font-medium text-zinc-900 dark:text-white">{displayName}</p>

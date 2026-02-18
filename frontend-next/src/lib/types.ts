@@ -9,6 +9,8 @@ export interface User {
   role: Role
   team: string | null
   is_active: boolean
+  /** For reps: exact deal_owner from CSV; they see only this owner's data. Set in Admin. */
+  deal_owner_name?: string | null
 }
 
 export interface Lead {

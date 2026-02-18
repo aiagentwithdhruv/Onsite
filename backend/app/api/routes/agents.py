@@ -29,11 +29,19 @@ router = APIRouter()
 @router.get("/")
 @router.get("")
 async def list_profiles(user: dict = Depends(get_current_user)):
-    """List all agent profiles."""
+    """List agent profiles. Reps see only their own (by deal_owner_name); managers/admins see all."""
     try:
         db = get_supabase_admin()
         result = db.table("agent_profiles").select("*").order("name").execute()
-        return {"profiles": result.data or [], "total": len(result.data or [])}
+        profiles = result.data or []
+        role = (user.get("role") or "rep").lower()
+        if role not in ("manager", "founder", "admin"):
+            deal_owner = (user.get("deal_owner_name") or "").strip()
+            if deal_owner:
+                profiles = [p for p in profiles if (p.get("name") or "").strip() == deal_owner]
+            else:
+                profiles = []
+        return {"profiles": profiles, "total": len(profiles)}
     except Exception as e:
         log.error(f"List profiles error: {e}")
         raise HTTPException(status_code=500, detail="Failed to load profiles")
@@ -209,6 +217,23 @@ def compute_agent_profiles(rows: list[dict]) -> list[dict]:
         elif recent_touch == 0 and total > 20:
             concerns.append("No activity in last 7 days")
 
+        # Next best action (one clear recommendation)
+        next_best_action = ""
+        if stale_30 > 10:
+            next_best_action = f"Follow up {stale_30} stale leads (30+ days untouched)"
+        elif demo_booked > demos and (demo_booked - demos) >= 5:
+            next_best_action = f"Complete {demo_booked - demos} pending demos (booked but not done)"
+        elif priority > 15:
+            next_best_action = f"Prioritize {priority} priority leads — contact this week"
+        elif recent_touch == 0 and total > 20:
+            next_best_action = "Log activity — no leads touched in last 7 days"
+        elif sale_rate < 2 and total > 50:
+            next_best_action = "Focus on demo-to-close: improve follow-up after demos"
+        elif top_sources:
+            next_best_action = f"Double down on top source: {top_sources[0]}"
+        else:
+            next_best_action = "Keep momentum — maintain weekly touch on active pipeline"
+
         performance = {
             "total_leads": total,
             "demo_booked": demo_booked,
@@ -224,6 +249,7 @@ def compute_agent_profiles(rows: list[dict]) -> list[dict]:
             "total_revenue": total_revenue,
             "total_price_pitched": total_price,
             "recent_7d_touches": recent_touch,
+            "next_best_action": next_best_action,
         }
 
         patterns = {

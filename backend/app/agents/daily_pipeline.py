@@ -603,24 +603,23 @@ async def save_results(state: DailyPipelineState) -> DailyPipelineState:
                 log.warning(f"[DailyPipeline] Score upsert failed for {lead['id']}: {e}")
                 errors.append(f"save_score ({lead['id']}): {str(e)}")
 
-        # Save briefs
+        # Save briefs (schema: brief_content, priority_list JSONB required)
         for rep_id, brief_text in briefs.items():
             if rep_id == "unassigned":
                 continue
             try:
+                plist = state.get("priority_lists", {}).get(rep_id, [])
+                priority_list = [{"lead_id": l.get("id"), "score_label": l.get("score_label")} for l in plist[:50]]
                 db.table("daily_briefs").insert({
                     "rep_id": rep_id,
-                    "brief_text": brief_text,
-                    "lead_count": len(state.get("priority_lists", {}).get(rep_id, [])),
-                    "hot_count": sum(
-                        1 for l in state.get("priority_lists", {}).get(rep_id, [])
-                        if l.get("score_label") == "hot"
-                    ),
+                    "brief_content": brief_text,
+                    "priority_list": priority_list,
+                    "lead_count": len(plist),
+                    "hot_count": sum(1 for l in plist if l.get("score_label") == "hot"),
                     "stale_count": sum(
                         1 for s in state.get("stale_leads", [])
                         if s.get("assigned_rep_id") == rep_id
                     ),
-                    "generated_at": now_iso,
                 }).execute()
             except Exception as e:
                 log.warning(f"[DailyPipeline] Brief save failed for {rep_id}: {e}")

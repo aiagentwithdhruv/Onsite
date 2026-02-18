@@ -94,11 +94,12 @@ def generate_smart_alerts(rows: list[dict], user_id: str) -> list[dict]:
     avg_conv = (total_sales / max(total_leads_owned, 1)) * 100
 
     def add(alert_type: str, severity: str, title: str, message: str, agent: str = "", meta: dict | None = None):
+        full_message = f"{title}\n\n{message}" if title != message else message
         alerts.append({
             "alert_type": alert_type,
             "severity": severity,
             "title": title,
-            "message": message,
+            "message": full_message,
             "target_user_id": user_id,
             "lead_id": None,
             "channel": "email",
@@ -221,26 +222,91 @@ def generate_smart_alerts(rows: list[dict], user_id: str) -> list[dict]:
     return alerts
 
 
-def save_alerts(alerts: list[dict]):
-    """Save generated alerts to Supabase, clearing old smart alerts first."""
+# Original schema (001) allowed alert_type values — use 'custom' for any other
+_LEGACY_ALERT_TYPES = frozenset({
+    "morning_brief", "new_lead", "stale_7d", "stale_14d",
+    "hot_no_followup", "deal_won", "deal_lost",
+    "weekly_report", "performance_drop", "custom",
+})
+
+
+def _row_minimal(alert: dict) -> dict:
+    """Row for base alerts table (001) only — no severity/title columns."""
+    alert_type = alert.get("alert_type") or "custom"
+    if alert_type not in _LEGACY_ALERT_TYPES:
+        alert_type = "custom"
+    return {
+        "alert_type": alert_type,
+        "message": alert.get("message") or alert.get("title") or "Alert",
+        "target_user_id": alert["target_user_id"],
+        "lead_id": None,
+        "channel": "email",
+        "sent_at": alert.get("sent_at") or datetime.now(timezone.utc).isoformat(),
+        "delivered": True,
+    }
+
+
+# alert_type values allowed after migration 007 (broader than legacy)
+_EXTENDED_ALERT_TYPES = _LEGACY_ALERT_TYPES | frozenset({
+    "stale_30d", "low_conversion", "demo_dropout", "priority_overload",
+    "inactive_agent", "top_performer", "revenue_milestone", "pipeline_risk", "follow_up_needed",
+})
+
+
+def _row_full(alert: dict) -> dict:
+    """Full row including severity, title, agent_name (after migration 007)."""
+    alert_type = alert.get("alert_type") or "custom"
+    if alert_type not in _EXTENDED_ALERT_TYPES:
+        alert_type = "custom"
+    now_iso = alert.get("sent_at") or datetime.now(timezone.utc).isoformat()
+    msg = alert.get("message") or alert.get("title") or "Alert"
+    return {
+        "alert_type": alert_type,
+        "message": msg,
+        "target_user_id": alert["target_user_id"],
+        "lead_id": None,
+        "channel": "email",
+        "sent_at": now_iso,
+        "delivered": True,
+        "severity": alert.get("severity") or "medium",
+        "title": (alert.get("title") or msg.split("\n")[0] or "Alert")[:500],
+        "agent_name": alert.get("agent_name") or "system",
+        "metadata": alert.get("metadata") or {},
+        "created_at": now_iso,
+    }
+
+
+def save_alerts(alerts: list[dict]) -> int:
+    """Save generated alerts to Supabase. Uses full row (severity, title, etc.) when migration 007 applied."""
     if not alerts:
         return 0
 
     db = get_supabase_admin()
-
     user_id = alerts[0]["target_user_id"]
+
     try:
         db.table("alerts").delete().eq("target_user_id", user_id).eq("delivered", True).is_("read_at", "null").execute()
     except Exception as e:
-        log.warning(f"Failed to clear old alerts: {e}")
+        log.warning("Failed to clear old alerts: %s", e)
 
     saved = 0
+    use_full = True  # try full row first
     for alert in alerts:
+        row = _row_full(alert) if use_full else _row_minimal(alert)
         try:
-            db.table("alerts").insert(alert).execute()
+            db.table("alerts").insert(row).execute()
             saved += 1
         except Exception as e:
-            log.warning(f"Failed to save alert '{alert.get('title', '')}': {e}")
+            if use_full:
+                use_full = False
+                row = _row_minimal(alert)
+                try:
+                    db.table("alerts").insert(row).execute()
+                    saved += 1
+                except Exception as e2:
+                    log.warning("Failed to save alert %s: %s", alert.get("title", "")[:50], e2)
+            else:
+                log.warning("Failed to save alert %s: %s", alert.get("title", "")[:50], e)
 
-    log.info(f"Smart Alert Agent: generated {len(alerts)} alerts, saved {saved}")
+    log.info("Smart Alert Agent: generated %s alerts, saved %s", len(alerts), saved)
     return saved
