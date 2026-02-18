@@ -11,9 +11,9 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from 'recharts'
 import {
-  smartMerge, getAllLeads, getLeadCount, getUploadHistory, getPhoneDuplicates,
+  smartMerge, getAllLeads, getLeadCount, getUploadHistory, getPhoneMergeHistory,
   clearAllData, getLastUpload,
-  type MergeResult, type UploadRecord, type DuplicateGroup,
+  type MergeResult, type UploadRecord, type PhoneMergeDetail,
 } from '@/lib/dataStore'
 
 type Row = Record<string, string>
@@ -80,7 +80,7 @@ export default function IntelligencePage() {
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null)
   const [uploadHistory, setUploadHistory] = useState<UploadRecord[]>([])
-  const [phoneDups, setPhoneDups] = useState<DuplicateGroup[]>([])
+  const [phoneMerges, setPhoneMerges] = useState<PhoneMergeDetail[]>([])
   const [showPanel, setShowPanel] = useState<'history' | 'duplicates' | 'merge' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -95,8 +95,8 @@ export default function IntelligencePage() {
           setAllData(leads)
           const history = await getUploadHistory()
           setUploadHistory(history)
-          const dups = await getPhoneDuplicates()
-          setPhoneDups(dups)
+          const merges = await getPhoneMergeHistory()
+          setPhoneMerges(merges)
         }
       } catch {
         // IndexedDB not available or empty
@@ -130,8 +130,8 @@ export default function IntelligencePage() {
         // Refresh history and duplicates
         const history = await getUploadHistory()
         setUploadHistory(history)
-        const dups = await getPhoneDuplicates()
-        setPhoneDups(dups)
+        const merges = await getPhoneMergeHistory()
+        setPhoneMerges(merges)
 
         setLoading(false)
         setShowPanel('merge')
@@ -153,7 +153,7 @@ export default function IntelligencePage() {
     await clearAllData()
     setAllData([])
     setUploadHistory([])
-    setPhoneDups([])
+    setPhoneMerges([])
     setMergeResult(null)
     setShowPanel(null)
   }, [])
@@ -163,7 +163,7 @@ export default function IntelligencePage() {
     const unique = (field: string) => [...new Set(allData.map(r => r[field]).filter(Boolean))].sort()
     return {
       lead_owner_manager: unique('lead_owner_manager'),
-      lead_owner: unique('lead_owner'),
+      deal_owner: unique('deal_owner'),
       lead_source: unique('lead_source'),
       region: unique('region'),
       lead_status: unique('lead_status'),
@@ -225,6 +225,8 @@ export default function IntelligencePage() {
   const prospects = d.filter(r => r.is_prospect === '1' || r.sales_stage?.includes('Prospect')).length
   const qualified = d.filter(r => r.lead_status === 'Qualified').length
   const importantCompanies = d.filter(r => matchesImportant((r.company_name || r.lead_name || ''))).length
+  const totalRevenue = d.reduce((sum, r) => sum + (parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0), 0)
+  const totalPricePitched = d.reduce((sum, r) => sum + (parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0), 0)
   const now = new Date()
 
   return (
@@ -252,8 +254,8 @@ export default function IntelligencePage() {
               <p className="text-[10px] font-medium uppercase text-zinc-500">Unchanged</p>
             </div>
             <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
-              <p className="text-lg font-bold text-amber-600">{mergeResult.phoneDuplicates.toLocaleString()}</p>
-              <p className="text-[10px] font-medium uppercase text-zinc-500">Phone Dups</p>
+              <p className="text-lg font-bold text-amber-600">{mergeResult.phoneMerged.toLocaleString()}</p>
+              <p className="text-[10px] font-medium uppercase text-zinc-500">Phone Merged</p>
             </div>
           </div>
           {mergeResult.changesByField.length > 0 && (
@@ -285,12 +287,12 @@ export default function IntelligencePage() {
           >
             <Clock className="h-3.5 w-3.5" /> History ({uploadHistory.length})
           </button>
-          {phoneDups.length > 0 && (
+          {phoneMerges.length > 0 && (
             <button
-              onClick={() => setShowPanel(showPanel === 'duplicates' ? null : 'duplicates')}
+              onClick={() => setShowPanel(showPanel === 'merges' ? null : 'merges')}
               className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
             >
-              <Copy className="h-3.5 w-3.5" /> Phone Dups ({phoneDups.length})
+              <GitMerge className="h-3.5 w-3.5" /> Phone Merges ({phoneMerges.length})
             </button>
           )}
           <button
@@ -331,7 +333,7 @@ export default function IntelligencePage() {
                     <span className="text-green-600">+{u.newLeads.toLocaleString()} new</span>
                     <span className="text-blue-600">{u.updatedLeads.toLocaleString()} updated</span>
                     <span className="text-zinc-400">{u.unchangedLeads.toLocaleString()} same</span>
-                    {u.phoneDuplicates > 0 && <span className="text-amber-600">{u.phoneDuplicates} phone dups</span>}
+                    {u.phoneMerged > 0 && <span className="text-amber-600">{u.phoneMerged} merged</span>}
                     <span className="text-zinc-400">{u.duration_ms}ms</span>
                   </div>
                 </div>
@@ -341,26 +343,24 @@ export default function IntelligencePage() {
         </div>
       )}
 
-      {/* Phone Duplicates Panel */}
-      {showPanel === 'duplicates' && (
+      {/* Phone Merges Panel */}
+      {showPanel === 'merges' && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400"><Copy className="h-4 w-4" /> Phone Number Duplicates — Same phone, different Lead IDs</h3>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400"><GitMerge className="h-4 w-4" /> Phone Merges — Leads merged by same phone number</h3>
             <button onClick={() => setShowPanel(null)} className="text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
           </div>
+          <p className="mb-2 text-xs text-zinc-500">Older user_date kept, newer lead_source_date kept, notes combined, higher-priority status kept.</p>
           <div className="max-h-72 space-y-2 overflow-auto">
-            {phoneDups.slice(0, 50).map((g, i) => (
-              <div key={i} className="rounded-lg bg-white/80 p-3 dark:bg-zinc-800/50">
-                <p className="mb-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300"><Phone className="mr-1 inline h-3 w-3" />{g.phone} — {g.leads.length} leads</p>
-                <div className="space-y-0.5">
-                  {g.leads.map((l, j) => (
-                    <p key={j} className="flex items-center gap-2 text-[11px]">
-                      <span className="font-mono text-zinc-400">{l.zoho_lead_id.slice(-8)}</span>
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">{l.lead_name || '—'}</span>
-                      <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] dark:bg-zinc-700">{l.lead_status || '—'}</span>
-                    </p>
-                  ))}
+            {phoneMerges.slice(0, 50).map((m, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-2 dark:bg-zinc-800/50">
+                <div className="flex items-center gap-2 text-xs">
+                  <Phone className="h-3 w-3 text-zinc-400" />
+                  <span className="font-mono text-zinc-400">{m.phone}</span>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">{m.keptName}</span>
+                  <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">kept</span>
                 </div>
+                <span className="text-[10px] text-zinc-500">merged {m.mergedCount} duplicate{m.mergedCount > 1 ? 's' : ''}</span>
               </div>
             ))}
           </div>
@@ -372,7 +372,7 @@ export default function IntelligencePage() {
         <Filter className="h-4 w-4 text-zinc-400" />
         {[
           { key: 'lead_owner_manager', label: 'Manager' },
-          { key: 'lead_owner', label: 'Lead Owner' },
+          { key: 'deal_owner', label: 'Deal Owner' },
           { key: 'lead_source', label: 'Source' },
           { key: 'region', label: 'Region' },
           { key: 'lead_status', label: 'Status' },
@@ -416,6 +416,23 @@ export default function IntelligencePage() {
           </div>
         ))}
       </div>
+      {/* Revenue KPIs */}
+      {(totalRevenue > 0 || totalPricePitched > 0) && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {totalRevenue > 0 && (
+            <div className="rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-500/20 dark:bg-green-500/5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-green-600">Annual Revenue</span>
+              <p className="text-xl font-bold text-green-600">₹{(totalRevenue / 100000).toFixed(1)}L</p>
+            </div>
+          )}
+          {totalPricePitched > 0 && (
+            <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 dark:border-purple-500/20 dark:bg-purple-500/5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-purple-600">Price Pitched</span>
+              <p className="text-xl font-bold text-purple-600">₹{(totalPricePitched / 100000).toFixed(1)}L</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-0 border-b border-zinc-200 dark:border-zinc-800">
@@ -500,7 +517,7 @@ function OverviewTab({ data, allData, now, demoBooked, demoDone, saleDone }: { d
   const stats = sourceStats(data, 'lead_source', 100)
   const bestSource = stats[0]
   const worstSource = stats[stats.length - 1]
-  const ownerStats2 = sourceStats(data, 'lead_owner', 100)
+  const ownerStats2 = sourceStats(data, 'deal_owner', 100)
   const topCloser = ownerStats2[0]
   const importantLeads = data.filter(r => matchesImportant((r.company_name || r.lead_name || '')))
   const importantSales = importantLeads.filter(r => r.sale_done === '1' || r.lead_status === 'Purchased').length
@@ -629,7 +646,7 @@ function PipelineTab({ data }: { data: Row[] }) {
 // ---- TEAM ----
 function TeamTab({ data, now }: { data: Row[]; now: Date }) {
   const managers = count(data, 'lead_owner_manager').filter(x => x[0])
-  const ownerData = count(data, 'lead_owner').filter(x => x[0]).slice(0, 20)
+  const ownerData = count(data, 'deal_owner').filter(x => x[0] && x[0] !== 'Onsite' && x[0] !== 'Offline Campaign').slice(0, 20)
 
   return (
     <div className="space-y-4">
@@ -657,11 +674,11 @@ function TeamTab({ data, now }: { data: Row[]; now: Date }) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead><tr className="border-b border-zinc-200 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-700">
-              <th className="py-2 pr-3">Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Demo</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Priority</th><th className="py-2">Stale 30d+</th>
+              <th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Demo</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Priority</th><th className="py-2">Stale 30d+</th>
             </tr></thead>
             <tbody>
               {ownerData.map(([own, total]) => {
-                const ol = data.filter(r => r.lead_owner === own)
+                const ol = data.filter(r => r.deal_owner === own)
                 const mgr = ol.find(r => r.lead_owner_manager)?.lead_owner_manager || '-'
                 const dd = ol.filter(r => r.demo_done === '1').length
                 const sd = ol.filter(r => r.sale_done === '1').length
@@ -803,7 +820,7 @@ function AgingTab({ data, now }: { data: Row[]; now: Date }) {
               <tbody>{staleLeads.slice(0, 50).map((r, i) => {
                 const lt = parseDate(r.last_touched_date_new)
                 const days = lt ? daysBetween(lt, now) : '-'
-                return <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-1.5 font-medium">{r.lead_name || '-'}</td><td><Badge color="amber">{r.lead_status}</Badge></td><td className="text-zinc-500">{r.lead_owner || '-'}</td><td><Badge color="red">{days}d</Badge></td><td className="text-zinc-500">{r.lead_phone || '-'}</td></tr>
+                return <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-1.5 font-medium">{r.lead_name || '-'}</td><td><Badge color="amber">{r.lead_status}</Badge></td><td className="text-zinc-500">{r.deal_owner || '-'}</td><td><Badge color="red">{days}d</Badge></td><td className="text-zinc-500">{r.lead_phone || '-'}</td></tr>
               })}</tbody>
             </table>
           </div>
