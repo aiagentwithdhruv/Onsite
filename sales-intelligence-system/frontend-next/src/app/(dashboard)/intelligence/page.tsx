@@ -3,18 +3,14 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import Papa from 'papaparse'
 import {
-  Upload, RefreshCw, Filter, TrendingUp, Users, Phone, Target, Flame, Award,
-  Building2, AlertTriangle, ChevronDown, Database, Clock, GitMerge, Copy, Trash2, X,
+  Upload, Filter, TrendingUp, Users, Phone, Target, Flame, Award,
+  Building2, ChevronDown, Trash2,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from 'recharts'
-import {
-  smartMerge, getAllLeads, getLeadCount, getUploadHistory, getPhoneMergeHistory,
-  clearAllData, getLastUpload,
-  type MergeResult, type UploadRecord, type PhoneMergeDetail,
-} from '@/lib/dataStore'
+import { getDashboardSummary, uploadIntelligenceCSV, clearDashboardSummary } from '@/lib/api'
 
 type Row = Record<string, string>
 
@@ -72,73 +68,58 @@ function sourceStats(arr: Row[], field: string, minCount: number) {
 const TABS = ['Overview', 'Pipeline', 'Team', 'Sources', 'Aging', 'Trends', 'Deep Dive'] as const
 type Tab = typeof TABS[number]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SummaryData = Record<string, any>
+
 export default function IntelligencePage() {
   const [allData, setAllData] = useState<Row[]>([])
+  const [summary, setSummary] = useState<SummaryData | null>(null)
+  const [mode, setMode] = useState<'empty' | 'summary' | 'full'>('empty')
   const [loading, setLoading] = useState(true)
-  const [loadingText, setLoadingText] = useState('Loading saved data...')
+  const [loadingText, setLoadingText] = useState('Loading dashboard...')
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [filters, setFilters] = useState<Record<string, string>>({})
-  const [mergeResult, setMergeResult] = useState<MergeResult | null>(null)
-  const [uploadHistory, setUploadHistory] = useState<UploadRecord[]>([])
-  const [phoneMerges, setPhoneMerges] = useState<PhoneMergeDetail[]>([])
-  const [showPanel, setShowPanel] = useState<'history' | 'duplicates' | 'merge' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Auto-load from IndexedDB on mount (survives refresh)
+  // Load saved summary from Supabase on mount (instant — ~1-2MB)
   useEffect(() => {
-    async function loadSaved() {
-      try {
-        const count = await getLeadCount()
-        if (count > 0) {
-          setLoadingText(`Loading ${count.toLocaleString()} saved leads...`)
-          const leads = await getAllLeads()
-          setAllData(leads)
-          const history = await getUploadHistory()
-          setUploadHistory(history)
-          const merges = await getPhoneMergeHistory()
-          setPhoneMerges(merges)
-        }
-      } catch {
-        // IndexedDB not available or empty
+    getDashboardSummary().then(res => {
+      if (res.data && res.data.total_leads > 0) {
+        setSummary(res.data)
+        setMode('summary')
       }
       setLoading(false)
-    }
-    loadSaved()
+    }).catch(() => setLoading(false))
   }, [])
 
   const handleFile = useCallback((file: File) => {
     setLoading(true)
-    setLoadingText('Parsing CSV data...')
-    setMergeResult(null)
+    setLoadingText('Parsing CSV...')
+
+    // Step 1: Parse client-side for instant display
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (h: string) => h.trim().replace(/^\uFEFF/, ''),
-      complete: async (results) => {
-        const parsed = (results.data as Row[]).filter(r => r.lead_name?.trim())
-        setLoadingText(`Smart merging ${parsed.length.toLocaleString()} leads...`)
-
-        // Run smart merge (dedup by zoho_lead_id + phone detection)
-        const result = await smartMerge(parsed, file.name, 'csv')
-        setMergeResult(result)
-
-        // Reload all data from IndexedDB (merged)
-        setLoadingText('Loading merged data...')
-        const allLeads = await getAllLeads()
-        setAllData(allLeads)
-
-        // Refresh history and duplicates
-        const history = await getUploadHistory()
-        setUploadHistory(history)
-        const merges = await getPhoneMergeHistory()
-        setPhoneMerges(merges)
-
+      complete: (results) => {
+        const data = (results.data as Row[]).filter(r => r.lead_name?.trim())
+        setAllData(data)
+        setMode('full')
         setLoading(false)
-        setShowPanel('merge')
+
+        // Step 2: Upload to backend in background → compute + save summary to Supabase
+        setLoadingText('Saving summary to database...')
+        uploadIntelligenceCSV(file).then(res => {
+          const kb = res.data?.summary_size_kb || 0
+          setSummary(null) // will reload from Supabase on next refresh
+          console.log(`Summary saved to Supabase (${kb}KB)`)
+        }).catch(err => {
+          console.warn('Background save failed (dashboard still works):', err)
+        })
       },
       error: () => {
         setLoading(false)
-        alert('Error parsing CSV. Please try again.')
+        alert('Error parsing CSV.')
       },
     })
   }, [])
@@ -148,14 +129,12 @@ export default function IntelligencePage() {
     if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0])
   }, [handleFile])
 
-  const handleClearAll = useCallback(async () => {
-    if (!confirm('Clear all saved data? This cannot be undone.')) return
-    await clearAllData()
+  const handleClearAll = useCallback(() => {
     setAllData([])
-    setUploadHistory([])
-    setPhoneMerges([])
-    setMergeResult(null)
-    setShowPanel(null)
+    setSummary(null)
+    setMode('empty')
+    setFilters({})
+    clearDashboardSummary().catch(() => {})
   }, [])
 
   const filterOptions = useMemo(() => {
@@ -179,8 +158,8 @@ export default function IntelligencePage() {
     })
   }, [allData, filters])
 
-  // Upload screen (no data yet)
-  if (!allData.length && !loading) {
+  // Upload screen (no data, no summary)
+  if (mode === 'empty' && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400">
@@ -215,6 +194,24 @@ export default function IntelligencePage() {
     )
   }
 
+  // Summary mode: render from pre-computed Supabase data (no raw rows needed)
+  if (mode === 'summary' && summary) {
+    const k = summary.kpis || {}
+    return (
+      <div className="space-y-5">
+        <SummaryDashboard
+          summary={summary}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onUpload={() => fileRef.current?.click()}
+          onClear={handleClearAll}
+        />
+        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]) }} />
+      </div>
+    )
+  }
+
+  // Full mode: compute from raw data (after CSV upload)
   const d = filteredData
   const total = d.length
   const demoBooked = d.filter(r => r.demo_booked === '1').length
@@ -231,141 +228,29 @@ export default function IntelligencePage() {
 
   return (
     <div className="space-y-5">
-      {/* Merge Result Banner */}
-      {mergeResult && showPanel === 'merge' && (
-        <div className="relative rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-500/20 dark:bg-green-500/5">
-          <button onClick={() => setShowPanel(null)} className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
-          <div className="mb-2 flex items-center gap-2">
-            <GitMerge className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <h3 className="text-sm font-semibold text-green-700 dark:text-green-400">Smart Merge Complete</h3>
-            <span className="text-xs text-zinc-400">({mergeResult.duration_ms}ms)</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
-              <p className="text-lg font-bold text-green-600">{mergeResult.newLeads.toLocaleString()}</p>
-              <p className="text-[10px] font-medium uppercase text-zinc-500">New Leads</p>
-            </div>
-            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
-              <p className="text-lg font-bold text-blue-600">{mergeResult.updatedLeads.toLocaleString()}</p>
-              <p className="text-[10px] font-medium uppercase text-zinc-500">Updated</p>
-            </div>
-            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
-              <p className="text-lg font-bold text-zinc-500">{mergeResult.unchangedLeads.toLocaleString()}</p>
-              <p className="text-[10px] font-medium uppercase text-zinc-500">Unchanged</p>
-            </div>
-            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
-              <p className="text-lg font-bold text-amber-600">{mergeResult.phoneMerged.toLocaleString()}</p>
-              <p className="text-[10px] font-medium uppercase text-zinc-500">Phone Merged</p>
-            </div>
-          </div>
-          {mergeResult.changesByField.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              <span className="text-[10px] text-zinc-500">Fields changed:</span>
-              {mergeResult.changesByField.slice(0, 8).map(f => (
-                <span key={f.field} className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-400">
-                  {f.field} ({f.count})
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Sales Intelligence Dashboard</h1>
-          <div className="flex items-center gap-3 text-sm text-zinc-500">
-            <span>Showing {d.length.toLocaleString()} of {allData.length.toLocaleString()} leads</span>
-            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><Database className="h-3 w-3" /> Saved locally</span>
-          </div>
+          <p className="text-sm text-zinc-500">Showing {d.length.toLocaleString()} of {allData.length.toLocaleString()} leads</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowPanel(showPanel === 'history' ? null : 'history')}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
-          >
-            <Clock className="h-3.5 w-3.5" /> History ({uploadHistory.length})
-          </button>
-          {phoneMerges.length > 0 && (
-            <button
-              onClick={() => setShowPanel(showPanel === 'merges' ? null : 'merges')}
-              className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
-            >
-              <GitMerge className="h-3.5 w-3.5" /> Phone Merges ({phoneMerges.length})
-            </button>
-          )}
           <button
             onClick={() => fileRef.current?.click()}
             className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
           >
-            <Upload className="h-3.5 w-3.5" /> Upload / Update
+            <Upload className="h-3.5 w-3.5" /> Upload New File
           </button>
           <button
             onClick={handleClearAll}
             className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:border-red-400 hover:text-red-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
-            title="Clear all saved data"
+            title="Clear data"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]) }} />
         </div>
       </div>
-
-      {/* Upload History Panel */}
-      {showPanel === 'history' && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-semibold"><Clock className="h-4 w-4 text-blue-500" /> Upload History</h3>
-            <button onClick={() => setShowPanel(null)} className="text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
-          </div>
-          {uploadHistory.length === 0 ? (
-            <p className="text-xs text-zinc-400">No uploads yet.</p>
-          ) : (
-            <div className="max-h-60 space-y-2 overflow-auto">
-              {uploadHistory.map((u, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-800/50">
-                  <div>
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">{u.fileName}</span>
-                    <span className="ml-2 text-zinc-400">{new Date(u.timestamp).toLocaleString()}</span>
-                  </div>
-                  <div className="flex gap-3 text-[10px]">
-                    <span className="text-green-600">+{u.newLeads.toLocaleString()} new</span>
-                    <span className="text-blue-600">{u.updatedLeads.toLocaleString()} updated</span>
-                    <span className="text-zinc-400">{u.unchangedLeads.toLocaleString()} same</span>
-                    {u.phoneMerged > 0 && <span className="text-amber-600">{u.phoneMerged} merged</span>}
-                    <span className="text-zinc-400">{u.duration_ms}ms</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Phone Merges Panel */}
-      {showPanel === 'merges' && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400"><GitMerge className="h-4 w-4" /> Phone Merges — Leads merged by same phone number</h3>
-            <button onClick={() => setShowPanel(null)} className="text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
-          </div>
-          <p className="mb-2 text-xs text-zinc-500">Older user_date kept, newer lead_source_date kept, notes combined, higher-priority status kept.</p>
-          <div className="max-h-72 space-y-2 overflow-auto">
-            {phoneMerges.slice(0, 50).map((m, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-2 dark:bg-zinc-800/50">
-                <div className="flex items-center gap-2 text-xs">
-                  <Phone className="h-3 w-3 text-zinc-400" />
-                  <span className="font-mono text-zinc-400">{m.phone}</span>
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">{m.keptName}</span>
-                  <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">kept</span>
-                </div>
-                <span className="text-[10px] text-zinc-500">merged {m.mergedCount} duplicate{m.mergedCount > 1 ? 's' : ''}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
@@ -968,6 +853,123 @@ function DeepDiveTab({ data }: { data: Row[] }) {
           </table>
         </div>
       </Card>
+    </div>
+  )
+}
+
+// ---- SUMMARY DASHBOARD (renders from pre-computed Supabase data) ----
+function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  summary: any; activeTab: Tab; setActiveTab: (t: Tab) => void; onUpload: () => void; onClear: () => void
+}) {
+  const k = summary.kpis || {}
+  const charts = summary.charts || {}
+  const ins = summary.insights || {}
+  const team = summary.team_data || {}
+  const src = summary.source_data || {}
+  const aging = summary.aging_data || {}
+  const trends = summary.trend_data || []
+  const dd = summary.deep_dive || {}
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Sales Intelligence Dashboard</h1>
+          <p className="text-sm text-zinc-500">
+            {(k.total || 0).toLocaleString()} leads &middot; Updated: {summary.updated_at ? new Date(summary.updated_at).toLocaleString() : 'N/A'}
+            <span className="ml-2 text-xs text-green-600">Saved in database</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={onUpload} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            <Upload className="h-3.5 w-3.5" /> Upload New File
+          </button>
+          <button onClick={onClear} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-500 hover:border-red-400 hover:text-red-500 dark:border-zinc-700 dark:bg-zinc-800">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
+        {[
+          { label: 'Total Leads', value: k.total || 0, color: 'text-blue-500', icon: Users },
+          { label: 'Demo Booked', value: k.demo_booked || 0, color: 'text-cyan-500', icon: Phone },
+          { label: 'Demo Done', value: k.demo_done || 0, color: 'text-purple-500', icon: Target },
+          { label: 'Sales Done', value: k.sale_done || 0, color: 'text-green-500', icon: TrendingUp },
+          { label: 'Purchased', value: k.purchased || 0, color: 'text-amber-500', icon: Award },
+          { label: 'Priority', value: k.priority || 0, color: 'text-pink-500', icon: Flame },
+          { label: 'Prospects', value: k.prospects || 0, color: 'text-indigo-500', icon: Target },
+          { label: 'Qualified', value: k.qualified || 0, color: 'text-red-500', icon: Award },
+          { label: 'Key Companies', value: k.important_companies || 0, color: 'text-blue-500', icon: Building2 },
+        ].map(kpi => (
+          <div key={kpi.label} className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-1 flex items-center gap-1.5">
+              <kpi.icon className={`h-3.5 w-3.5 ${kpi.color}`} />
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">{kpi.label}</span>
+            </div>
+            <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value.toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-0 border-b border-zinc-200 dark:border-zinc-800">
+        {TABS.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? 'border-amber-500 text-amber-600' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}>{tab}</button>
+        ))}
+      </div>
+
+      {activeTab === 'Overview' && (
+        <div className="space-y-4">
+          <InsightBox title="Conversion Funnel">Demo conversion: <strong>{ins.demo_rate || 0}%</strong>, Sale rate: <strong>{ins.sale_rate || 0}%</strong>. {ins.top_source && <>Top source: <strong>{ins.top_source.name}</strong> ({ins.top_source.value?.toLocaleString()} leads).</>}</InsightBox>
+          {(ins.stale_30 || 0) > 0 && <InsightBox title="Action Required"><strong>{ins.stale_30?.toLocaleString()}</strong> active leads untouched 30+ days.</InsightBox>}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <SmartCard title="Demo Backlog" metric={`${(ins.booked_not_done || 0).toLocaleString()}`} desc="Booked but not done" meta="Push owners to complete" />
+            {ins.best_source && <SmartCard title="Best Source" metric={ins.best_source.name} desc={`${ins.best_source.rate}% from ${ins.best_source.total?.toLocaleString()}`} meta="Scale this" />}
+            {ins.top_closer && <SmartCard title="Top Closer" metric={ins.top_closer.name} desc={`${ins.top_closer.rate}% over ${ins.top_closer.total?.toLocaleString()}`} meta="Share practices" />}
+            <SmartCard title="Stale Leads" metric={`${(ins.stale_30 || 0).toLocaleString()}`} desc="30+ days untouched" meta="Assign immediately" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="Lead Status"><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={charts.status || []} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={110}>{(charts.status || []).map((_: unknown, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer></Card>
+            <Card title="Top Sources"><ResponsiveContainer width="100%" height={300}><BarChart data={charts.source || []} layout="vertical" margin={{ left: 20 }}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis type="number" /><YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></Card>
+          </div>
+          <Card title="Conversion Funnel"><div className="space-y-2 py-2">{(charts.funnel || []).map((s: { label: string; value: number }, i: number) => (<div key={s.label} className="flex items-center gap-3"><span className="w-28 text-right text-xs font-medium text-zinc-500">{s.label}</span><div className="h-9 rounded-lg flex items-center px-3 text-xs font-bold text-white" style={{ width: `${k.total ? Math.max(8, s.value / k.total * 100) : 0}%`, background: COLORS[i], minWidth: 60 }}>{s.value.toLocaleString()}</div><span className="text-xs text-zinc-400">{pct(s.value, k.total)}</span></div>))}</div></Card>
+        </div>
+      )}
+
+      {activeTab === 'Team' && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(team.managers || []).map((m: { name: string; total: number; demos: number; sales: number; priority: number }) => (<Card key={m.name} title={m.name}><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-zinc-500">Total</span><span className="font-semibold text-blue-500">{m.total.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-zinc-500">Sales</span><span className="font-semibold text-green-500">{m.sales.toLocaleString()} ({pct(m.sales, m.total)})</span></div><div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-amber-500">{m.priority}</span></div></div></Card>))}</div>
+          <Card title="Team Leaderboard"><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b text-[10px] font-semibold uppercase text-zinc-400"><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2">Stale</th></tr></thead><tbody>{(team.owners || []).map((o: { name: string; manager: string; total: number; sales: number; stale: number }) => (<tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-2 pr-3 font-medium">{o.name}</td><td className="py-2 pr-3 text-zinc-500">{o.manager}</td><td className="py-2 pr-2">{o.total.toLocaleString()}</td><td className="py-2 pr-2">{o.sales}</td><td className="py-2 pr-2"><Badge color={o.total ? (o.sales / o.total * 100 > 5 ? 'green' : 'red') : 'zinc'}>{pct(o.sales, o.total)}</Badge></td><td className="py-2">{o.stale > 0 ? <Badge color="red">{o.stale}</Badge> : '0'}</td></tr>))}</tbody></table></div></Card>
+        </div>
+      )}
+
+      {activeTab === 'Trends' && (
+        <div className="space-y-4">
+          <Card title="Monthly Leads"><ResponsiveContainer width="100%" height={300}><LineChart data={trends}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis dataKey="month" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Line type="monotone" dataKey="leads" stroke="#3b82f6" strokeWidth={2} dot={false} /></LineChart></ResponsiveContainer></Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="Monthly Sales"><ResponsiveContainer width="100%" height={280}><BarChart data={trends}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis dataKey="month" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={50} /><YAxis /><Tooltip /><Bar dataKey="sales" fill="#22c55e" radius={[4, 4, 0, 0]} /><Bar dataKey="purchased" fill="#f59e0b" radius={[4, 4, 0, 0]} /><Legend /></BarChart></ResponsiveContainer></Card>
+            <Card title="Conversion Rates"><ResponsiveContainer width="100%" height={280}><LineChart data={trends}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis dataKey="month" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Line type="monotone" dataKey="demoRate" name="Demo %" stroke="#a855f7" strokeWidth={2} dot={false} /><Line type="monotone" dataKey="saleRate" name="Sale %" stroke="#22c55e" strokeWidth={2} dot={false} /><Legend /></LineChart></ResponsiveContainer></Card>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'Aging' && (
+        <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="Lead Age"><ResponsiveContainer width="100%" height={280}><BarChart data={aging.age_dist || []}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis dataKey="name" /><YAxis /><Tooltip /><Bar dataKey="value">{(aging.age_dist || []).map((_: unknown, i: number) => <Cell key={i} fill={['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444','#dc2626','#991b1b'][i] || '#666'} />)}</Bar></BarChart></ResponsiveContainer></Card>
+            <Card title="Last Touch"><ResponsiveContainer width="100%" height={280}><BarChart data={aging.touch_dist || []}><CartesianGrid strokeDasharray="3 3" stroke="#333" /><XAxis dataKey="name" /><YAxis /><Tooltip /><Bar dataKey="value">{(aging.touch_dist || []).map((_: unknown, i: number) => <Cell key={i} fill={['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444','#991b1b','#6b7280'][i] || '#666'} />)}</Bar></BarChart></ResponsiveContainer></Card>
+          </div>
+          <Card title={`Stale Leads (${(aging.stale_leads || []).length})`}><div className="max-h-80 overflow-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b text-[10px] font-semibold uppercase text-zinc-400"><th className="py-2">Name</th><th className="py-2">Status</th><th className="py-2">Owner</th><th className="py-2">Days</th></tr></thead><tbody>{(aging.stale_leads || []).slice(0, 30).map((r: { name: string; status: string; owner: string; days: number }, i: number) => (<tr key={i} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-1.5 font-medium">{r.name}</td><td><Badge color="amber">{r.status}</Badge></td><td className="text-zinc-500">{r.owner}</td><td><Badge color="red">{r.days}d</Badge></td></tr>))}</tbody></table></div></Card>
+        </div>
+      )}
+
+      {(activeTab === 'Pipeline' || activeTab === 'Sources' || activeTab === 'Deep Dive') && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/20 dark:bg-amber-500/5">
+          <p className="text-sm text-amber-700 dark:text-amber-400">Upload a fresh CSV for full {activeTab} analytics with filters and deep-dive data.</p>
+          <button onClick={onUpload} className="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-400">Upload CSV</button>
+        </div>
+      )}
     </div>
   )
 }

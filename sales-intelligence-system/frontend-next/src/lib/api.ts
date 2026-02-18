@@ -86,4 +86,15 @@ export const getSyncStatus = () => api.get('/admin/sync-status')
 export const triggerSync = () => api.post('/admin/sync/trigger')
 export const getAIUsage = () => api.get('/admin/ai-usage')
 
+export const getDashboardSummary = () => api.get('/intelligence/summary')
+export const uploadIntelligenceCSV = (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post('/intelligence/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000,
+  })
+}
+export const clearDashboardSummary = () => api.delete('/intelligence/summary')
+
 export default api
