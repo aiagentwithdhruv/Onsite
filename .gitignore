@@ -1,33 +1,8 @@
-# Temp files
-Quotation_temp/
-*.tmp
-*.bak
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-*.swp
-
-# Test files
-test-*.html
-
-# Logs
-*.log
-
-# Sensitive
-*.env
-credentials.json
-
-# Python
-__pycache__/
-*.pyc
-venv/
-.venv/
-
-# Node
+*.csv
+*.pdf
+*.ogg
+*.DS_Store
 node_modules/
-dist/
+__pycache__/
+venv/
+.env
