@@ -1,8 +1,12 @@
 import axios from 'axios'
 import { supabase } from './supabase'
 
+const apiBase = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api')
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBase,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -18,8 +22,8 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const originalRequest = err.config
-    if (err.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
+    if (err.response?.status === 401 && !originalRequest._retryCount) {
+      originalRequest._retryCount = 1
       const { data } = await supabase.auth.refreshSession()
       if (data.session?.access_token) {
         originalRequest.headers.Authorization = `Bearer ${data.session.access_token}`
@@ -37,7 +41,7 @@ export const login = (email: string, password: string) =>
 export const logout = () => supabase.auth.signOut()
 
 export const getLeads = (params?: Record<string, string>) =>
-  api.get('/leads/', { params })
+  api.get('/leads', { params })
 
 export const getLeadDetail = (id: string) =>
   api.get(`/leads/${id}`)
@@ -61,7 +65,7 @@ export const getBriefHistory = () =>
   api.get('/briefs/history')
 
 export const getAlerts = (params?: Record<string, string>) =>
-  api.get('/alerts/', { params })
+  api.get('/alerts', { params })
 
 export const markAlertRead = (alertId: string) =>
   api.patch(`/alerts/${alertId}/read`)
@@ -85,5 +89,20 @@ export const getUsers = () => api.get('/admin/users')
 export const getSyncStatus = () => api.get('/admin/sync-status')
 export const triggerSync = () => api.post('/admin/sync/trigger')
 export const getAIUsage = () => api.get('/admin/ai-usage')
+
+export const getDashboardSummary = () => api.get('/intelligence/summary')
+export const uploadIntelligenceCSV = (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post('/intelligence/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000,
+  })
+}
+export const clearDashboardSummary = () => api.delete('/intelligence/summary')
+
+export const getAgentProfiles = () => api.get('/agents')
+export const getAgentProfile = (id: string) => api.get(`/agents/${id}`)
+export const addAgentNote = (id: string, text: string) => api.post(`/agents/${id}/notes`, { text })
 
 export default api

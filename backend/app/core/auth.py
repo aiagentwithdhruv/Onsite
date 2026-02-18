@@ -26,8 +26,11 @@ def _decode_jwt_payload(token: str) -> dict:
 
 async def get_current_user(request: Request) -> dict:
     """Decode Supabase JWT, extract user info, look up in users table."""
+    path = request.url.path
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
+        log.warning("AUTH FAIL [%s]: No Authorization header present. Headers: %s",
+                     path, list(request.headers.keys()))
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
 
     token = auth_header.split("Bearer ")[1]
@@ -35,7 +38,7 @@ async def get_current_user(request: Request) -> dict:
     try:
         payload = _decode_jwt_payload(token)
     except Exception as e:
-        log.warning("JWT decode failed: %s", e)
+        log.warning("AUTH FAIL [%s]: JWT decode failed: %s", path, e)
         raise HTTPException(status_code=401, detail="Invalid token")
 
     sub = payload.get("sub")
@@ -43,10 +46,12 @@ async def get_current_user(request: Request) -> dict:
     exp = payload.get("exp")
 
     if not sub:
+        log.warning("AUTH FAIL [%s]: Token missing sub claim", path)
         raise HTTPException(status_code=401, detail="Token missing user ID")
 
     import time
     if exp and exp < time.time():
+        log.warning("AUTH FAIL [%s]: Token expired (exp=%s, now=%s)", path, exp, time.time())
         raise HTTPException(status_code=401, detail="Token expired")
 
     db = get_supabase_admin()
@@ -64,6 +69,7 @@ async def get_current_user(request: Request) -> dict:
             pass
 
     if not result:
+        log.warning("AUTH FAIL [%s]: User not found for sub=%s email=%s", path, sub, email)
         raise HTTPException(status_code=403, detail="User not found in system")
 
     return result

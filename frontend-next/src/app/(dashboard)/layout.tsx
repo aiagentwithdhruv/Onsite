@@ -12,6 +12,7 @@ const pageTitles: Record<string, string> = {
   '/leads': 'Leads',
   '/briefs': 'Daily Briefs',
   '/intelligence': 'Sales Intelligence',
+  '/agents': 'Agent Profiles',
   '/analytics': 'Analytics',
   '/alerts': 'Alerts',
   '/admin': 'Admin',
