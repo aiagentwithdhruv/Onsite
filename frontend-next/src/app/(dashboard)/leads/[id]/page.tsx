@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Phone, Mail, Building2, Loader2, Search } from 'lucide-react'
@@ -8,34 +8,43 @@ import { getLeadDetail, performLeadAction, triggerResearch } from '@/lib/api'
 import { formatCurrency, formatDate, getStageColor } from '@/lib/utils'
 import type { LeadDetail as LeadDetailType } from '@/lib/types'
 import ScoreBadge from '@/components/ui/ScoreBadge'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function LeadDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params?.id as string
+  const { session, loading: authLoading } = useAuth()
 
   const [lead, setLead] = useState<LeadDetailType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [researchLoading, setResearchLoading] = useState(false)
+  const lastFetchedId = useRef<string | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
     if (!id) return
+    if (lastFetchedId.current === id) return
+    lastFetchedId.current = id
     async function fetchLead() {
       try {
         setLoading(true)
         const res = await getLeadDetail(id)
         setLead((res.data as { lead: LeadDetailType })?.lead ?? null)
-      } catch (err) {
-        console.error(err)
+      } catch {
         setError('Failed to load lead')
       } finally {
         setLoading(false)
       }
     }
     fetchLead()
-  }, [id])
+  }, [authLoading, id])
 
   async function handleAction(action: string) {
     if (!id) return

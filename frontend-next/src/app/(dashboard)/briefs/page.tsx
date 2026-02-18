@@ -1,18 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { FileText, Lightbulb, Calendar, Loader2 } from 'lucide-react'
 import { getTodayBrief, getBriefHistory } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
 import type { DailyBrief } from '@/lib/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function BriefsPage() {
+  const { session, loading: authLoading } = useAuth()
   const [todayBrief, setTodayBrief] = useState<DailyBrief | null>(null)
   const [history, setHistory] = useState<DailyBrief[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    if (hasFetched.current) return
+    hasFetched.current = true
     async function fetchData() {
       try {
         setLoading(true)
@@ -21,14 +31,14 @@ export default function BriefsPage() {
         setTodayBrief(todayData?.brief ?? null)
         const histData = historyRes.data as { briefs?: DailyBrief[] } | DailyBrief[]
         setHistory(Array.isArray(histData) ? histData : histData?.briefs ?? [])
-      } catch (err) {
+      } catch {
         setError('Failed to load briefs')
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [authLoading])
 
   if (loading) {
     return (

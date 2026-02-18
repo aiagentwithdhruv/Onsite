@@ -57,24 +57,12 @@ export default function LeadsPage() {
       setLeads(list)
       setTotalCount(data?.total ?? list.length)
       setTotalPages(Math.max(1, data?.total_pages ?? 1))
-
-      const next = new URLSearchParams(searchParams?.toString() || '')
-      if (stageFilter !== 'All') next.set('stage', stageFilter)
-      else next.delete('stage')
-      if (sortBy !== 'score') next.set('sort', sortBy)
-      else next.delete('sort')
-      if (searchQuery) next.set('search', searchQuery)
-      else next.delete('search')
-      if (page > 1) next.set('page', page.toString())
-      else next.delete('page')
-      router.replace(`/leads?${next.toString()}`, { scroll: false })
-    } catch (err) {
-      console.error('Failed to fetch leads:', err)
-      setError('Failed to load leads')
+    } catch {
+      setError('No leads in database yet. Upload CSV in Intelligence page.')
     } finally {
       setLoading(false)
     }
-  }, [stageFilter, sortBy, searchQuery, page, router, searchParams])
+  }, [stageFilter, sortBy, searchQuery, page])
 
   useEffect(() => {
     fetchLeads()

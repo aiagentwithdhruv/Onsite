@@ -1,19 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { BarChart3, Users, TrendingUp, Loader2 } from 'lucide-react'
 import { getRepPerformance, getPipelineFunnel, getSourceAnalysis } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type { RepPerformance, PipelineFunnel, SourceAnalysis } from '@/lib/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AnalyticsPage() {
+  const { session, loading: authLoading } = useAuth()
   const [repPerf, setRepPerf] = useState<RepPerformance[]>([])
   const [funnel, setFunnel] = useState<PipelineFunnel[]>([])
   const [sources, setSources] = useState<SourceAnalysis[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    if (hasFetched.current) return
+    hasFetched.current = true
     async function fetchData() {
       try {
         setLoading(true)
@@ -34,14 +44,14 @@ export default function AnalyticsPage() {
           const data = sourceRes.value.data as SourceAnalysis[] | { data?: SourceAnalysis[] }
           setSources(Array.isArray(data) ? data : data?.data ?? [])
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load analytics')
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [authLoading])
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getUnreadCount } from '@/lib/api'
@@ -41,11 +41,16 @@ export default function DashboardLayout({
     }
   }, [])
 
+  const didInit = useRef(false)
+
   useEffect(() => {
-    if (!loading && !session) {
+    if (loading) return
+    if (!session) {
       router.replace('/login')
       return
     }
+    if (didInit.current) return
+    didInit.current = true
     fetchUnreadCount()
     const interval = setInterval(fetchUnreadCount, 60_000)
     return () => clearInterval(interval)

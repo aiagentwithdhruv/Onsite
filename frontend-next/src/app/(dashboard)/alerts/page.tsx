@@ -1,20 +1,23 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Bell, Loader2, CheckCheck } from 'lucide-react'
 import { getAlerts, markAlertRead } from '@/lib/api'
 import { formatRelative, getSeverityColor } from '@/lib/utils'
 import type { Alert } from '@/lib/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 const PAGE_SIZE = 15
 
 export default function AlertsPage() {
+  const { session, loading: authLoading } = useAuth()
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [markingId, setMarkingId] = useState<string | null>(null)
+  const lastFetchedFilter = useRef<'all' | 'unread' | null>(null)
 
   const fetchAlerts = useCallback(async () => {
     try {
@@ -25,7 +28,7 @@ export default function AlertsPage() {
       const res = await getAlerts(params)
       const data = res.data as { alerts?: Alert[] } | Alert[]
       setAlerts(Array.isArray(data) ? data : data?.alerts ?? [])
-    } catch (err) {
+    } catch {
       setError('Failed to load alerts')
     } finally {
       setLoading(false)
@@ -33,8 +36,15 @@ export default function AlertsPage() {
   }, [filter])
 
   useEffect(() => {
+    if (authLoading) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    if (lastFetchedFilter.current === filter) return
+    lastFetchedFilter.current = filter
     fetchAlerts()
-  }, [fetchAlerts])
+  }, [authLoading, filter, fetchAlerts])
 
   async function handleMarkRead(alertId: string) {
     setMarkingId(alertId)

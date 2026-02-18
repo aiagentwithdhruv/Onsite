@@ -1,18 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Settings, RefreshCw, Loader2, Users, Database } from 'lucide-react'
 import { getUsers, getSyncStatus, triggerSync, getAIUsage } from '@/lib/api'
 import type { User } from '@/lib/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AdminPage() {
+  const { session, loading: authLoading } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [syncStatus, setSyncStatus] = useState<{ last_sync_at?: string; status?: string } | null>(null)
   const [aiUsage, setAIUsage] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    if (hasFetched.current) return
+    hasFetched.current = true
     async function fetchData() {
       try {
         setLoading(true)
@@ -31,14 +41,14 @@ export default function AdminPage() {
         if (usageRes.status === 'fulfilled') {
           setAIUsage((usageRes.value.data as Record<string, unknown>) ?? null)
         }
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // non-critical
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [authLoading])
 
   async function handleSync() {
     setSyncing(true)

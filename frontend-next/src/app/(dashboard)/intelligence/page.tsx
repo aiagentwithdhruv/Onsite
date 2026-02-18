@@ -72,7 +72,7 @@ function sourceStats(arr: Row[], field: string, minCount: number) {
     .sort((a, b) => b.saleRate - a.saleRate)
 }
 
-const TABS = ['Sales', 'Overview', 'Pipeline', 'Team', 'Sources', 'Aging', 'Trends', 'Deep Dive'] as const
+const TABS = ['Overview', 'Sales', 'Pipeline', 'Team', 'Sources', 'Aging', 'Trends', 'Deep Dive'] as const
 type Tab = typeof TABS[number]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +84,7 @@ export default function IntelligencePage() {
   const [mode, setMode] = useState<'empty' | 'summary' | 'full'>('empty')
   const [loading, setLoading] = useState(true)
   const [loadingText, setLoadingText] = useState('Loading dashboard...')
-  const [activeTab, setActiveTab] = useState<Tab>('Sales')
+  const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -624,8 +624,8 @@ function SalesTab({ data }: { data: Row[] }) {
 
       {/* Key Insights */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {topOwner && <SmartCard title="Top Closer (by Count)" metric={topOwner.name} desc={`${topOwner.sales} sales closed`} meta={`₹${(topOwner.revenue / 100000).toFixed(1)}L rev • ${topOwner.convRate}% conv`} />}
         {topRevenueOwner && <SmartCard title="Top Closer (by Revenue)" metric={topRevenueOwner.name} desc={`₹${(topRevenueOwner.revenue / 100000).toFixed(1)}L revenue`} meta={`${topRevenueOwner.sales} sales • Avg: ₹${(topRevenueOwner.avgDeal / 100000).toFixed(1)}L`} />}
+        {topOwner && <SmartCard title="Top Closer (by Count)" metric={topOwner.name} desc={`${topOwner.sales} sales closed`} meta={`₹${(topOwner.revenue / 100000).toFixed(1)}L rev • ${topOwner.convRate}% conv`} />}
         {topRegion && <SmartCard title="Top Region (by Count)" metric={topRegion.name} desc={`${topRegion.sales} sales closed`} meta={`₹${(topRegion.revenue / 100000).toFixed(1)}L rev • ${topRegion.leads} leads`} />}
         {topRegionByRev && topRegionByRev.name !== topRegion?.name && <SmartCard title="Top Region (by Revenue)" metric={topRegionByRev.name} desc={`₹${(topRegionByRev.revenue / 100000).toFixed(1)}L revenue`} meta={`${topRegionByRev.sales} sales • ${topRegionByRev.leads} leads`} />}
         {bestSourceRev && <SmartCard title="Best Source (by Sales)" metric={bestSourceRev.name} desc={`${bestSourceRev.sales} sales • ₹${bestSourceRev.revenue}L`} meta={`${bestSourceRev.convRate}% conversion • ${bestSourceRev.leads} leads`} />}
@@ -740,9 +740,9 @@ function SalesTab({ data }: { data: Row[] }) {
             <tbody>
               {regionData.map(r => (
                 <tr key={r.name} className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-3 font-medium">{r.name}</td>
-                  <td className="py-2 pr-2">{r.leads.toLocaleString()}</td>
-                  <td className="py-2 pr-2">{r.sales.toLocaleString()}</td>
+                  <td className="py-2 pr-3 font-medium text-zinc-800 dark:text-zinc-100">{r.name}</td>
+                  <td className="py-2 pr-2 text-zinc-700 dark:text-zinc-300">{r.leads.toLocaleString()}</td>
+                  <td className="py-2 pr-2 font-semibold text-blue-600">{r.sales.toLocaleString()}</td>
                   <td className="py-2 pr-2"><Badge color={r.convRate > 5 ? 'green' : r.convRate > 2 ? 'amber' : 'red'}>{r.convRate}%</Badge></td>
                   <td className="py-2 pr-2 font-semibold text-green-600">₹{(r.revenue / 100000).toFixed(1)}L</td>
                   <td className="py-2 pr-2 text-purple-600">₹{(r.pitched / 100000).toFixed(1)}L</td>
@@ -765,8 +765,8 @@ function SalesTab({ data }: { data: Row[] }) {
               <tbody>
                 {ownerRevData.slice(0, 20).map((o, i) => (
                   <tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="py-2 pr-2">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
-                    <td className="py-2 pr-3 font-medium">{o.name}</td>
+                    <td className="py-2 pr-2 text-zinc-500">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
+                    <td className="py-2 pr-3 font-medium text-zinc-800 dark:text-zinc-100">{o.name}</td>
                     <td className="py-2 pr-2 font-bold text-blue-600">{o.sales.toLocaleString()}</td>
                     <td className="py-2 pr-2"><Badge color={o.convRate > 5 ? 'green' : o.convRate > 2 ? 'amber' : 'red'}>{o.convRate}%</Badge></td>
                     <td className="py-2 pr-2 text-green-600">₹{(o.revenue / 100000).toFixed(1)}L</td>
@@ -787,8 +787,8 @@ function SalesTab({ data }: { data: Row[] }) {
               <tbody>
                 {[...ownerRevData].sort((a, b) => b.revenue - a.revenue).slice(0, 20).map((o, i) => (
                   <tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="py-2 pr-2">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
-                    <td className="py-2 pr-3 font-medium">{o.name}</td>
+                    <td className="py-2 pr-2 text-zinc-500">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
+                    <td className="py-2 pr-3 font-medium text-zinc-800 dark:text-zinc-100">{o.name}</td>
                     <td className="py-2 pr-2 font-bold text-green-600">₹{(o.revenue / 100000).toFixed(1)}L</td>
                     <td className="py-2 pr-2 text-blue-600">{o.sales.toLocaleString()}</td>
                     <td className="py-2 pr-2 text-purple-600">₹{(o.pitched / 100000).toFixed(1)}L</td>
