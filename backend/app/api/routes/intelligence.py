@@ -493,15 +493,27 @@ async def upload_and_compute(file: UploadFile = File(...), user: dict = Depends(
         # Compute and save agent profiles
         from app.api.routes.agents import compute_agent_profiles, save_agent_profiles
         profiles = compute_agent_profiles(rows)
+        agents_count = 0
         try:
             save_agent_profiles(profiles)
-            log.info(f"Agent profiles saved: {len(profiles)} agents")
+            agents_count = len(profiles)
+            log.info(f"Agent profiles saved: {agents_count} agents")
         except Exception as e:
             log.warning(f"Agent profile save failed (non-fatal): {e}")
 
-        log.info(f"Summary saved: {len(rows)} leads → ~{len(json.dumps(summary)) // 1024}KB, {len(profiles)} agents")
+        # Generate smart alerts
+        alerts_count = 0
+        try:
+            from app.agents.smart_alerts import generate_smart_alerts, save_alerts
+            smart_alerts = generate_smart_alerts(rows, user.get("id", ""))
+            alerts_count = save_alerts(smart_alerts)
+            log.info(f"Smart alerts generated: {len(smart_alerts)}, saved: {alerts_count}")
+        except Exception as e:
+            log.warning(f"Smart alert generation failed (non-fatal): {e}")
 
-        return {"success": True, "total_rows": len(rows), "summary_size_kb": len(json.dumps(summary)) // 1024, "agents_updated": len(profiles)}
+        log.info(f"Summary saved: {len(rows)} leads → ~{len(json.dumps(summary)) // 1024}KB, {agents_count} agents, {alerts_count} alerts")
+
+        return {"success": True, "total_rows": len(rows), "summary_size_kb": len(json.dumps(summary)) // 1024, "agents_updated": agents_count, "alerts_generated": alerts_count}
 
     except HTTPException:
         raise

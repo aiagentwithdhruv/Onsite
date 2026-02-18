@@ -49,8 +49,17 @@ Help sales team with real-time alerts, performance tracking, and actionable insi
 - [x] Direct API calls (bypass Next.js proxy to fix auth header stripping)
 - [x] FastAPI redirect_slashes=False (fix 307 auth loop)
 
+## Completed — Smart Alert Agent
+- [x] Smart Alert Agent: auto-generates alerts on CSV upload
+- [x] 10 alert rules: stale leads, demo dropout, low conversion, hot prospects,
+      priority overload, inactive agents, top performer, revenue milestone,
+      pipeline risk, follow-up needed
+- [x] Severity levels: critical, high, medium, info
+- [x] Beautiful alert cards with icons, severity colors, agent names
+- [x] Mark as read, filter by severity
+- [x] Alerts saved to Supabase, persist across sessions
+
 ## Upcoming / Roadmap
-- [ ] Smart Alert Agent: monitor stale leads, hot prospects, follow-up reminders
 - [ ] Agentic notifications: WhatsApp/email alerts for sales team
 - [ ] Zoho webhook integration: real-time lead updates
 - [ ] Agent chat: sales reps can ask questions about their pipeline
