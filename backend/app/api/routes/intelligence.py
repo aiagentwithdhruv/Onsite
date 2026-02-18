@@ -23,6 +23,18 @@ IMPORTANT_KEYWORDS = [
 ]
 
 
+def _parse_currency(val: str) -> float:
+    """Parse 'Rs. 42,000.00' or '42000' to float."""
+    import re
+    if not val:
+        return 0.0
+    cleaned = re.sub(r'[Rr][Ss]\.?\s*', '', val).replace('₹', '').replace(',', '').strip()
+    try:
+        return float(cleaned)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def _matches_important(name: str) -> bool:
     if not name:
         return False
@@ -78,17 +90,9 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
     qualified = sum(1 for r in rows if r.get('lead_status') == 'Qualified')
     important = sum(1 for r in rows if _matches_important(r.get('company_name', '') or r.get('lead_name', '')))
 
-    total_revenue = 0
-    total_price = 0
-    for r in rows:
-        try:
-            total_revenue += float((r.get('annual_revenue') or '0').replace(',', ''))
-        except Exception:
-            pass
-        try:
-            total_price += float((r.get('price_pitched') or '0').replace(',', ''))
-        except Exception:
-            pass
+    sold_rows = [r for r in rows if r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased']
+    total_revenue = sum(_parse_currency(r.get('annual_revenue', '')) for r in sold_rows)
+    total_price = sum(_parse_currency(r.get('price_pitched', '')) for r in sold_rows)
 
     kpis = {
         "total": total, "demo_booked": demo_booked, "demo_done": demo_done,
@@ -319,11 +323,11 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
     sales_rows = [r for r in rows if r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased']
     total_sales_count = len(sales_rows)
 
-    sales_revenue = sum(float((r.get('annual_revenue') or '0').replace(',', '') or '0') for r in sales_rows)
-    sales_pitched = sum(float((r.get('price_pitched') or '0').replace(',', '') or '0') for r in sales_rows)
+    sales_revenue = sum(_parse_currency(r.get('annual_revenue', '')) for r in sales_rows)
+    sales_pitched = sum(_parse_currency(r.get('price_pitched', '')) for r in sales_rows)
     avg_deal = sales_revenue / max(total_sales_count, 1)
 
-    # Revenue by region
+    # Revenue by region (only count revenue from actual sales)
     region_rev: dict[str, dict] = {}
     for r in rows:
         reg = (r.get('state_mobile') or r.get('region') or '').strip()
@@ -332,19 +336,18 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         if reg not in region_rev:
             region_rev[reg] = {"revenue": 0, "sales": 0, "leads": 0, "pitched": 0}
         region_rev[reg]["leads"] += 1
-        try: region_rev[reg]["revenue"] += float((r.get('annual_revenue') or '0').replace(',', ''))
-        except: pass
-        try: region_rev[reg]["pitched"] += float((r.get('price_pitched') or '0').replace(',', ''))
-        except: pass
-        if r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased':
+        is_sale = r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased'
+        if is_sale:
+            region_rev[reg]["revenue"] += _parse_currency(r.get('annual_revenue', ''))
+            region_rev[reg]["pitched"] += _parse_currency(r.get('price_pitched', ''))
             region_rev[reg]["sales"] += 1
 
     region_rev_list = sorted(
         [{"name": k, **v, "convRate": round(v["sales"] / max(v["leads"], 1) * 100, 1)} for k, v in region_rev.items()],
-        key=lambda x: -x["revenue"]
+        key=lambda x: -x["sales"]
     )[:15]
 
-    # Revenue by deal owner
+    # Revenue by deal owner (only count revenue from actual sales)
     owner_rev: dict[str, dict] = {}
     for r in rows:
         own = (r.get('deal_owner') or '').strip()
@@ -353,16 +356,15 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         if own not in owner_rev:
             owner_rev[own] = {"revenue": 0, "sales": 0, "leads": 0, "pitched": 0}
         owner_rev[own]["leads"] += 1
-        try: owner_rev[own]["revenue"] += float((r.get('annual_revenue') or '0').replace(',', ''))
-        except: pass
-        try: owner_rev[own]["pitched"] += float((r.get('price_pitched') or '0').replace(',', ''))
-        except: pass
-        if r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased':
+        is_sale = r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased'
+        if is_sale:
+            owner_rev[own]["revenue"] += _parse_currency(r.get('annual_revenue', ''))
+            owner_rev[own]["pitched"] += _parse_currency(r.get('price_pitched', ''))
             owner_rev[own]["sales"] += 1
 
     owner_rev_list = sorted(
         [{"name": k, **v, "avgDeal": round(v["revenue"] / max(v["sales"], 1)), "convRate": round(v["sales"] / max(v["leads"], 1) * 100, 1)} for k, v in owner_rev.items()],
-        key=lambda x: -x["revenue"]
+        key=lambda x: -x["sales"]
     )[:20]
 
     # Monthly revenue trend (by sale_done_date or user_date)
@@ -374,10 +376,8 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
         key = f"{d.year}-{d.month:02d}"
         if key not in monthly_rev:
             monthly_rev[key] = {"revenue": 0, "sales": 0, "pitched": 0}
-        try: monthly_rev[key]["revenue"] += float((r.get('annual_revenue') or '0').replace(',', ''))
-        except: pass
-        try: monthly_rev[key]["pitched"] += float((r.get('price_pitched') or '0').replace(',', ''))
-        except: pass
+        monthly_rev[key]["revenue"] += _parse_currency(r.get('annual_revenue', ''))
+        monthly_rev[key]["pitched"] += _parse_currency(r.get('price_pitched', ''))
         monthly_rev[key]["sales"] += 1
 
     monthly_rev_trend = [
@@ -395,19 +395,18 @@ def _compute_summary(rows: list[dict], file_name: str, user_email: str) -> dict:
             src_rev[src] = {"revenue": 0, "sales": 0, "leads": 0}
         src_rev[src]["leads"] += 1
         if r.get('sale_done') == '1' or r.get('lead_status') == 'Purchased':
-            try: src_rev[src]["revenue"] += float((r.get('annual_revenue') or '0').replace(',', ''))
-            except: pass
+            src_rev[src]["revenue"] += _parse_currency(r.get('annual_revenue', ''))
             src_rev[src]["sales"] += 1
 
     src_rev_list = sorted(
         [{"name": k, "revenue": round(v["revenue"] / 100000, 1), "sales": v["sales"], "leads": v["leads"], "convRate": round(v["sales"] / max(v["leads"], 1) * 100, 1)} for k, v in src_rev.items() if v["sales"] > 0],
-        key=lambda x: -x["revenue"]
+        key=lambda x: -x["sales"]
     )[:10]
 
     # Top 20 deals
     top_deals = sorted(
         [{"name": r.get('lead_name', '-'), "company": r.get('company_name', '-'), "owner": r.get('deal_owner', '-'),
-          "revenue": float((r.get('annual_revenue') or '0').replace(',', '') or '0'), "pitched": float((r.get('price_pitched') or '0').replace(',', '') or '0'),
+          "revenue": _parse_currency(r.get('annual_revenue', '')), "pitched": _parse_currency(r.get('price_pitched', '')),
           "date": r.get('sale_done_date') or r.get('user_date', '-'), "region": r.get('state_mobile') or r.get('region', '-'), "source": r.get('lead_source', '-')}
          for r in sales_rows],
         key=lambda x: -x["revenue"]

@@ -44,6 +44,12 @@ function matchesImportant(name: string) {
   return IMPORTANT_KEYWORDS.some(k => raw.includes(k))
 }
 
+function parseCurrency(val: string | undefined | null): number {
+  if (!val) return 0
+  const cleaned = String(val).replace(/Rs\.?\s*/gi, '').replace(/₹\s*/g, '').replace(/,/g, '').trim()
+  return parseFloat(cleaned) || 0
+}
+
 function count(arr: Row[], field: string): [string, number][] {
   const c: Record<string, number> = {}
   arr.forEach(r => { const v = r[field] || ''; if (v) c[v] = (c[v] || 0) + 1 })
@@ -66,7 +72,7 @@ function sourceStats(arr: Row[], field: string, minCount: number) {
     .sort((a, b) => b.saleRate - a.saleRate)
 }
 
-const TABS = ['Overview', 'Sales', 'Pipeline', 'Team', 'Sources', 'Aging', 'Trends', 'Deep Dive'] as const
+const TABS = ['Sales', 'Overview', 'Pipeline', 'Team', 'Sources', 'Aging', 'Trends', 'Deep Dive'] as const
 type Tab = typeof TABS[number]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +84,7 @@ export default function IntelligencePage() {
   const [mode, setMode] = useState<'empty' | 'summary' | 'full'>('empty')
   const [loading, setLoading] = useState(true)
   const [loadingText, setLoadingText] = useState('Loading dashboard...')
-  const [activeTab, setActiveTab] = useState<Tab>('Overview')
+  const [activeTab, setActiveTab] = useState<Tab>('Sales')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -223,8 +229,9 @@ export default function IntelligencePage() {
   const prospects = d.filter(r => r.is_prospect === '1' || r.sales_stage?.includes('Prospect')).length
   const qualified = d.filter(r => r.lead_status === 'Qualified').length
   const importantCompanies = d.filter(r => matchesImportant((r.company_name || r.lead_name || ''))).length
-  const totalRevenue = d.reduce((sum, r) => sum + (parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0), 0)
-  const totalPricePitched = d.reduce((sum, r) => sum + (parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0), 0)
+  const soldRows = d.filter(r => r.sale_done === '1' || r.lead_status === 'Purchased')
+  const totalRevenue = soldRows.reduce((sum, r) => sum + parseCurrency(r.annual_revenue), 0)
+  const totalPricePitched = soldRows.reduce((sum, r) => sum + parseCurrency(r.price_pitched), 0)
   const now = new Date()
 
   return (
@@ -490,45 +497,47 @@ function SalesTab({ data }: { data: Row[] }) {
   const totalSales = salesRows.length
   const totalLeads = data.length
 
-  const totalRevenue = salesRows.reduce((s, r) => s + (parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0), 0)
-  const totalPricePitched = salesRows.reduce((s, r) => s + (parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0), 0)
-  const allRevenue = data.reduce((s, r) => s + (parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0), 0)
+  const totalRevenue = salesRows.reduce((s, r) => s + parseCurrency(r.annual_revenue), 0)
+  const totalPricePitched = salesRows.reduce((s, r) => s + parseCurrency(r.price_pitched), 0)
+  const allRevenue = data.reduce((s, r) => s + parseCurrency(r.annual_revenue), 0)
   const avgDealSize = totalSales ? totalRevenue / totalSales : 0
   const conversionRate = totalLeads ? (totalSales / totalLeads * 100) : 0
 
-  // Revenue by region
+  // Revenue by region (only count revenue from actual sales)
   const regionRevMap: Record<string, { revenue: number; sales: number; leads: number; pitched: number }> = {}
   data.forEach(r => {
     const region = (r.state_mobile || r.region || '').trim()
     if (!region) return
     if (!regionRevMap[region]) regionRevMap[region] = { revenue: 0, sales: 0, leads: 0, pitched: 0 }
     regionRevMap[region].leads += 1
-    const rev = parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0
-    const pitch = parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0
-    regionRevMap[region].revenue += rev
-    regionRevMap[region].pitched += pitch
-    if (r.sale_done === '1' || r.lead_status === 'Purchased') regionRevMap[region].sales += 1
+    const isSale = r.sale_done === '1' || r.lead_status === 'Purchased'
+    if (isSale) {
+      regionRevMap[region].revenue += parseCurrency(r.annual_revenue)
+      regionRevMap[region].pitched += parseCurrency(r.price_pitched)
+      regionRevMap[region].sales += 1
+    }
   })
   const regionData = Object.entries(regionRevMap)
     .map(([name, v]) => ({ name: name.length > 18 ? name.slice(0, 16) + '..' : name, ...v, convRate: v.leads ? +(v.sales / v.leads * 100).toFixed(1) : 0 }))
-    .sort((a, b) => b.revenue - a.revenue).slice(0, 15)
+    .sort((a, b) => b.sales - a.sales).slice(0, 15)
 
-  // Revenue by deal owner
+  // Revenue by deal owner (only count revenue from actual sales)
   const ownerRevMap: Record<string, { revenue: number; sales: number; leads: number; pitched: number }> = {}
   data.forEach(r => {
     const owner = (r.deal_owner || '').trim()
     if (!owner || owner === 'Onsite' || owner === 'Offline Campaign') return
     if (!ownerRevMap[owner]) ownerRevMap[owner] = { revenue: 0, sales: 0, leads: 0, pitched: 0 }
     ownerRevMap[owner].leads += 1
-    const rev = parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0
-    const pitch = parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0
-    ownerRevMap[owner].revenue += rev
-    ownerRevMap[owner].pitched += pitch
-    if (r.sale_done === '1' || r.lead_status === 'Purchased') ownerRevMap[owner].sales += 1
+    const isSale = r.sale_done === '1' || r.lead_status === 'Purchased'
+    if (isSale) {
+      ownerRevMap[owner].revenue += parseCurrency(r.annual_revenue)
+      ownerRevMap[owner].pitched += parseCurrency(r.price_pitched)
+      ownerRevMap[owner].sales += 1
+    }
   })
   const ownerRevData = Object.entries(ownerRevMap)
     .map(([name, v]) => ({ name, ...v, avgDeal: v.sales ? v.revenue / v.sales : 0, convRate: v.leads ? +(v.sales / v.leads * 100).toFixed(1) : 0 }))
-    .sort((a, b) => b.revenue - a.revenue)
+    .sort((a, b) => b.sales - a.sales)
   const topOwnerChart = ownerRevData.slice(0, 12).map(o => ({ name: o.name.length > 16 ? o.name.slice(0, 14) + '..' : o.name, revenue: +(o.revenue / 100000).toFixed(1), sales: o.sales }))
 
   // Monthly sales revenue trend
@@ -540,8 +549,8 @@ function SalesTab({ data }: { data: Row[] }) {
     if (!d) return
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     if (!monthlyRevMap[key]) monthlyRevMap[key] = { revenue: 0, sales: 0, pitched: 0 }
-    monthlyRevMap[key].revenue += parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0
-    monthlyRevMap[key].pitched += parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0
+    monthlyRevMap[key].revenue += parseCurrency(r.annual_revenue)
+    monthlyRevMap[key].pitched += parseCurrency(r.price_pitched)
     monthlyRevMap[key].sales += 1
   })
   const monthlyRevTrend = Object.keys(monthlyRevMap).sort().slice(-18).map(m => ({
@@ -559,23 +568,25 @@ function SalesTab({ data }: { data: Row[] }) {
     if (!srcRevMap[src]) srcRevMap[src] = { revenue: 0, sales: 0, leads: 0 }
     srcRevMap[src].leads += 1
     if (r.sale_done === '1' || r.lead_status === 'Purchased') {
-      srcRevMap[src].revenue += parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0
+      srcRevMap[src].revenue += parseCurrency(r.annual_revenue)
       srcRevMap[src].sales += 1
     }
   })
   const srcRevData = Object.entries(srcRevMap)
     .map(([name, v]) => ({ name: name.length > 20 ? name.slice(0, 18) + '..' : name, revenue: +(v.revenue / 100000).toFixed(1), sales: v.sales, leads: v.leads, convRate: v.leads ? +(v.sales / v.leads * 100).toFixed(1) : 0 }))
     .filter(s => s.sales > 0)
-    .sort((a, b) => b.revenue - a.revenue).slice(0, 10)
+    .sort((a, b) => b.sales - a.sales).slice(0, 10)
 
   // Top 20 sales by revenue
   const topDeals = salesRows
-    .map(r => ({ name: r.lead_name || r.company_name || '-', company: r.company_name || '-', owner: r.deal_owner || '-', revenue: parseFloat(String(r.annual_revenue ?? '').replace(/,/g, '')) || 0, pitched: parseFloat(String(r.price_pitched ?? '').replace(/,/g, '')) || 0, date: r.sale_done_date || r.user_date || '-', region: r.state_mobile || r.region || '-', source: r.lead_source || '-' }))
+    .map(r => ({ name: r.lead_name || r.company_name || '-', company: r.company_name || '-', owner: r.deal_owner || '-', revenue: parseCurrency(r.annual_revenue), pitched: parseCurrency(r.price_pitched), date: r.sale_done_date || r.user_date || '-', region: r.state_mobile || r.region || '-', source: r.lead_source || '-' }))
     .sort((a, b) => b.revenue - a.revenue).slice(0, 20)
 
   // Key insights
   const topRegion = regionData[0]
   const topOwner = ownerRevData[0]
+  const topRevenueOwner = [...ownerRevData].sort((a, b) => b.revenue - a.revenue)[0]
+  const topRegionByRev = [...regionData].sort((a, b) => b.revenue - a.revenue)[0]
   const bestSourceRev = srcRevData[0]
   const recentMonth = monthlyRevTrend[monthlyRevTrend.length - 1]
   const prevMonth = monthlyRevTrend[monthlyRevTrend.length - 2]
@@ -612,10 +623,12 @@ function SalesTab({ data }: { data: Row[] }) {
       </div>
 
       {/* Key Insights */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {topRegion && <SmartCard title="Top Revenue Region" metric={topRegion.name} desc={`₹${(topRegion.revenue / 100000).toFixed(1)}L from ${topRegion.sales} sales`} meta={`${topRegion.convRate}% conversion • ${topRegion.leads} total leads`} />}
-        {topOwner && <SmartCard title="Top Revenue Closer" metric={topOwner.name} desc={`₹${(topOwner.revenue / 100000).toFixed(1)}L from ${topOwner.sales} sales`} meta={`Avg deal: ₹${(topOwner.avgDeal / 100000).toFixed(1)}L • ${topOwner.convRate}% conv`} />}
-        {bestSourceRev && <SmartCard title="Best Revenue Source" metric={bestSourceRev.name} desc={`₹${bestSourceRev.revenue}L from ${bestSourceRev.sales} sales`} meta={`${bestSourceRev.convRate}% conversion • ${bestSourceRev.leads} leads`} />}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {topOwner && <SmartCard title="Top Closer (by Count)" metric={topOwner.name} desc={`${topOwner.sales} sales closed`} meta={`₹${(topOwner.revenue / 100000).toFixed(1)}L rev • ${topOwner.convRate}% conv`} />}
+        {topRevenueOwner && <SmartCard title="Top Closer (by Revenue)" metric={topRevenueOwner.name} desc={`₹${(topRevenueOwner.revenue / 100000).toFixed(1)}L revenue`} meta={`${topRevenueOwner.sales} sales • Avg: ₹${(topRevenueOwner.avgDeal / 100000).toFixed(1)}L`} />}
+        {topRegion && <SmartCard title="Top Region (by Count)" metric={topRegion.name} desc={`${topRegion.sales} sales closed`} meta={`₹${(topRegion.revenue / 100000).toFixed(1)}L rev • ${topRegion.leads} leads`} />}
+        {topRegionByRev && topRegionByRev.name !== topRegion?.name && <SmartCard title="Top Region (by Revenue)" metric={topRegionByRev.name} desc={`₹${(topRegionByRev.revenue / 100000).toFixed(1)}L revenue`} meta={`${topRegionByRev.sales} sales • ${topRegionByRev.leads} leads`} />}
+        {bestSourceRev && <SmartCard title="Best Source (by Sales)" metric={bestSourceRev.name} desc={`${bestSourceRev.sales} sales • ₹${bestSourceRev.revenue}L`} meta={`${bestSourceRev.convRate}% conversion • ${bestSourceRev.leads} leads`} />}
         {momGrowth !== null && (
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
             <h4 className="text-xs font-semibold text-amber-600 dark:text-amber-400">Month-over-Month</h4>
@@ -691,20 +704,31 @@ function SalesTab({ data }: { data: Row[] }) {
         </Card>
       </div>
 
-      {/* Deal Owner Revenue Performance */}
-      <Card title="Deal Owner Revenue Performance (₹ Lakhs)">
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={topOwnerChart}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
-            <YAxis tick={{ fontSize: 10 }} />
-            <Tooltip formatter={(v: number, n: string) => [n === 'revenue' ? `₹${v}L` : v, '']} />
-            <Bar dataKey="revenue" name="Revenue (₹L)" fill="#22c55e" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="sales" name="Sales Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            <Legend />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+      {/* Deal Owner Charts — side by side */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card title="Top Closers by Sales Count">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={topOwnerChart}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip />
+              <Bar dataKey="sales" name="Sales Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card title="Top Closers by Revenue (₹ Lakhs)">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={[...ownerRevData].sort((a, b) => b.revenue - a.revenue).slice(0, 12).map(o => ({ name: o.name.length > 16 ? o.name.slice(0, 14) + '..' : o.name, revenue: +(o.revenue / 100000).toFixed(1) }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip formatter={(v: number) => [`₹${v}L`, '']} />
+              <Bar dataKey="revenue" name="Revenue (₹L)" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
 
       {/* Region Performance Table */}
       <Card title="Region Sales Performance">
@@ -730,30 +754,52 @@ function SalesTab({ data }: { data: Row[] }) {
         </div>
       </Card>
 
-      {/* Deal Owner Revenue Table */}
-      <Card title="Deal Owner Revenue Leaderboard">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead><tr className="border-b border-zinc-200 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-700">
-              <th className="py-2 pr-3">#</th><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-2">Leads</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Revenue</th><th className="py-2 pr-2">Pitched</th><th className="py-2">Avg Deal</th>
-            </tr></thead>
-            <tbody>
-              {ownerRevData.slice(0, 20).map((o, i) => (
-                <tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-3">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
-                  <td className="py-2 pr-3 font-medium">{o.name}</td>
-                  <td className="py-2 pr-2">{o.leads.toLocaleString()}</td>
-                  <td className="py-2 pr-2">{o.sales.toLocaleString()}</td>
-                  <td className="py-2 pr-2"><Badge color={o.convRate > 5 ? 'green' : o.convRate > 2 ? 'amber' : 'red'}>{o.convRate}%</Badge></td>
-                  <td className="py-2 pr-2 font-semibold text-green-600">₹{(o.revenue / 100000).toFixed(1)}L</td>
-                  <td className="py-2 pr-2 text-purple-600">₹{(o.pitched / 100000).toFixed(1)}L</td>
-                  <td className="py-2 text-zinc-500">₹{(o.avgDeal / 100000).toFixed(1)}L</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* Deal Owner Leaderboards side by side */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card title="Top Closers (by Sales Count)">
+          <div className="overflow-x-auto max-h-[420px]">
+            <table className="w-full text-left text-xs">
+              <thead><tr className="border-b border-zinc-200 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-700">
+                <th className="py-2 pr-2">#</th><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2 pr-2">Revenue</th><th className="py-2">Avg Deal</th>
+              </tr></thead>
+              <tbody>
+                {ownerRevData.slice(0, 20).map((o, i) => (
+                  <tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800">
+                    <td className="py-2 pr-2">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
+                    <td className="py-2 pr-3 font-medium">{o.name}</td>
+                    <td className="py-2 pr-2 font-bold text-blue-600">{o.sales.toLocaleString()}</td>
+                    <td className="py-2 pr-2"><Badge color={o.convRate > 5 ? 'green' : o.convRate > 2 ? 'amber' : 'red'}>{o.convRate}%</Badge></td>
+                    <td className="py-2 pr-2 text-green-600">₹{(o.revenue / 100000).toFixed(1)}L</td>
+                    <td className="py-2 text-zinc-500">₹{(o.avgDeal / 100000).toFixed(1)}L</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card title="Top Closers (by Revenue)">
+          <div className="overflow-x-auto max-h-[420px]">
+            <table className="w-full text-left text-xs">
+              <thead><tr className="border-b border-zinc-200 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-700">
+                <th className="py-2 pr-2">#</th><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-2">Revenue</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Pitched</th><th className="py-2">Avg Deal</th>
+              </tr></thead>
+              <tbody>
+                {[...ownerRevData].sort((a, b) => b.revenue - a.revenue).slice(0, 20).map((o, i) => (
+                  <tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800">
+                    <td className="py-2 pr-2">{i < 3 ? <Crown className={`inline h-3.5 w-3.5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-zinc-400' : 'text-amber-700'}`} /> : i + 1}</td>
+                    <td className="py-2 pr-3 font-medium">{o.name}</td>
+                    <td className="py-2 pr-2 font-bold text-green-600">₹{(o.revenue / 100000).toFixed(1)}L</td>
+                    <td className="py-2 pr-2 text-blue-600">{o.sales.toLocaleString()}</td>
+                    <td className="py-2 pr-2 text-purple-600">₹{(o.pitched / 100000).toFixed(1)}L</td>
+                    <td className="py-2 text-zinc-500">₹{(o.avgDeal / 100000).toFixed(1)}L</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
       {/* Top Deals */}
       {topDeals.length > 0 && (

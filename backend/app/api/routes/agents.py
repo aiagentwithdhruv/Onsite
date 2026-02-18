@@ -1,9 +1,21 @@
 """Agent Profiles: per-person performance memory for sales reps/deal owners."""
 
+import re
 import json
 import logging
 from datetime import datetime, timezone
 from collections import Counter
+
+
+def _parse_currency(val: str) -> float:
+    """Parse 'Rs. 42,000.00' or '42000' to float."""
+    if not val:
+        return 0.0
+    cleaned = re.sub(r'[Rr][Ss]\.?\s*', '', val).replace('₹', '').replace(',', '').strip()
+    try:
+        return float(cleaned)
+    except (ValueError, TypeError):
+        return 0.0
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -129,14 +141,13 @@ def compute_agent_profiles(rows: list[dict]) -> list[dict]:
 
         mgr = next((r.get("lead_owner_manager", "") for r in leads if r.get("lead_owner_manager")), "")
 
-        # Revenue
+        # Revenue (only from actual sales)
         total_revenue = 0
         total_price = 0
         for r in leads:
-            try: total_revenue += float((r.get("annual_revenue") or "0").replace(",", ""))
-            except: pass
-            try: total_price += float((r.get("price_pitched") or "0").replace(",", ""))
-            except: pass
+            if r.get("sale_done") == "1" or r.get("lead_status") == "Purchased":
+                total_revenue += _parse_currency(r.get("annual_revenue", ""))
+                total_price += _parse_currency(r.get("price_pitched", ""))
 
         # Top sources
         src_counts = Counter(r.get("lead_source", "").strip() for r in leads if r.get("lead_source", "").strip())
