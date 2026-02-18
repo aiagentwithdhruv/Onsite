@@ -1,12 +1,20 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import Papa from 'papaparse'
-import { Upload, RefreshCw, Filter, TrendingUp, Users, Phone, Target, Flame, Award, Building2, AlertTriangle, ChevronDown } from 'lucide-react'
+import {
+  Upload, RefreshCw, Filter, TrendingUp, Users, Phone, Target, Flame, Award,
+  Building2, AlertTriangle, ChevronDown, Database, Clock, GitMerge, Copy, Trash2, X,
+} from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from 'recharts'
+import {
+  smartMerge, getAllLeads, getLeadCount, getUploadHistory, getPhoneDuplicates,
+  clearAllData, getLastUpload,
+  type MergeResult, type UploadRecord, type DuplicateGroup,
+} from '@/lib/dataStore'
 
 type Row = Record<string, string>
 
@@ -66,26 +74,67 @@ type Tab = typeof TABS[number]
 
 export default function IntelligencePage() {
   const [allData, setAllData] = useState<Row[]>([])
-  const [loading, setLoading] = useState(false)
-  const [loadingText, setLoadingText] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [loadingText, setLoadingText] = useState('Loading saved data...')
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [mergeResult, setMergeResult] = useState<MergeResult | null>(null)
+  const [uploadHistory, setUploadHistory] = useState<UploadRecord[]>([])
+  const [phoneDups, setPhoneDups] = useState<DuplicateGroup[]>([])
+  const [showPanel, setShowPanel] = useState<'history' | 'duplicates' | 'merge' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Auto-load from IndexedDB on mount (survives refresh)
+  useEffect(() => {
+    async function loadSaved() {
+      try {
+        const count = await getLeadCount()
+        if (count > 0) {
+          setLoadingText(`Loading ${count.toLocaleString()} saved leads...`)
+          const leads = await getAllLeads()
+          setAllData(leads)
+          const history = await getUploadHistory()
+          setUploadHistory(history)
+          const dups = await getPhoneDuplicates()
+          setPhoneDups(dups)
+        }
+      } catch {
+        // IndexedDB not available or empty
+      }
+      setLoading(false)
+    }
+    loadSaved()
+  }, [])
 
   const handleFile = useCallback((file: File) => {
     setLoading(true)
     setLoadingText('Parsing CSV data...')
+    setMergeResult(null)
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (h: string) => h.trim().replace(/^\uFEFF/, ''),
-      complete: (results) => {
-        setLoadingText(`Processing ${results.data.length.toLocaleString()} leads...`)
-        setTimeout(() => {
-          const data = (results.data as Row[]).filter(r => r.lead_name?.trim())
-          setAllData(data)
-          setLoading(false)
-        }, 100)
+      complete: async (results) => {
+        const parsed = (results.data as Row[]).filter(r => r.lead_name?.trim())
+        setLoadingText(`Smart merging ${parsed.length.toLocaleString()} leads...`)
+
+        // Run smart merge (dedup by zoho_lead_id + phone detection)
+        const result = await smartMerge(parsed, file.name, 'csv')
+        setMergeResult(result)
+
+        // Reload all data from IndexedDB (merged)
+        setLoadingText('Loading merged data...')
+        const allLeads = await getAllLeads()
+        setAllData(allLeads)
+
+        // Refresh history and duplicates
+        const history = await getUploadHistory()
+        setUploadHistory(history)
+        const dups = await getPhoneDuplicates()
+        setPhoneDups(dups)
+
+        setLoading(false)
+        setShowPanel('merge')
       },
       error: () => {
         setLoading(false)
@@ -98,6 +147,16 @@ export default function IntelligencePage() {
     e.preventDefault()
     if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0])
   }, [handleFile])
+
+  const handleClearAll = useCallback(async () => {
+    if (!confirm('Clear all saved data? This cannot be undone.')) return
+    await clearAllData()
+    setAllData([])
+    setUploadHistory([])
+    setPhoneDups([])
+    setMergeResult(null)
+    setShowPanel(null)
+  }, [])
 
   const filterOptions = useMemo(() => {
     if (!allData.length) return {}
@@ -120,7 +179,7 @@ export default function IntelligencePage() {
     })
   }, [allData, filters])
 
-  // Upload screen
+  // Upload screen (no data yet)
   if (!allData.length && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
@@ -130,6 +189,7 @@ export default function IntelligencePage() {
         <h1 className="mb-2 text-3xl font-bold text-zinc-900 dark:text-white">Sales Intelligence</h1>
         <p className="mb-8 max-w-md text-zinc-500 dark:text-zinc-400">
           Upload your Zoho CRM leads export (CSV) to get actionable insights, team performance metrics, and pipeline analysis.
+          <br /><span className="mt-2 inline-block text-xs text-amber-500">Data persists locally — no re-upload on refresh</span>
         </p>
         <div
           className="group flex w-full max-w-md cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-zinc-300 bg-white px-12 py-10 transition-all hover:border-amber-500 hover:bg-amber-50/50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-amber-500 dark:hover:bg-amber-500/5"
@@ -169,19 +229,143 @@ export default function IntelligencePage() {
 
   return (
     <div className="space-y-5">
+      {/* Merge Result Banner */}
+      {mergeResult && showPanel === 'merge' && (
+        <div className="relative rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-500/20 dark:bg-green-500/5">
+          <button onClick={() => setShowPanel(null)} className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
+          <div className="mb-2 flex items-center gap-2">
+            <GitMerge className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <h3 className="text-sm font-semibold text-green-700 dark:text-green-400">Smart Merge Complete</h3>
+            <span className="text-xs text-zinc-400">({mergeResult.duration_ms}ms)</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
+              <p className="text-lg font-bold text-green-600">{mergeResult.newLeads.toLocaleString()}</p>
+              <p className="text-[10px] font-medium uppercase text-zinc-500">New Leads</p>
+            </div>
+            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
+              <p className="text-lg font-bold text-blue-600">{mergeResult.updatedLeads.toLocaleString()}</p>
+              <p className="text-[10px] font-medium uppercase text-zinc-500">Updated</p>
+            </div>
+            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
+              <p className="text-lg font-bold text-zinc-500">{mergeResult.unchangedLeads.toLocaleString()}</p>
+              <p className="text-[10px] font-medium uppercase text-zinc-500">Unchanged</p>
+            </div>
+            <div className="rounded-lg bg-white/80 p-2 text-center dark:bg-zinc-800/50">
+              <p className="text-lg font-bold text-amber-600">{mergeResult.phoneDuplicates.toLocaleString()}</p>
+              <p className="text-[10px] font-medium uppercase text-zinc-500">Phone Dups</p>
+            </div>
+          </div>
+          {mergeResult.changesByField.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              <span className="text-[10px] text-zinc-500">Fields changed:</span>
+              {mergeResult.changesByField.slice(0, 8).map(f => (
+                <span key={f.field} className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-400">
+                  {f.field} ({f.count})
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Sales Intelligence Dashboard</h1>
-          <p className="text-sm text-zinc-500">Showing {d.length.toLocaleString()} of {allData.length.toLocaleString()} leads</p>
+          <div className="flex items-center gap-3 text-sm text-zinc-500">
+            <span>Showing {d.length.toLocaleString()} of {allData.length.toLocaleString()} leads</span>
+            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><Database className="h-3 w-3" /> Saved locally</span>
+          </div>
         </div>
-        <button
-          onClick={() => { setAllData([]); setFilters({}) }}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-        >
-          <RefreshCw className="h-4 w-4" /> Upload New File
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPanel(showPanel === 'history' ? null : 'history')}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+          >
+            <Clock className="h-3.5 w-3.5" /> History ({uploadHistory.length})
+          </button>
+          {phoneDups.length > 0 && (
+            <button
+              onClick={() => setShowPanel(showPanel === 'duplicates' ? null : 'duplicates')}
+              className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
+            >
+              <Copy className="h-3.5 w-3.5" /> Phone Dups ({phoneDups.length})
+            </button>
+          )}
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+          >
+            <Upload className="h-3.5 w-3.5" /> Upload / Update
+          </button>
+          <button
+            onClick={handleClearAll}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:border-red-400 hover:text-red-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+            title="Clear all saved data"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]) }} />
+        </div>
       </div>
+
+      {/* Upload History Panel */}
+      {showPanel === 'history' && (
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold"><Clock className="h-4 w-4 text-blue-500" /> Upload History</h3>
+            <button onClick={() => setShowPanel(null)} className="text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
+          </div>
+          {uploadHistory.length === 0 ? (
+            <p className="text-xs text-zinc-400">No uploads yet.</p>
+          ) : (
+            <div className="max-h-60 space-y-2 overflow-auto">
+              {uploadHistory.map((u, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-800/50">
+                  <div>
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">{u.fileName}</span>
+                    <span className="ml-2 text-zinc-400">{new Date(u.timestamp).toLocaleString()}</span>
+                  </div>
+                  <div className="flex gap-3 text-[10px]">
+                    <span className="text-green-600">+{u.newLeads.toLocaleString()} new</span>
+                    <span className="text-blue-600">{u.updatedLeads.toLocaleString()} updated</span>
+                    <span className="text-zinc-400">{u.unchangedLeads.toLocaleString()} same</span>
+                    {u.phoneDuplicates > 0 && <span className="text-amber-600">{u.phoneDuplicates} phone dups</span>}
+                    <span className="text-zinc-400">{u.duration_ms}ms</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Phone Duplicates Panel */}
+      {showPanel === 'duplicates' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400"><Copy className="h-4 w-4" /> Phone Number Duplicates — Same phone, different Lead IDs</h3>
+            <button onClick={() => setShowPanel(null)} className="text-zinc-400 hover:text-zinc-600"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="max-h-72 space-y-2 overflow-auto">
+            {phoneDups.slice(0, 50).map((g, i) => (
+              <div key={i} className="rounded-lg bg-white/80 p-3 dark:bg-zinc-800/50">
+                <p className="mb-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300"><Phone className="mr-1 inline h-3 w-3" />{g.phone} — {g.leads.length} leads</p>
+                <div className="space-y-0.5">
+                  {g.leads.map((l, j) => (
+                    <p key={j} className="flex items-center gap-2 text-[11px]">
+                      <span className="font-mono text-zinc-400">{l.zoho_lead_id.slice(-8)}</span>
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">{l.lead_name || '—'}</span>
+                      <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] dark:bg-zinc-700">{l.lead_status || '—'}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
