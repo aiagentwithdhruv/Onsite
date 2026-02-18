@@ -1,38 +1,51 @@
-"""LLM configuration with automatic fallback: Claude → GPT-4o."""
+"""LLM configuration: API keys and model selection from Admin UI (app_config) or env. Builds client from selected model id."""
 
 import time
 import logging
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from app.core.config import get_settings
+from app.core.llm_config import get_llm_api_key, get_llm_model_id
+from app.core.llm_models import get_model_by_id
 from app.core.supabase_client import get_supabase_admin
 
 log = logging.getLogger(__name__)
 
-settings = get_settings()
+OPENROUTER_BASE = "https://openrouter.ai/api/v1"
+MOONSHOT_BASE = "https://api.moonshot.ai/v1"
 
-# Primary models
-llm_sonnet = ChatAnthropic(
-    model="claude-sonnet-4-5-20250929",
-    api_key=settings.anthropic_api_key,
-    temperature=0,
-    max_tokens=4096,
-)
 
-llm_haiku = ChatAnthropic(
-    model="claude-haiku-4-5-20251001",
-    api_key=settings.anthropic_api_key,
-    temperature=0,
-    max_tokens=4096,
-)
+def _build_llm_from_model_id(model_id: str):
+    """Build LangChain chat model from model id (primary/fast/fallback). Returns None if key missing."""
+    info = get_model_by_id(model_id)
+    if not info:
+        return None
+    provider = info["provider"]
+    key = get_llm_api_key(provider)
+    if not key:
+        return None
+    common = {"temperature": 0, "max_tokens": 4096}
+    if provider == "anthropic":
+        return ChatAnthropic(model=model_id, api_key=key, **common)
+    if provider == "openai":
+        return ChatOpenAI(model=model_id, api_key=key, **common)
+    if provider == "openrouter":
+        router_id = info.get("router_id") or model_id.replace("or:", "", 1)
+        return ChatOpenAI(base_url=OPENROUTER_BASE, model=router_id, api_key=key, **common)
+    if provider == "moonshot":
+        return ChatOpenAI(base_url=MOONSHOT_BASE, model=model_id, api_key=key, **common)
+    return None
 
-# Fallback
-llm_fallback = ChatOpenAI(
-    model="gpt-4o",
-    api_key=settings.openai_api_key,
-    temperature=0,
-    max_tokens=4096,
-)
+
+def _build_sonnet():
+    return _build_llm_from_model_id(get_llm_model_id("primary"))
+
+
+def _build_haiku():
+    return _build_llm_from_model_id(get_llm_model_id("fast"))
+
+
+def _build_openai_fallback():
+    return _build_llm_from_model_id(get_llm_model_id("fallback"))
 
 # Model pricing (per 1M tokens)
 PRICING = {
@@ -43,11 +56,19 @@ PRICING = {
 
 
 def get_llm(task_type: str):
-    """Returns appropriate LLM based on task complexity."""
+    """Returns appropriate LLM based on task complexity. Uses selected primary/fast model from Settings."""
     cheap_tasks = {"scoring", "ranking", "anomaly_detection", "assignment"}
-    if task_type in cheap_tasks:
-        return llm_haiku
-    return llm_sonnet
+    model_which = "fast" if task_type in cheap_tasks else "primary"
+    llm = _build_llm_from_model_id(get_llm_model_id(model_which))
+    if llm is None:
+        fallback = _build_openai_fallback()
+        if fallback is not None:
+            return fallback
+        raise ValueError(
+            "No LLM configured. Set API key for the selected model's provider in Admin → Settings (LLM Providers), "
+            "or set a fallback model whose provider has a key."
+        )
+    return llm
 
 
 def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
@@ -59,18 +80,23 @@ def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 async def call_llm_with_fallback(llm, messages, fallback=None):
     """Try primary LLM, fall back to GPT-4o on failure."""
     if fallback is None:
-        fallback = llm_fallback
+        fallback = _build_openai_fallback()
+    if fallback is None:
+        log.warning("OpenAI API key not set; no fallback available.")
 
     try:
         response = await llm.ainvoke(messages)
         return response, llm.model
     except Exception as e:
-        log.warning(f"Primary LLM failed ({llm.model}): {e}. Falling back to GPT-4o.")
+        model_name = getattr(llm, "model", str(llm))
+        log.warning("Primary LLM failed (%s): %s. Trying fallback.", model_name, e)
+        if fallback is None:
+            raise
         try:
             response = await fallback.ainvoke(messages)
-            return response, fallback.model_name
+            return response, getattr(fallback, "model_name", getattr(fallback, "model", "gpt-4o"))
         except Exception as e2:
-            log.error(f"Fallback also failed: {e2}")
+            log.error("Fallback also failed: %s", e2)
             raise
 
 

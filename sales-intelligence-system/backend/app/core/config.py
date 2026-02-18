@@ -8,9 +8,11 @@ class Settings(BaseSettings):
     supabase_key: str = ""
     supabase_service_key: str = ""
 
-    # AI
+    # AI (can also be set in Admin UI → app_config)
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    openrouter_api_key: str = ""
+    moonshot_api_key: str = ""
 
     # Zoho
     zoho_client_id: str = ""
@@ -18,10 +20,17 @@ class Settings(BaseSettings):
     zoho_refresh_token: str = ""
     zoho_api_domain: str = "https://www.zohoapis.in"
 
-    # WhatsApp
+    # Telegram (alerts delivery — priority)
+    telegram_bot_token: str = ""
+
+    # WhatsApp (Gupshup or Business API)
     gupshup_api_key: str = ""
     gupshup_app_name: str = ""
     gupshup_source_number: str = ""
+
+    # WhatsApp Business Cloud API (optional; alternative to Gupshup)
+    whatsapp_cloud_api_token: str = ""
+    whatsapp_phone_number_id: str = ""
 
     # Email
     resend_api_key: str = ""
@@ -30,6 +39,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     secret_key: str = "change-this"
+    supabase_jwt_secret: str = ""
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # LangSmith
