@@ -32,6 +32,7 @@ class UpdateUserRequest(BaseModel):
     team: Optional[str] = None
     is_active: Optional[bool] = None
     name: Optional[str] = None
+    deal_owner_name: Optional[str] = None
 
 
 VALID_ROLES = {"rep", "team_lead", "manager", "founder", "admin"}
@@ -115,8 +116,8 @@ async def create_user(payload: CreateUserRequest, user: dict = Depends(require_a
 
 
 @router.patch("/users/{user_id}")
-async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Depends(require_admin)):
-    """Update a user's role, team, active status, or name. Admin only."""
+async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Depends(require_manager)):
+    """Update a user's role, team, deal owner access, active status, or name. Manager+ only."""
     try:
         db = get_supabase_admin()
 
@@ -142,6 +143,8 @@ async def update_user(user_id: str, payload: UpdateUserRequest, user: dict = Dep
             update_data["is_active"] = payload.is_active
         if payload.name is not None:
             update_data["name"] = payload.name
+        if payload.deal_owner_name is not None:
+            update_data["deal_owner_name"] = payload.deal_owner_name or None
 
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")
@@ -294,3 +297,130 @@ async def get_ai_usage(user: dict = Depends(require_manager)):
     except Exception as e:
         log.error(f"Error fetching AI usage: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch AI usage data")
+
+
+# ---------------------------------------------------------------------------
+# Telegram Bot Token (set via UI, stored in app_config)
+# ---------------------------------------------------------------------------
+
+class TelegramConfigResponse(BaseModel):
+    configured: bool
+
+
+class TelegramConfigUpdate(BaseModel):
+    telegram_bot_token: Optional[str] = None
+
+
+@router.get("/telegram-config", response_model=TelegramConfigResponse)
+async def get_telegram_config(user: dict = Depends(require_manager)):
+    """Return whether Telegram bot token is configured (env or DB). Never returns the token."""
+    from app.services.telegram import get_telegram_bot_token
+    token = get_telegram_bot_token()
+    return TelegramConfigResponse(configured=bool(token and token.strip()))
+
+
+@router.patch("/telegram-config")
+async def update_telegram_config(body: TelegramConfigUpdate, user: dict = Depends(require_manager)):
+    """Set or clear Telegram bot token (stored in app_config). Manager/Admin only."""
+    try:
+        db = get_supabase_admin()
+        value = (body.telegram_bot_token or "").strip() or None
+        now = datetime.now(timezone.utc).isoformat()
+        if value is None:
+            db.table("app_config").delete().eq("key", "telegram_bot_token").execute()
+            return {"message": "Telegram token cleared", "configured": False}
+        db.table("app_config").upsert({"key": "telegram_bot_token", "value": value, "updated_at": now}, on_conflict="key").execute()
+        return {"message": "Telegram token saved", "configured": True}
+    except Exception as e:
+        log.error("Update telegram config: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to save token")
+
+
+# ---------------------------------------------------------------------------
+# LLM Provider API keys (Admin only — set via UI, stored in app_config)
+# ---------------------------------------------------------------------------
+
+class LLMModelItem(BaseModel):
+    id: str
+    label: str
+    description: str
+    provider: str
+    router_id: Optional[str] = None
+
+
+class LLMConfigResponse(BaseModel):
+    anthropic: bool
+    openai: bool
+    openrouter: bool
+    moonshot: bool
+    models: list[LLMModelItem]
+    model_primary: str
+    model_fast: str
+    model_fallback: str
+
+
+class LLMConfigUpdate(BaseModel):
+    anthropic_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
+    moonshot_api_key: Optional[str] = None
+    model_primary: Optional[str] = None
+    model_fast: Optional[str] = None
+    model_fallback: Optional[str] = None
+
+
+@router.get("/llm-config", response_model=LLMConfigResponse)
+async def get_llm_config(user: dict = Depends(require_admin)):
+    """Return which LLM providers are configured and available models + selected model ids. Admin only. Never returns keys."""
+    from app.core.llm_config import get_llm_config_status, get_llm_model_id
+    from app.core.llm_models import TEXT_MODELS
+    status = get_llm_config_status()
+    models = [LLMModelItem(id=m["id"], label=m["label"], description=m["description"], provider=m["provider"], router_id=m.get("router_id")) for m in TEXT_MODELS]
+    return LLMConfigResponse(
+        anthropic=status.get("anthropic", False),
+        openai=status.get("openai", False),
+        openrouter=status.get("openrouter", False),
+        moonshot=status.get("moonshot", False),
+        models=models,
+        model_primary=get_llm_model_id("primary"),
+        model_fast=get_llm_model_id("fast"),
+        model_fallback=get_llm_model_id("fallback"),
+    )
+
+
+@router.patch("/llm-config")
+async def update_llm_config(body: LLMConfigUpdate, user: dict = Depends(require_admin)):
+    """Set or clear LLM provider API keys and selected model ids (stored in app_config). Admin only."""
+    try:
+        from app.core.llm_models import MODEL_IDS
+        db = get_supabase_admin()
+        now = datetime.now(timezone.utc).isoformat()
+        keys_to_update = [
+            ("anthropic_api_key", body.anthropic_api_key),
+            ("openai_api_key", body.openai_api_key),
+            ("openrouter_api_key", body.openrouter_api_key),
+            ("moonshot_api_key", body.moonshot_api_key),
+        ]
+        for key, value in keys_to_update:
+            if value is not None:
+                v = (value or "").strip() or None
+                if v is None:
+                    db.table("app_config").delete().eq("key", key).execute()
+                else:
+                    db.table("app_config").upsert({"key": key, "value": v, "updated_at": now}, on_conflict="key").execute()
+        # Model selection (only persist if valid model id)
+        for key, val in [("llm_model_primary", body.model_primary), ("llm_model_fast", body.model_fast), ("llm_model_fallback", body.model_fallback)]:
+            if val is not None and (v := (val or "").strip()) and v in MODEL_IDS:
+                db.table("app_config").upsert({"key": key, "value": v, "updated_at": now}, on_conflict="key").execute()
+        from app.core.llm_config import get_llm_config_status, get_llm_model_id
+        status = get_llm_config_status()
+        return {
+            "message": "LLM config updated",
+            **status,
+            "model_primary": get_llm_model_id("primary"),
+            "model_fast": get_llm_model_id("fast"),
+            "model_fallback": get_llm_model_id("fallback"),
+        }
+    except Exception as e:
+        log.error("Update LLM config: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to save LLM config")

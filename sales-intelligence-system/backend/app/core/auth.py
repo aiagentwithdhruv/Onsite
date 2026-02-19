@@ -69,10 +69,7 @@ async def get_current_user(request: Request) -> dict:
             pass
 
     if not result:
-<<<<<<< Updated upstream
-=======
         log.warning("AUTH FAIL [%s]: User not found for sub=%s email=%s", path, sub, email)
->>>>>>> Stashed changes
         raise HTTPException(status_code=403, detail="User not found in system")
 
     return result
