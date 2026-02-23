@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onsite Sales Intelligence Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--card:#222536;--border:#2e3348;
+  --text:#e4e6f0;--text-muted:#8b8fa3;--accent:#6366f1;--accent-light:#818cf8;
+  --green:#22c55e;--red:#ef4444;--orange:#f59e0b;--blue:#3b82f6;--purple:#a855f7;
+  --cyan:#06b6d4;--pink:#ec4899;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+.upload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center}
+.upload-screen h1{font-size:2.5rem;font-weight:700;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.upload-screen p{color:var(--text-muted);font-size:1.1rem;margin-bottom:2rem;max-width:500px}
+.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:3rem 4rem;cursor:pointer;transition:all .3s;background:var(--surface)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.upload-zone svg{width:64px;height:64px;margin-bottom:1rem;color:var(--accent)}
+.upload-zone h3{font-size:1.2rem;margin-bottom:.5rem}
+.upload-zone span{color:var(--text-muted);font-size:.9rem}
+#fileInput{display:none}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999}
+.spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{margin-top:1rem;color:var(--text-muted)}
+.dashboard{display:none;padding:1rem 1.5rem 3rem}
+.dash-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;margin-bottom:1rem;border-bottom:1px solid var(--border)}
+.dash-header h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.dash-header .meta{color:var(--text-muted);font-size:.85rem}
+.dash-header button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:.5rem 1rem;border-radius:8px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.dash-header button:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Filters */
+.filters{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.filters label{color:var(--text-muted);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.filters select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:.45rem .75rem;border-radius:8px;font-size:.85rem;cursor:pointer;min-width:160px}
+.filters select:focus{outline:none;border-color:var(--accent)}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:var(--blue)}.kpi.green::before{background:var(--green)}.kpi.orange::before{background:var(--orange)}.kpi.purple::before{background:var(--purple)}.kpi.cyan::before{background:var(--cyan)}.kpi.red::before{background:var(--red)}.kpi.pink::before{background:var(--pink)}.kpi.accent::before{background:var(--accent)}
+.kpi .label{font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:.5rem;font-weight:600}
+.kpi .value{font-size:1.75rem;font-weight:700}
+.kpi .sub{font-size:.8rem;color:var(--text-muted);margin-top:.25rem}
+.kpi .value.blue{color:var(--blue)}.kpi .value.green{color:var(--green)}.kpi .value.orange{color:var(--orange)}.kpi .value.purple{color:var(--purple)}.kpi .value.cyan{color:var(--cyan)}.kpi .value.red{color:var(--red)}.kpi .value.pink{color:var(--pink)}.kpi .value.accent{color:var(--accent)}
+
+/* Sections */
+.section-title{font-size:1.1rem;font-weight:700;margin:1.5rem 0 .75rem;padding-left:.75rem;border-left:3px solid var(--accent)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.card h3{font-size:.95rem;font-weight:600;margin-bottom:1rem;color:var(--text)}
+.card canvas{max-height:320px}
+
+/* Funnel */
+.funnel{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem 0}
+.funnel-step{display:flex;align-items:center;gap:1rem;width:100%}
+.funnel-bar{height:42px;border-radius:8px;display:flex;align-items:center;padding:0 1rem;font-weight:600;font-size:.85rem;color:#fff;transition:width .6s ease;min-width:60px;position:relative}
+.funnel-label{min-width:180px;text-align:right;font-size:.85rem;color:var(--text-muted);font-weight:500}
+.funnel-value{min-width:80px;font-size:.85rem;font-weight:600}
+.funnel-pct{font-size:.75rem;color:var(--text-muted);min-width:50px}
+
+/* Table */
+.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{background:var(--surface);color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:.72rem;letter-spacing:.5px;padding:.75rem .6rem;position:sticky;top:0;z-index:1;text-align:left;border-bottom:1px solid var(--border);cursor:pointer}
+th:hover{color:var(--accent)}
+td{padding:.65rem .6rem;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:rgba(99,102,241,.04)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-orange{background:rgba(245,158,11,.15);color:var(--orange)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-purple{background:rgba(168,85,247,.15);color:var(--purple)}
+.badge-cyan{background:rgba(6,182,212,.15);color:var(--cyan)}
+.badge-gray{background:rgba(139,143,163,.15);color:var(--text-muted)}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.tab{padding:.6rem 1.25rem;font-size:.85rem;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Heatmap */
+.heatmap-grid{display:grid;gap:3px;font-size:.7rem}
+.heat-cell{padding:6px 4px;text-align:center;border-radius:4px;font-weight:500}
+
+/* Action cards */
+.action-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center}
+.action-card .info h4{font-size:.85rem;font-weight:600;margin-bottom:2px}
+.action-card .info span{font-size:.75rem;color:var(--text-muted)}
+.action-card .action-badge{padding:4px 10px;border-radius:6px;font-size:.72rem;font-weight:600}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s ease}
+
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(46,51,72,.5)}
+.stat-row:last-child{border:none}
+.stat-row .name{font-size:.85rem;font-weight:500}
+.stat-row .val{font-size:.85rem;font-weight:700}
+
+.insight-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.insight-box h4{font-size:.85rem;font-weight:600;color:var(--accent-light);margin-bottom:.35rem}
+.insight-box p{font-size:.82rem;color:var(--text-muted);line-height:1.5}
+.smart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.smart-card h4{font-size:.85rem;font-weight:600;color:var(--accent-light);margin-bottom:.35rem}
+.smart-card .metric{font-size:1.1rem;font-weight:700;margin:.2rem 0 .35rem}
+.smart-card p{font-size:.78rem;color:var(--text-muted);line-height:1.4}
+.smart-card .meta{font-size:.72rem;color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<!-- Upload Screen -->
+<div class="upload-screen" id="uploadScreen">
+  <h1>Onsite Sales Intelligence</h1>
+  <p>Upload your Zoho CRM leads export (CSV) to get actionable insights, team performance metrics, and pipeline analysis.</p>
+  <div class="upload-zone" id="uploadZone">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <h3>Drop your CSV file here</h3>
+    <span>or click to browse &middot; supports large files (300K+ rows)</span>
+  </div>
+  <input type="file" id="fileInput" accept=".csv">
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="spinner"></div>
+  <p id="loadingText">Parsing CSV data...</p>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard" id="dashboard">
+  <div class="dash-header">
+    <div>
+      <h1>Sales Intelligence Dashboard</h1>
+      <div class="meta" id="dashMeta"></div>
+    </div>
+    <button onclick="location.reload()">Upload New File</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <label>Filters:</label>
+    <select id="filterManager"><option value="">All Managers</option></select>
+    <select id="filterOwner"><option value="">All Lead Owners</option></select>
+    <select id="filterSource"><option value="">All Lead Sources</option></select>
+    <select id="filterRegion"><option value="">All Regions</option></select>
+    <select id="filterStatus"><option value="">All Statuses</option></select>
+    <select id="filterPreQual"><option value="">All Pre-Qualification</option></select>
+    <select id="filterCategory"><option value="">All Category (Lead)</option></select>
+    <select id="filterCategory1"><option value="">All Category-1</option></select>
+    <select id="filterCompanyKeyword">
+      <option value="">All Companies</option>
+      <option value="important">Important Keywords Only</option>
+    </select>
+    <select id="filterMonth"><option value="">All Time</option></select>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="mainTabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="pipeline">Pipeline & Status</div>
+    <div class="tab" data-tab="team">Team Performance</div>
+    <div class="tab" data-tab="sources">Lead Sources</div>
+    <div class="tab" data-tab="aging">Aging & Action</div>
+    <div class="tab" data-tab="trends">Trends</div>
+    <div class="tab" data-tab="deep">Deep Dive</div>
+  </div>
+
+  <!-- Overview Tab -->
+  <div class="tab-content active" id="tab-overview">
+    <div id="insightsBox"></div>
+    <div class="section-title">Smart Insights</div>
+    <div class="grid-3" id="smartInsights"></div>
+    <div class="grid-2">
+      <div class="card"><h3>Lead Status Distribution</h3><canvas id="chartStatus"></canvas></div>
+      <div class="card"><h3>Sales Pipeline (Post-Demo)</h3><canvas id="chartPipeline"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem"><h3>Conversion Funnel</h3><div class="funnel" id="funnelArea"></div></div>
+    <div class="grid-2">
+      <div class="card"><h3>Lead Source Breakdown</h3><canvas id="chartSource"></canvas></div>
+      <div class="card"><h3>Region Distribution</h3><canvas id="chartRegion"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Pipeline Tab -->
+  <div class="tab-content" id="tab-pipeline">
+    <div class="grid-2">
+      <div class="card"><h3>Lead Status Breakdown (Count & %)</h3><canvas id="chartStatusBar"></canvas></div>
+      <div class="card"><h3>Sales Stage Detailed</h3><canvas id="chartStageBar"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><h3>Demo Metrics</h3><canvas id="chartDemoMetrics"></canvas></div>
+      <div class="card"><h3>Call Disposition Summary</h3><canvas id="chartDisposition"></canvas></div>
+    </div>
+    <div class="card"><h3>Lead Status vs Sales Stage Heatmap</h3><div id="heatmapArea"></div></div>
+  </div>
+
+  <!-- Team Tab -->
+  <div class="tab-content" id="tab-team">
+    <div class="section-title">Manager Overview</div>
+    <div class="grid-3" id="managerCards"></div>
+    <div class="grid-2">
+      <div class="card"><h3>Lead Owner Performance (Top 15)</h3><canvas id="chartOwnerPerf"></canvas></div>
+      <div class="card"><h3>Deal Owner Conversion</h3><canvas id="chartDealOwner"></canvas></div>
+    </div>
+    <div class="card"><h3>Team Leaderboard</h3><div class="table-wrap" id="teamTable"></div></div>
+  </div>
+
+  <!-- Sources Tab -->
+  <div class="tab-content" id="tab-sources">
+    <div class="grid-2">
+      <div class="card"><h3>Lead Source Volume</h3><canvas id="chartSourceVolume"></canvas></div>
+      <div class="card"><h3>Lead Source Conversion Rate</h3><canvas id="chartSourceConv"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><h3>Source Type Performance</h3><canvas id="chartSourceType"></canvas></div>
+      <div class="card"><h3>Campaign Performance (Top 15)</h3><canvas id="chartCampaign"></canvas></div>
+    </div>
+    <div class="card"><h3>Source Analysis Table</h3><div class="table-wrap" id="sourceTable"></div></div>
+  </div>
+
+  <!-- Aging Tab -->
+  <div class="tab-content" id="tab-aging">
+    <div class="grid-2">
+      <div class="card"><h3>Lead Age Distribution (Days Since User Date)</h3><canvas id="chartAging"></canvas></div>
+      <div class="card"><h3>Days Since Last Touch</h3><canvas id="chartLastTouch"></canvas></div>
+    </div>
+    <div class="section-title">Action Board - Leads Needing Attention</div>
+    <div class="grid-2">
+      <div class="card"><h3>Stale Leads (No Touch 30+ Days, Active Status)</h3><div class="table-wrap" id="staleTable"></div></div>
+      <div class="card"><h3>High Priority Untouched</h3><div class="table-wrap" id="priorityTable"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><h3>Demo Booked But Not Done</h3><div class="table-wrap" id="demoBookedTable"></div></div>
+      <div class="card"><h3>Hot Prospects (Very High + High Prospect)</h3><div class="table-wrap" id="hotProspectTable"></div></div>
+    </div>
+    <div class="card"><h3>Important Company Leads (Keyword Matches)</h3><div class="table-wrap" id="importantCompanyTable"></div></div>
+  </div>
+
+  <!-- Trends Tab -->
+  <div class="tab-content" id="tab-trends">
+    <div class="card" style="margin-bottom:1rem"><h3>Monthly Lead Intake Trend</h3><canvas id="chartMonthlyIntake"></canvas></div>
+    <div class="grid-2">
+      <div class="card"><h3>Monthly Demos Done</h3><canvas id="chartMonthlyDemos"></canvas></div>
+      <div class="card"><h3>Monthly Sales Done</h3><canvas id="chartMonthlySales"></canvas></div>
+    </div>
+    <div class="card"><h3>Monthly Conversion Rates</h3><canvas id="chartMonthlyConv"></canvas></div>
+  </div>
+
+  <!-- Deep Dive Tab -->
+  <div class="tab-content" id="tab-deep">
+    <div class="grid-2">
+      <div class="card"><h3>Profession Breakdown</h3><canvas id="chartProfession"></canvas></div>
+      <div class="card"><h3>Team Size Distribution</h3><canvas id="chartTeamSize"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><h3>State/Region Heatmap (Top 20)</h3><canvas id="chartState"></canvas></div>
+      <div class="card"><h3>Pre-Qualification Distribution</h3><canvas id="chartPreQual"></canvas></div>
+    </div>
+    <div class="card"><h3>Notes Intelligence - Recent Actionable Notes</h3><div class="table-wrap" id="notesTable"></div></div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#6366f1','#22c55e','#f59e0b','#ef4444','#3b82f6','#a855f7','#06b6d4','#ec4899','#14b8a6','#f97316','#8b5cf6','#84cc16','#e11d48','#0ea5e9','#d946ef','#fbbf24','#10b981','#f43f5e','#7c3aed','#2dd4bf'];
+const CHART_DEFAULTS = {responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#8b8fa3',font:{size:11}}}},scales:{}};
+let allData = [];
+let filteredData = [];
+let charts = {};
+const IMPORTANT_COMPANY_KEYWORDS = [
+  'कन्स्ट्रॅक्शन','studio','fabrica','corpo','indus','energ','&co','civil','hous','found','struc',
+  'limit','agency','contrac','home','servi','trad','eletri','associ','world','space','company','private',
+  'cons','infra','tech','inte','enter','dev','build','engg','constru','plan','proj','arch','des','real',
+  'prop','site','firm','group','hold','estate','pvt','llp','llc','inno','eng','solutiond','decor'
+];
+
+// Upload handlers
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if(e.target.files[0]) processFile(e.target.files[0]); });
+
+function processFile(file) {
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: h => h.trim().replace(/^\uFEFF/,''),
+    complete: function(results) {
+      document.getElementById('loadingText').textContent = `Processing ${results.data.length.toLocaleString()} leads...`;
+      setTimeout(() => {
+        allData = results.data.filter(r => r.lead_name && r.lead_name.trim());
+        populateFilters();
+        applyFilters();
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+      }, 100);
+    },
+    error: function(err) {
+      alert('Error parsing CSV: ' + err.message);
+      location.reload();
+    }
+  });
+}
+
+// Tabs
+document.getElementById('mainTabs').addEventListener('click', e => {
+  if (!e.target.classList.contains('tab')) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('tab-' + e.target.dataset.tab).classList.add('active');
+});
+
+// Filters
+function populateFilters() {
+  const fill = (id, field) => {
+    const sel = document.getElementById(id);
+    const vals = [...new Set(allData.map(r => r[field]).filter(Boolean))].sort();
+    vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+  };
+  fill('filterManager','lead_owner_manager');
+  fill('filterOwner','lead_owner');
+  fill('filterSource','lead_source');
+  fill('filterRegion','region');
+  fill('filterStatus','lead_status');
+  fill('filterPreQual','pre_qualification');
+  fill('filterCategory','lead_category');
+  fill('filterCategory1','lead_category_1');
+  
+  const months = [...new Set(allData.map(r => {
+    const d = parseDate(r.user_date);
+    return d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : null;
+  }).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('filterMonth');
+  months.slice(0, 36).forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
+  
+  ['filterManager','filterOwner','filterSource','filterRegion','filterStatus','filterPreQual','filterCategory','filterCategory1','filterCompanyKeyword','filterMonth'].forEach(id => {
+    document.getElementById(id).addEventListener('change', applyFilters);
+  });
+}
+
+function applyFilters() {
+  const mgr = document.getElementById('filterManager').value;
+  const own = document.getElementById('filterOwner').value;
+  const src = document.getElementById('filterSource').value;
+  const reg = document.getElementById('filterRegion').value;
+  const sts = document.getElementById('filterStatus').value;
+  const pre = document.getElementById('filterPreQual').value;
+  const cat = document.getElementById('filterCategory').value;
+  const cat1 = document.getElementById('filterCategory1').value;
+  const comp = document.getElementById('filterCompanyKeyword').value;
+  const mon = document.getElementById('filterMonth').value;
+
+  filteredData = allData.filter(r => {
+    if (mgr && r.lead_owner_manager !== mgr) return false;
+    if (own && r.lead_owner !== own) return false;
+    if (src && r.lead_source !== src) return false;
+    if (reg && r.region !== reg) return false;
+    if (sts && r.lead_status !== sts) return false;
+    if (pre && r.pre_qualification !== pre) return false;
+    if (cat && r.lead_category !== cat) return false;
+    if (cat1 && r.lead_category_1 !== cat1) return false;
+    if (comp === 'important') {
+      const name = (r.company_name || r.lead_name || '').toString();
+      if (!matchesImportantCompany(name)) return false;
+    }
+    if (mon) {
+      const d = parseDate(r.user_date);
+      if (!d) return false;
+      const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if (ym !== mon) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('dashMeta').textContent = `Showing ${filteredData.length.toLocaleString()} of ${allData.length.toLocaleString()} leads`;
+  renderAll();
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function normalizeText(str) {
+  return str.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'');
+}
+
+function matchesImportantCompany(name) {
+  if (!name) return false;
+  const raw = name.toLowerCase();
+  const norm = normalizeText(name);
+  return IMPORTANT_COMPANY_KEYWORDS.some(k => {
+    const key = k.toLowerCase();
+    const keyNorm = normalizeText(k);
+    if (raw.includes(key)) return true;
+    return keyNorm.length >= 3 && norm.includes(keyNorm);
+  });
+}
+
+function daysBetween(d1, d2) {
+  return Math.floor((d2 - d1) / 86400000);
+}
+
+function count(arr, field) {
+  const c = {};
+  arr.forEach(r => { const v = r[field] || '(empty)'; c[v] = (c[v]||0)+1; });
+  return Object.entries(c).sort((a,b) => b[1]-a[1]);
+}
+
+function aggregateStatsByField(arr, field, minCount) {
+  const map = {};
+  arr.forEach(r => {
+    const key = r[field];
+    if (!key) return;
+    if (!map[key]) map[key] = { key, total:0, demo:0, sale:0, purchased:0 };
+    map[key].total += 1;
+    if (r.demo_done === '1') map[key].demo += 1;
+    if (r.sale_done === '1') map[key].sale += 1;
+    if (r.lead_status === 'Purchased') map[key].purchased += 1;
+  });
+  return Object.values(map)
+    .filter(v => v.total >= minCount)
+    .map(v => ({
+      ...v,
+      demoRate: v.demo / Math.max(v.total, 1),
+      saleRate: v.sale / Math.max(v.total, 1),
+      purchaseRate: v.purchased / Math.max(v.total, 1),
+    }))
+    .sort((a,b) => b.saleRate - a.saleRate);
+}
+
+function pct(num, den) {
+  return den ? ((num/den)*100).toFixed(1) + '%' : '0%';
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function makeChart(id, config) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, config);
+}
+
+function renderAll() {
+  renderKPIs();
+  renderOverview();
+  renderPipeline();
+  renderTeam();
+  renderSources();
+  renderAging();
+  renderTrends();
+  renderDeepDive();
+}
+
+// KPI Cards
+function renderKPIs() {
+  const d = filteredData;
+  const total = d.length;
+  const demoBooked = d.filter(r => r.demo_booked === '1').length;
+  const demoDone = d.filter(r => r.demo_done === '1' || r.lead_status === 'Demo Done').length;
+  const saleDone = d.filter(r => r.sale_done === '1').length;
+  const purchased = d.filter(r => r.lead_status === 'Purchased').length;
+  const priority = d.filter(r => r.lead_status === 'Priority').length;
+  const qualified = d.filter(r => r.lead_status === 'Qualified').length;
+  const prospects = d.filter(r => r.is_prospect === '1' || r.sales_stage?.includes('Prospect')).length;
+  const highProspects = d.filter(r => r.is_high_prospect === '1' || r.sales_stage === 'High Prospect' || r.sales_stage === 'Very High Prospect').length;
+  const importantCompanies = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString())).length;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi blue"><div class="label">Total Leads</div><div class="value blue">${total.toLocaleString()}</div><div class="sub">In current view</div></div>
+    <div class="kpi cyan"><div class="label">Demo Booked</div><div class="value cyan">${demoBooked.toLocaleString()}</div><div class="sub">${pct(demoBooked,total)} of leads</div></div>
+    <div class="kpi purple"><div class="label">Demo Done</div><div class="value purple">${demoDone.toLocaleString()}</div><div class="sub">${pct(demoDone,demoBooked)} booking-to-done</div></div>
+    <div class="kpi green"><div class="label">Sales Done</div><div class="value green">${saleDone.toLocaleString()}</div><div class="sub">${pct(saleDone,demoDone)} demo-to-sale</div></div>
+    <div class="kpi orange"><div class="label">Purchased</div><div class="value orange">${purchased.toLocaleString()}</div><div class="sub">${pct(purchased,total)} overall conversion</div></div>
+    <div class="kpi pink"><div class="label">Priority Leads</div><div class="value pink">${priority.toLocaleString()}</div><div class="sub">Need immediate attention</div></div>
+    <div class="kpi accent"><div class="label">All Prospects</div><div class="value accent">${prospects.toLocaleString()}</div><div class="sub">${highProspects.toLocaleString()} are High/Very High</div></div>
+    <div class="kpi red"><div class="label">Qualified</div><div class="value red">${qualified.toLocaleString()}</div><div class="sub">${pct(qualified,total)} qualification rate</div></div>
+    <div class="kpi blue"><div class="label">Important Companies</div><div class="value blue">${importantCompanies.toLocaleString()}</div><div class="sub">Keyword-matched leads</div></div>
+  `;
+}
+
+// Overview
+function renderOverview() {
+  const d = filteredData;
+  const total = d.length;
+
+  // Insights
+  const demoRate = d.filter(r => r.demo_done === '1').length / total * 100;
+  const saleRate = d.filter(r => r.sale_done === '1').length / total * 100;
+  const topSource = count(d, 'lead_source').filter(x => x[0] !== '(empty)')[0];
+  const stale = d.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    if (!lt) return false;
+    return daysBetween(lt, new Date()) > 30 && !['Purchased','Rejected','DTA'].includes(r.lead_status);
+  }).length;
+
+  document.getElementById('insightsBox').innerHTML = `
+    <div class="insight-box"><h4>Key Insight: Conversion Funnel</h4><p>Overall demo conversion is <strong>${demoRate.toFixed(1)}%</strong> and lead-to-sale rate is <strong>${saleRate.toFixed(1)}%</strong>. ${topSource ? `Top lead source is <strong>${topSource[0]}</strong> with ${topSource[1].toLocaleString()} leads.` : ''}</p></div>
+    ${stale > 0 ? `<div class="insight-box"><h4>Action Required</h4><p><strong>${stale.toLocaleString()}</strong> active leads haven't been touched in 30+ days. Check the Aging & Action tab for details.</p></div>` : ''}
+  `;
+  renderSmartInsights();
+
+  // Status pie
+  const statusData = count(d, 'lead_status').slice(0, 12);
+  makeChart('chartStatus', {
+    type: 'doughnut',
+    data: { labels: statusData.map(x=>x[0]), datasets: [{ data: statusData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { position: 'right', labels: { color:'#8b8fa3', font:{size:11}, padding:8 } } } }
+  });
+
+  // Pipeline
+  const stages = count(d, 'sales_stage').filter(x => x[0] !== '(empty)');
+  makeChart('chartPipeline', {
+    type: 'doughnut',
+    data: { labels: stages.map(x=>x[0]), datasets: [{ data: stages.map(x=>x[1]), backgroundColor: COLORS.slice(3) }] },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { position: 'right', labels: { color:'#8b8fa3', font:{size:11}, padding:8 } } } }
+  });
+
+  // Funnel
+  const totalLeads = d.length;
+  const demoBookedCount = d.filter(r => r.demo_booked === '1').length;
+  const demoDoneCount = d.filter(r => r.demo_done === '1').length;
+  const trialCount = d.filter(r => r.trial_activated === '1').length;
+  const prospectCount = d.filter(r => r.is_prospect === '1').length;
+  const saleDoneCount = d.filter(r => r.sale_done === '1').length;
+  const purchasedCount = d.filter(r => r.lead_status === 'Purchased').length;
+
+  const funnelSteps = [
+    { label: 'Total Leads', value: totalLeads, color: '#3b82f6' },
+    { label: 'Demo Booked', value: demoBookedCount, color: '#6366f1' },
+    { label: 'Demo Done', value: demoDoneCount, color: '#a855f7' },
+    { label: 'Trial Activated', value: trialCount, color: '#06b6d4' },
+    { label: 'Prospect', value: prospectCount, color: '#f59e0b' },
+    { label: 'Sale Done', value: saleDoneCount, color: '#22c55e' },
+    { label: 'Purchased', value: purchasedCount, color: '#10b981' },
+  ];
+  const maxVal = funnelSteps[0].value;
+  document.getElementById('funnelArea').innerHTML = funnelSteps.map(s => {
+    const w = Math.max(8, (s.value / maxVal) * 100);
+    return `<div class="funnel-step">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-bar" style="width:${w}%;background:${s.color}">${s.value.toLocaleString()}</div>
+      <div class="funnel-pct">${pct(s.value, maxVal)}</div>
+    </div>`;
+  }).join('');
+
+  // Source chart
+  const srcData = count(d, 'lead_source').filter(x => x[0] !== '(empty)').slice(0, 10);
+  makeChart('chartSource', {
+    type: 'bar',
+    data: { labels: srcData.map(x=>x[0].length>25?x[0].slice(0,22)+'...':x[0]), datasets: [{ label:'Leads', data: srcData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ ticks:{color:'#8b8fa3'}, grid:{color:'#2e3348'} }, y:{ ticks:{color:'#8b8fa3'}, grid:{display:false} } }, plugins:{legend:{display:false}} }
+  });
+
+  // Region chart
+  const regData = count(d, 'region').filter(x => x[0] !== '(empty)');
+  makeChart('chartRegion', {
+    type: 'pie',
+    data: { labels: regData.map(x=>x[0]), datasets: [{ data: regData.map(x=>x[1]), backgroundColor: COLORS.slice(4) }] },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { position: 'right', labels: { color:'#8b8fa3', font:{size:11}, padding:8 } } } }
+  });
+}
+
+function renderSmartInsights() {
+  const d = filteredData;
+  const container = document.getElementById('smartInsights');
+  if (!container) return;
+  if (!d.length) {
+    container.innerHTML = '<div class="smart-card"><h4>No data</h4><p>Upload a CSV to generate insights.</p></div>';
+    return;
+  }
+
+  const now = new Date();
+  const demoBooked = d.filter(r => r.demo_booked === '1').length;
+  const demoDone = d.filter(r => r.demo_done === '1').length;
+  const saleDone = d.filter(r => r.sale_done === '1').length;
+  const bookedNotDone = Math.max(0, demoBooked - demoDone);
+  const demoDropRate = demoBooked ? (bookedNotDone / demoBooked * 100) : 0;
+  const saleDrop = Math.max(0, demoDone - saleDone);
+  const saleDropRate = demoDone ? (saleDrop / demoDone * 100) : 0;
+  const biggestDrop = demoDropRate >= saleDropRate
+    ? { label: 'Booked → Done', drop: bookedNotDone, rate: demoDropRate }
+    : { label: 'Demo → Sale', drop: saleDrop, rate: saleDropRate };
+
+  const MIN_SOURCE = 100;
+  const sourceStats = aggregateStatsByField(d, 'lead_source', MIN_SOURCE);
+  const bestSource = sourceStats[0];
+  const worstSource = sourceStats[sourceStats.length - 1];
+
+  const MIN_OWNER = 100;
+  const ownerStats = aggregateStatsByField(d, 'lead_owner', MIN_OWNER);
+  const topOwner = ownerStats[0];
+  const lowOwner = ownerStats[ownerStats.length - 1];
+
+  const activeStatuses = ['Priority','Follow Up','Qualified','Demo Booked','Demo Done','User not attend session'];
+  const stale30 = d.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 30 && activeStatuses.includes(r.lead_status);
+  }).length;
+  const priorityStale = d.filter(r => r.lead_status === 'Priority').filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 7;
+  }).length;
+  const hotProspects = d.filter(r => r.sales_stage === 'Very High Prospect' || r.sales_stage === 'High Prospect');
+  const hotStale = hotProspects.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    return lt && daysBetween(lt, now) > 7;
+  }).length;
+  const importantLeads = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString()));
+  const importantSales = importantLeads.filter(r => r.sale_done === '1' || r.lead_status === 'Purchased').length;
+
+  container.innerHTML = `
+    <div class="smart-card">
+      <h4>Biggest Funnel Drop</h4>
+      <div class="metric">${biggestDrop.drop.toLocaleString()} leads</div>
+      <p>${biggestDrop.label} drop-off is ${biggestDrop.rate.toFixed(1)}% of that stage.</p>
+      <div class="meta">Tune messaging and follow-ups here.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Demo Backlog</h4>
+      <div class="metric">${bookedNotDone.toLocaleString()} not done</div>
+      <p>${demoDropRate.toFixed(1)}% of booked demos are still pending.</p>
+      <div class="meta">Push owners to confirm & complete demos.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Best Lead Source</h4>
+      <div class="metric">${bestSource ? bestSource.key : 'N/A'}</div>
+      <p>Sale conversion ${bestSource ? (bestSource.saleRate*100).toFixed(2)+'%' : '0%'} from ${bestSource ? bestSource.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Scale if budget allows.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Weak Lead Source</h4>
+      <div class="metric">${worstSource ? worstSource.key : 'N/A'}</div>
+      <p>Sale conversion ${worstSource ? (worstSource.saleRate*100).toFixed(2)+'%' : '0%'} from ${worstSource ? worstSource.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Refine targeting or qualification.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Top Closer</h4>
+      <div class="metric">${topOwner ? topOwner.key : 'N/A'}</div>
+      <p>Sale conversion ${topOwner ? (topOwner.saleRate*100).toFixed(2)+'%' : '0%'} over ${topOwner ? topOwner.total.toLocaleString() : '0'} leads.</p>
+      <div class="meta">Share best practices across team.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Important Company Matches</h4>
+      <div class="metric">${importantLeads.length.toLocaleString()} leads</div>
+      <p>Sale conversion ${importantLeads.length ? (importantSales/importantLeads.length*100).toFixed(2)+'%' : '0%'} across keyword-matched companies.</p>
+      <div class="meta">Prioritize these accounts.</div>
+    </div>
+    <div class="smart-card">
+      <h4>Urgent Follow-up</h4>
+      <div class="metric">${stale30.toLocaleString()} stale leads</div>
+      <p>${priorityStale.toLocaleString()} priority + ${hotStale.toLocaleString()} hot prospects untouched 7+ days.</p>
+      <div class="meta">Assign immediately to owners.</div>
+    </div>
+  `;
+}
+
+// Pipeline & Status
+function renderPipeline() {
+  const d = filteredData;
+
+  const statusData = count(d, 'lead_status');
+  makeChart('chartStatusBar', {
+    type: 'bar',
+    data: { labels: statusData.map(x=>x[0]), datasets: [{ label:'Count', data: statusData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ ticks:{color:'#8b8fa3',maxRotation:45}, grid:{display:false} }, y:{ ticks:{color:'#8b8fa3'}, grid:{color:'#2e3348'} } }, plugins:{legend:{display:false}} }
+  });
+
+  const stageData = count(d, 'sales_stage').filter(x => x[0] !== '(empty)');
+  makeChart('chartStageBar', {
+    type: 'bar',
+    data: { labels: stageData.map(x=>x[0].length>30?x[0].slice(0,27)+'...':x[0]), datasets: [{ label:'Count', data: stageData.map(x=>x[1]), backgroundColor: COLORS.slice(2) }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ ticks:{color:'#8b8fa3'}, grid:{color:'#2e3348'} }, y:{ ticks:{color:'#8b8fa3',font:{size:10}}, grid:{display:false} } }, plugins:{legend:{display:false}} }
+  });
+
+  // Demo metrics
+  const demoBooked = d.filter(r=>r.demo_booked==='1').length;
+  const demoDone = d.filter(r=>r.demo_done==='1').length;
+  const demoNotDone = demoBooked - demoDone;
+  const noDemoBooked = d.length - demoBooked;
+  makeChart('chartDemoMetrics', {
+    type: 'doughnut',
+    data: { labels: ['Demo Done','Demo Booked (Not Done)','No Demo Booked'], datasets: [{ data: [demoDone, Math.max(0,demoNotDone), noDemoBooked], backgroundColor: ['#22c55e','#f59e0b','#ef4444'] }] },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { position:'bottom', labels:{color:'#8b8fa3',font:{size:11}} } } }
+  });
+
+  // Disposition
+  const dispData = count(d, 'call_disposition').filter(x=>x[0]!=='(empty)').slice(0,12);
+  makeChart('chartDisposition', {
+    type: 'bar',
+    data: { labels: dispData.map(x=>x[0]), datasets: [{ label:'Count', data: dispData.map(x=>x[1]), backgroundColor: COLORS.slice(1) }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Heatmap
+  const statuses = [...new Set(d.map(r=>r.lead_status).filter(Boolean))];
+  const stages2 = [...new Set(d.map(r=>r.sales_stage).filter(Boolean))];
+  if (statuses.length && stages2.length) {
+    const hm = {};
+    d.forEach(r => {
+      const s = r.lead_status || '(empty)';
+      const st = r.sales_stage || '(empty)';
+      if (!hm[s]) hm[s] = {};
+      hm[s][st] = (hm[s][st]||0)+1;
+    });
+    const topSts = count(d,'lead_status').slice(0,8).map(x=>x[0]);
+    const topStg = count(d,'sales_stage').slice(0,8).map(x=>x[0]);
+    let maxHm = 0;
+    topSts.forEach(s => topStg.forEach(st => { maxHm = Math.max(maxHm, (hm[s]||{})[st]||0); }));
+
+    let html = `<div class="heatmap-grid" style="grid-template-columns:120px repeat(${topStg.length},1fr)">`;
+    html += `<div class="heat-cell" style="font-weight:700"></div>`;
+    topStg.forEach(st => html += `<div class="heat-cell" style="font-weight:600;font-size:.65rem">${st.length>15?st.slice(0,13)+'..':st}</div>`);
+    topSts.forEach(s => {
+      html += `<div class="heat-cell" style="font-weight:600;font-size:.65rem;text-align:right">${s.length>15?s.slice(0,13)+'..':s}</div>`;
+      topStg.forEach(st => {
+        const v = (hm[s]||{})[st]||0;
+        const intensity = maxHm > 0 ? v / maxHm : 0;
+        const bg = `rgba(99,102,241,${Math.min(intensity * 0.8 + 0.05, 0.85)})`;
+        html += `<div class="heat-cell" style="background:${bg}">${v>0?v.toLocaleString():'-'}</div>`;
+      });
+    });
+    html += '</div>';
+    document.getElementById('heatmapArea').innerHTML = html;
+  }
+}
+
+// Team Performance
+function renderTeam() {
+  const d = filteredData;
+
+  // Manager cards
+  const mgrData = count(d, 'lead_owner_manager').filter(x=>x[0]!=='(empty)');
+  let mgrHtml = '';
+  mgrData.forEach(([mgr, total]) => {
+    const mgrLeads = d.filter(r => r.lead_owner_manager === mgr);
+    const demos = mgrLeads.filter(r => r.demo_done === '1').length;
+    const sales = mgrLeads.filter(r => r.sale_done === '1').length;
+    const priority = mgrLeads.filter(r => r.lead_status === 'Priority').length;
+    mgrHtml += `<div class="card">
+      <h3>${mgr}</h3>
+      <div class="stat-row"><span class="name">Total Leads</span><span class="val" style="color:var(--blue)">${total.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="name">Demos Done</span><span class="val" style="color:var(--purple)">${demos.toLocaleString()} (${pct(demos,total)})</span></div>
+      <div class="stat-row"><span class="name">Sales Done</span><span class="val" style="color:var(--green)">${sales.toLocaleString()} (${pct(sales,total)})</span></div>
+      <div class="stat-row"><span class="name">Priority Pending</span><span class="val" style="color:var(--orange)">${priority.toLocaleString()}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${(sales/Math.max(total,1)*100*10)}%;background:var(--green)"></div></div>
+    </div>`;
+  });
+  document.getElementById('managerCards').innerHTML = mgrHtml;
+
+  // Owner performance
+  const ownerData = count(d, 'lead_owner').filter(x=>x[0]!=='(empty)').slice(0, 15);
+  const ownerNames = ownerData.map(x=>x[0].length>18?x[0].slice(0,15)+'...':x[0]);
+  const ownerDemos = ownerData.map(([own]) => d.filter(r=>r.lead_owner===own && r.demo_done==='1').length);
+  const ownerSales = ownerData.map(([own]) => d.filter(r=>r.lead_owner===own && r.sale_done==='1').length);
+  makeChart('chartOwnerPerf', {
+    type: 'bar',
+    data: { labels: ownerNames, datasets: [
+      { label:'Total Leads', data: ownerData.map(x=>x[1]), backgroundColor:'rgba(59,130,246,.6)' },
+      { label:'Demos', data: ownerDemos, backgroundColor:'rgba(168,85,247,.6)' },
+      { label:'Sales', data: ownerSales, backgroundColor:'rgba(34,197,94,.6)' },
+    ]},
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'},stacked:false}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} } }
+  });
+
+  // Deal owner
+  const dealData = count(d, 'deal_owner').filter(x=>x[0]!=='(empty)'&&x[0]!=='Onsite'&&x[0]!=='Offline Campaign').slice(0, 15);
+  const dealSales = dealData.map(([own]) => d.filter(r=>r.deal_owner===own && r.sale_done==='1').length);
+  makeChart('chartDealOwner', {
+    type: 'bar',
+    data: { labels: dealData.map(x=>x[0].length>18?x[0].slice(0,15)+'...':x[0]), datasets: [
+      { label:'Assigned Leads', data: dealData.map(x=>x[1]), backgroundColor:'rgba(6,182,212,.6)' },
+      { label:'Sales Done', data: dealSales, backgroundColor:'rgba(34,197,94,.6)' },
+    ]},
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} } }
+  });
+
+  // Team leaderboard table
+  const allOwners = count(d, 'lead_owner').filter(x=>x[0]!=='(empty)');
+  let tbl = `<table><thead><tr><th>Lead Owner</th><th>Manager</th><th>Total</th><th>Demo Booked</th><th>Demo Done</th><th>Sales Done</th><th>Demo Rate</th><th>Conv Rate</th><th>Priority</th><th>Untouched 30d+</th></tr></thead><tbody>`;
+  allOwners.slice(0, 30).forEach(([own, total]) => {
+    const ol = d.filter(r=>r.lead_owner===own);
+    const mgr = ol.find(r=>r.lead_owner_manager)?.lead_owner_manager || '-';
+    const db = ol.filter(r=>r.demo_booked==='1').length;
+    const dd = ol.filter(r=>r.demo_done==='1').length;
+    const sd = ol.filter(r=>r.sale_done==='1').length;
+    const pri = ol.filter(r=>r.lead_status==='Priority').length;
+    const stale = ol.filter(r => {
+      const lt = parseDate(r.last_touched_date_new);
+      return lt && daysBetween(lt, new Date()) > 30 && !['Purchased','Rejected','DTA'].includes(r.lead_status);
+    }).length;
+    const convBadge = sd/total*100 > 5 ? 'badge-green' : sd/total*100 > 2 ? 'badge-orange' : 'badge-red';
+    tbl += `<tr><td><strong>${own}</strong></td><td>${mgr}</td><td>${total.toLocaleString()}</td><td>${db.toLocaleString()}</td><td>${dd.toLocaleString()}</td><td>${sd.toLocaleString()}</td><td>${pct(dd,db)}</td><td><span class="badge ${convBadge}">${pct(sd,total)}</span></td><td>${pri}</td><td>${stale > 0 ? `<span class="badge badge-red">${stale}</span>` : '0'}</td></tr>`;
+  });
+  tbl += '</tbody></table>';
+  document.getElementById('teamTable').innerHTML = tbl;
+}
+
+// Sources
+function renderSources() {
+  const d = filteredData;
+
+  const srcData = count(d, 'lead_source').filter(x=>x[0]!=='(empty)').slice(0, 15);
+  makeChart('chartSourceVolume', {
+    type: 'bar',
+    data: { labels: srcData.map(x=>x[0].length>22?x[0].slice(0,19)+'...':x[0]), datasets: [{ label:'Leads', data: srcData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Conversion by source
+  const srcConv = srcData.map(([src, total]) => {
+    const sl = d.filter(r=>r.lead_source===src);
+    return { src, total, sales: sl.filter(r=>r.sale_done==='1').length, demos: sl.filter(r=>r.demo_done==='1').length };
+  }).sort((a,b) => (b.sales/b.total) - (a.sales/a.total));
+  makeChart('chartSourceConv', {
+    type: 'bar',
+    data: { labels: srcConv.map(x=>x.src.length>22?x.src.slice(0,19)+'...':x.src), datasets: [
+      { label:'Sale Conv %', data: srcConv.map(x=>(x.sales/x.total*100).toFixed(2)), backgroundColor:'rgba(34,197,94,.7)' },
+      { label:'Demo Conv %', data: srcConv.map(x=>(x.demos/x.total*100).toFixed(2)), backgroundColor:'rgba(168,85,247,.5)' },
+    ]},
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} } }
+  });
+
+  // Source type
+  const stData = count(d, 'lead_source_type').filter(x=>x[0]!=='(empty)');
+  makeChart('chartSourceType', {
+    type: 'doughnut',
+    data: { labels: stData.map(x=>x[0]), datasets: [{ data: stData.map(x=>x[1]), backgroundColor: COLORS.slice(5) }] },
+    options: { ...CHART_DEFAULTS, plugins:{ legend:{position:'right',labels:{color:'#8b8fa3',font:{size:11}}} } }
+  });
+
+  // Campaign
+  const campData = count(d, 'campaign_name').filter(x=>x[0]!=='(empty)').slice(0,15);
+  makeChart('chartCampaign', {
+    type: 'bar',
+    data: { labels: campData.map(x=>x[0].length>25?x[0].slice(0,22)+'...':x[0]), datasets: [{ label:'Leads', data: campData.map(x=>x[1]), backgroundColor: COLORS.slice(2) }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Source table
+  const allSrc = count(d, 'lead_source').filter(x=>x[0]!=='(empty)');
+  let tbl = `<table><thead><tr><th>Lead Source</th><th>Total</th><th>Demo Done</th><th>Sales Done</th><th>Demo Rate</th><th>Conv Rate</th><th>Purchased</th><th>Priority</th></tr></thead><tbody>`;
+  allSrc.slice(0, 40).forEach(([src, total]) => {
+    const sl = d.filter(r=>r.lead_source===src);
+    const dd = sl.filter(r=>r.demo_done==='1').length;
+    const sd = sl.filter(r=>r.sale_done==='1').length;
+    const pur = sl.filter(r=>r.lead_status==='Purchased').length;
+    const pri = sl.filter(r=>r.lead_status==='Priority').length;
+    tbl += `<tr><td><strong>${src}</strong></td><td>${total.toLocaleString()}</td><td>${dd.toLocaleString()}</td><td>${sd.toLocaleString()}</td><td>${pct(dd,total)}</td><td><span class="badge ${sd/total>0.03?'badge-green':'badge-orange'}">${pct(sd,total)}</span></td><td>${pur.toLocaleString()}</td><td>${pri}</td></tr>`;
+  });
+  tbl += '</tbody></table>';
+  document.getElementById('sourceTable').innerHTML = tbl;
+}
+
+// Aging
+function renderAging() {
+  const d = filteredData;
+  const now = new Date();
+
+  // Age distribution
+  const ageBuckets = {'0-7 days':0,'8-30 days':0,'31-90 days':0,'91-180 days':0,'181-365 days':0,'1-2 years':0,'2+ years':0};
+  d.forEach(r => {
+    const ud = parseDate(r.user_date);
+    if (!ud) return;
+    const days = daysBetween(ud, now);
+    if (days <= 7) ageBuckets['0-7 days']++;
+    else if (days <= 30) ageBuckets['8-30 days']++;
+    else if (days <= 90) ageBuckets['31-90 days']++;
+    else if (days <= 180) ageBuckets['91-180 days']++;
+    else if (days <= 365) ageBuckets['181-365 days']++;
+    else if (days <= 730) ageBuckets['1-2 years']++;
+    else ageBuckets['2+ years']++;
+  });
+  makeChart('chartAging', {
+    type: 'bar',
+    data: { labels: Object.keys(ageBuckets), datasets: [{ label:'Leads', data: Object.values(ageBuckets), backgroundColor:['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444','#dc2626','#991b1b'] }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3'},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Last touch
+  const touchBuckets = {'0-7 days':0,'8-14 days':0,'15-30 days':0,'31-60 days':0,'61-90 days':0,'90+ days':0,'Never':0};
+  d.forEach(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    if (!lt) { touchBuckets['Never']++; return; }
+    const days = daysBetween(lt, now);
+    if (days <= 7) touchBuckets['0-7 days']++;
+    else if (days <= 14) touchBuckets['8-14 days']++;
+    else if (days <= 30) touchBuckets['15-30 days']++;
+    else if (days <= 60) touchBuckets['31-60 days']++;
+    else if (days <= 90) touchBuckets['61-90 days']++;
+    else touchBuckets['90+ days']++;
+  });
+  makeChart('chartLastTouch', {
+    type: 'bar',
+    data: { labels: Object.keys(touchBuckets), datasets: [{ label:'Leads', data: Object.values(touchBuckets), backgroundColor:['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444','#991b1b','#6b7280'] }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3'},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Stale leads table
+  const activeStatuses = ['Priority','Follow Up','Qualified','Demo Booked','Demo Done','User not attend session'];
+  const staleLeads = d.filter(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    if (!lt) return false;
+    return daysBetween(lt, now) > 30 && activeStatuses.includes(r.lead_status);
+  }).sort((a,b) => {
+    const da = parseDate(a.last_touched_date_new);
+    const db2 = parseDate(b.last_touched_date_new);
+    return da - db2;
+  });
+  let stbl = `<table><thead><tr><th>Name</th><th>Status</th><th>Owner</th><th>Last Touch</th><th>Days Stale</th><th>Phone</th></tr></thead><tbody>`;
+  staleLeads.slice(0,50).forEach(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    const days = lt ? daysBetween(lt, now) : '-';
+    stbl += `<tr><td><strong>${r.lead_name||'-'}</strong></td><td><span class="badge badge-orange">${r.lead_status}</span></td><td>${r.lead_owner||'-'}</td><td>${r.last_touched_date_new||'-'}</td><td><span class="badge badge-red">${days}d</span></td><td>${r.lead_phone||'-'}</td></tr>`;
+  });
+  stbl += '</tbody></table>';
+  document.getElementById('staleTable').innerHTML = stbl;
+
+  // Priority untouched
+  const priLeads = d.filter(r => r.lead_status === 'Priority').sort((a,b) => {
+    const da = parseDate(a.last_touched_date_new) || new Date(0);
+    const db2 = parseDate(b.last_touched_date_new) || new Date(0);
+    return da - db2;
+  });
+  let ptbl = `<table><thead><tr><th>Name</th><th>Owner</th><th>Source</th><th>Last Touch</th><th>Days</th><th>Phone</th></tr></thead><tbody>`;
+  priLeads.slice(0,50).forEach(r => {
+    const lt = parseDate(r.last_touched_date_new);
+    const days = lt ? daysBetween(lt, now) : 'Never';
+    ptbl += `<tr><td><strong>${r.lead_name||'-'}</strong></td><td>${r.lead_owner||'-'}</td><td>${r.lead_source||'-'}</td><td>${r.last_touched_date_new||'-'}</td><td><span class="badge ${typeof days==='number'&&days>30?'badge-red':'badge-blue'}">${typeof days==='number'?days+'d':days}</span></td><td>${r.lead_phone||'-'}</td></tr>`;
+  });
+  ptbl += '</tbody></table>';
+  document.getElementById('priorityTable').innerHTML = ptbl;
+
+  // Demo booked not done
+  const demoNotDone = d.filter(r => r.demo_booked === '1' && r.demo_done !== '1');
+  let dtbl = `<table><thead><tr><th>Name</th><th>Status</th><th>Owner</th><th>Booked Date</th><th>Phone</th><th>Source</th></tr></thead><tbody>`;
+  demoNotDone.slice(0,50).forEach(r => {
+    dtbl += `<tr><td><strong>${r.lead_name||'-'}</strong></td><td><span class="badge badge-orange">${r.lead_status||'-'}</span></td><td>${r.lead_owner||'-'}</td><td>${r.demo_booked_date||'-'}</td><td>${r.lead_phone||'-'}</td><td>${r.lead_source||'-'}</td></tr>`;
+  });
+  dtbl += '</tbody></table>';
+  document.getElementById('demoBookedTable').innerHTML = dtbl;
+
+  // Hot prospects
+  const hotP = d.filter(r => r.sales_stage === 'Very High Prospect' || r.sales_stage === 'High Prospect');
+  let htbl = `<table><thead><tr><th>Name</th><th>Stage</th><th>Owner</th><th>Last Touch</th><th>Company</th><th>Phone</th></tr></thead><tbody>`;
+  hotP.slice(0,50).forEach(r => {
+    const badge = r.sales_stage === 'Very High Prospect' ? 'badge-green' : 'badge-blue';
+    htbl += `<tr><td><strong>${r.lead_name||'-'}</strong></td><td><span class="badge ${badge}">${r.sales_stage}</span></td><td>${r.deal_owner||r.lead_owner||'-'}</td><td>${r.last_touched_date_new||'-'}</td><td>${r.company_name||'-'}</td><td>${r.lead_phone||'-'}</td></tr>`;
+  });
+  htbl += '</tbody></table>';
+  document.getElementById('hotProspectTable').innerHTML = htbl;
+
+  // Important company leads (keyword matches)
+  const importantLeads = d.filter(r => matchesImportantCompany((r.company_name || r.lead_name || '').toString()));
+  const priorityRank = (r) => {
+    let score = 0;
+    if (r.lead_status === 'Priority') score += 100;
+    if (r.sales_stage === 'Very High Prospect') score += 80;
+    if (r.sales_stage === 'High Prospect') score += 60;
+    if (r.demo_done === '1') score += 40;
+    if (r.demo_booked === '1') score += 20;
+    if (r.sale_done === '1' || r.lead_status === 'Purchased') score += 10;
+    const lt = parseDate(r.last_touched_date_new);
+    if (lt) score += Math.max(0, 30 - Math.min(30, daysBetween(lt, now)));
+    return score;
+  };
+  const rankedImportant = importantLeads.sort((a,b) => priorityRank(b) - priorityRank(a));
+  let itbl = `<table><thead><tr><th>Company</th><th>Lead</th><th>Status</th><th>Stage</th><th>Owner</th><th>Last Touch</th><th>Phone</th><th>Source</th></tr></thead><tbody>`;
+  rankedImportant.slice(0,60).forEach(r => {
+    const status = r.lead_status || '-';
+    const badge = status === 'Priority' ? 'badge-orange' : status === 'Purchased' ? 'badge-green' : status === 'Demo Done' ? 'badge-purple' : 'badge-gray';
+    itbl += `<tr><td><strong>${r.company_name||'-'}</strong></td><td>${r.lead_name||'-'}</td><td><span class="badge ${badge}">${status}</span></td><td>${r.sales_stage||'-'}</td><td>${r.deal_owner||r.lead_owner||'-'}</td><td>${r.last_touched_date_new||'-'}</td><td>${r.lead_phone||'-'}</td><td>${r.lead_source||'-'}</td></tr>`;
+  });
+  itbl += '</tbody></table>';
+  document.getElementById('importantCompanyTable').innerHTML = itbl;
+}
+
+// Trends
+function renderTrends() {
+  const d = filteredData;
+
+  const monthlyData = {};
+  d.forEach(r => {
+    const ud = parseDate(r.user_date);
+    if (!ud) return;
+    const key = `${ud.getFullYear()}-${String(ud.getMonth()+1).padStart(2,'0')}`;
+    if (!monthlyData[key]) monthlyData[key] = { leads:0, demos:0, sales:0, purchased:0 };
+    monthlyData[key].leads++;
+    if (r.demo_done === '1') monthlyData[key].demos++;
+    if (r.sale_done === '1') monthlyData[key].sales++;
+    if (r.lead_status === 'Purchased') monthlyData[key].purchased++;
+  });
+
+  const months = Object.keys(monthlyData).sort();
+  const last24 = months.slice(-24);
+
+  makeChart('chartMonthlyIntake', {
+    type: 'line',
+    data: { labels: last24, datasets: [{ label:'New Leads', data: last24.map(m=>monthlyData[m].leads), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.1)', fill:true, tension:.3 }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3'},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} } }
+  });
+
+  makeChart('chartMonthlyDemos', {
+    type: 'bar',
+    data: { labels: last24, datasets: [{ label:'Demos Done', data: last24.map(m=>monthlyData[m].demos), backgroundColor:'rgba(168,85,247,.6)' }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3',maxRotation:45},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} }, plugins:{legend:{display:false}} }
+  });
+
+  makeChart('chartMonthlySales', {
+    type: 'bar',
+    data: { labels: last24, datasets: [
+      { label:'Sales Done', data: last24.map(m=>monthlyData[m].sales), backgroundColor:'rgba(34,197,94,.6)' },
+      { label:'Purchased', data: last24.map(m=>monthlyData[m].purchased), backgroundColor:'rgba(245,158,11,.6)' },
+    ]},
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3',maxRotation:45},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} } }
+  });
+
+  makeChart('chartMonthlyConv', {
+    type: 'line',
+    data: { labels: last24, datasets: [
+      { label:'Demo Rate %', data: last24.map(m=>(monthlyData[m].demos/monthlyData[m].leads*100).toFixed(1)), borderColor:'#a855f7', tension:.3 },
+      { label:'Sale Rate %', data: last24.map(m=>(monthlyData[m].sales/monthlyData[m].leads*100).toFixed(1)), borderColor:'#22c55e', tension:.3 },
+    ]},
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3'},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} } }
+  });
+}
+
+// Deep Dive
+function renderDeepDive() {
+  const d = filteredData;
+
+  // Profession
+  const profData = count(d, 'user_profession').filter(x=>x[0]!=='(empty)').slice(0,12);
+  makeChart('chartProfession', {
+    type: 'doughnut',
+    data: { labels: profData.map(x=>x[0].length>25?x[0].slice(0,22)+'...':x[0]), datasets: [{ data: profData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, plugins:{legend:{position:'right',labels:{color:'#8b8fa3',font:{size:10},padding:6}}} }
+  });
+
+  // Team size
+  const tsData = count(d, 'Team_size').filter(x=>x[0]!=='(empty)').slice(0,10);
+  makeChart('chartTeamSize', {
+    type: 'bar',
+    data: { labels: tsData.map(x=>x[0]), datasets: [{ label:'Leads', data: tsData.map(x=>x[1]), backgroundColor: COLORS.slice(3) }] },
+    options: { ...CHART_DEFAULTS, scales:{ x:{ticks:{color:'#8b8fa3'},grid:{display:false}}, y:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}} }, plugins:{legend:{display:false}} }
+  });
+
+  // State
+  const stateData = count(d, 'state_mobile').filter(x=>x[0]!=='(empty)').slice(0,20);
+  makeChart('chartState', {
+    type: 'bar',
+    data: { labels: stateData.map(x=>x[0].length>15?x[0].slice(0,12)+'...':x[0]), datasets: [{ label:'Leads', data: stateData.map(x=>x[1]), backgroundColor: COLORS }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{ticks:{color:'#8b8fa3'},grid:{color:'#2e3348'}}, y:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{display:false}} }, plugins:{legend:{display:false}} }
+  });
+
+  // Pre-qualification
+  const pqData = count(d, 'pre_qualification').filter(x=>x[0]!=='(empty)');
+  makeChart('chartPreQual', {
+    type: 'doughnut',
+    data: { labels: pqData.map(x=>'Stage '+x[0]), datasets: [{ data: pqData.map(x=>x[1]), backgroundColor: COLORS.slice(5) }] },
+    options: { ...CHART_DEFAULTS, plugins:{legend:{position:'right',labels:{color:'#8b8fa3',font:{size:11}}}} }
+  });
+
+  // Notes intelligence
+  const notesLeads = d.filter(r => r.lead_notes && r.lead_notes.trim().length > 10)
+    .sort((a,b) => {
+      const da = parseDate(a.notes_date) || new Date(0);
+      const db2 = parseDate(b.notes_date) || new Date(0);
+      return db2 - da;
+    });
+  let ntbl = `<table><thead><tr><th>Name</th><th>Status</th><th>Stage</th><th>Owner</th><th>Notes Date</th><th>Notes (Preview)</th></tr></thead><tbody>`;
+  notesLeads.slice(0, 80).forEach(r => {
+    const notePreview = (r.lead_notes || '').replace(/\n/g,' ').slice(0, 120) + (r.lead_notes?.length > 120 ? '...' : '');
+    const statusBadge = r.lead_status === 'Priority' ? 'badge-orange' : r.lead_status === 'Purchased' ? 'badge-green' : r.lead_status === 'Demo Done' ? 'badge-purple' : 'badge-gray';
+    ntbl += `<tr><td><strong>${r.lead_name||'-'}</strong></td><td><span class="badge ${statusBadge}">${r.lead_status||'-'}</span></td><td>${r.sales_stage||'-'}</td><td>${r.deal_owner||r.lead_owner||'-'}</td><td>${r.notes_date||'-'}</td><td style="white-space:normal;max-width:300px;font-size:.78rem">${notePreview}</td></tr>`;
+  });
+  ntbl += '</tbody></table>';
+  document.getElementById('notesTable').innerHTML = ntbl;
+}
+</script>
+</body>
+</html>

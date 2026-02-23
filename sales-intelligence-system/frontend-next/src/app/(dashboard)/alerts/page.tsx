@@ -174,7 +174,7 @@ export default function AlertsPage() {
                   placeholder="Your Telegram Chat ID (e.g. 123456789)"
                   value={telegramChatId}
                   onChange={(e) => { setTelegramChatId(e.target.value); setPrefsError(null); setPrefsSuccess(false) }}
-                  className="min-w-[220px] rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-amber-400 focus:outline-none dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="min-w-[220px] rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-violet-400 focus:outline-none dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
                 />
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   Message @userinfobot on Telegram to get your Chat ID.
@@ -186,7 +186,7 @@ export default function AlertsPage() {
                 type="button"
                 onClick={savePrefs}
                 disabled={prefsSaving}
-                className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
               >
                 {prefsSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                 Save
@@ -215,7 +215,7 @@ export default function AlertsPage() {
           onClick={() => setFilter('all')}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
             filter === 'all'
-              ? 'bg-amber-500 text-white'
+              ? 'bg-violet-600 text-white'
               : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300'
           }`}
         >
@@ -225,7 +225,7 @@ export default function AlertsPage() {
           onClick={() => setFilter('unread')}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
             filter === 'unread'
-              ? 'bg-amber-500 text-white'
+              ? 'bg-violet-600 text-white'
               : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300'
           }`}
         >
@@ -236,7 +236,7 @@ export default function AlertsPage() {
       {/* Alerts list */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
         </div>
       ) : error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
@@ -255,16 +255,16 @@ export default function AlertsPage() {
               className={`rounded-xl border p-4 transition-colors ${
                 alert.is_read
                   ? 'border-zinc-200/60 bg-white/50 dark:border-zinc-800/60 dark:bg-zinc-900/20'
-                  : 'border-amber-200/60 bg-amber-50/30 dark:border-amber-900/30 dark:bg-amber-950/10'
+                  : 'border-violet-200/60 bg-violet-50/30 dark:border-violet-900/30 dark:bg-violet-950/10'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${getSeverityColor(alert.severity)}`}>
-                      {alert.severity}
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${getSeverityColor(alert.severity || 'low')}`}>
+                      {alert.severity || 'info'}
                     </span>
-                    <span className="text-xs text-zinc-400">{formatRelative(alert.created_at)}</span>
+                    <span className="text-xs text-zinc-400">{formatRelative(alert.created_at || new Date().toISOString())}</span>
                     {alert.alert_type && (
                       <span className="text-xs text-zinc-400">
                         {TYPE_ICONS[alert.alert_type] || ''} {alert.alert_type.replace(/_/g, ' ')}
@@ -280,7 +280,7 @@ export default function AlertsPage() {
                   <button
                     onClick={() => handleMarkRead(alert.id)}
                     disabled={markingId === alert.id}
-                    className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-50 disabled:opacity-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                    className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-violet-600 hover:bg-violet-50 disabled:opacity-50 dark:text-violet-400 dark:hover:bg-violet-950/30"
                   >
                     {markingId === alert.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />

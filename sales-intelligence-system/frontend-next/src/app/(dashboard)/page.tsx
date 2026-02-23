@@ -68,6 +68,9 @@ export default function DashboardHome() {
   const hotLeads = leads.filter(
     (l) => l.score === 'hot' || (typeof l.score_numeric === 'number' && l.score_numeric >= 80)
   ).length
+  const demoPending = leads.filter(
+    (l) => l.stage === 'demo' || l.stage === 'proposal' || l.stage === 'meeting_scheduled'
+  ).length
   const pipelineValue = leads.reduce((sum, l) => sum + (l.deal_value || 0), 0)
   const topLeads = leads.slice(0, 8)
   const brief = briefData?.brief
@@ -81,7 +84,7 @@ export default function DashboardHome() {
           <p className="text-zinc-600 dark:text-zinc-400">{error}</p>
           <button
             onClick={() => fetchData()}
-            className="mt-3 text-sm font-medium text-amber-600 hover:text-amber-500"
+            className="mt-3 text-sm font-medium text-violet-600 hover:text-violet-500"
           >
             Try Again
           </button>
@@ -118,14 +121,14 @@ export default function DashboardHome() {
             value={totalLeads}
           />
           <StatCard
-            icon={<Flame className="h-5 w-5 text-amber-500" />}
+            icon={<Flame className="h-5 w-5 text-violet-500" />}
             label="Hot Leads"
             value={hotLeads}
           />
           <StatCard
             icon={<Phone className="h-5 w-5 text-emerald-500" />}
-            label="Calls Today"
-            value={0}
+            label="Demos Pending"
+            value={demoPending}
           />
           <StatCard
             icon={<IndianRupee className="h-5 w-5 text-violet-500" />}
@@ -137,9 +140,9 @@ export default function DashboardHome() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="glow-card rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-violet-500/10 dark:bg-zinc-900/50">
             <div className="mb-3 flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-amber-500" />
+              <Lightbulb className="h-5 w-5 text-violet-500" />
               <h3 className="text-base font-semibold text-zinc-900 dark:text-white">Today&apos;s Brief</h3>
             </div>
             {briefContent ? (
@@ -153,7 +156,7 @@ export default function DashboardHome() {
             )}
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="glow-card overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-violet-500/10 dark:bg-zinc-900/50">
             <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
               <h3 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-white">
                 <Phone className="h-5 w-5 text-emerald-500" />
@@ -161,7 +164,7 @@ export default function DashboardHome() {
               </h3>
               <Link
                 href="/leads"
-                className="flex items-center gap-0.5 text-xs font-medium text-amber-600 hover:text-amber-500"
+                className="flex items-center gap-0.5 text-xs font-medium text-violet-600 hover:text-violet-500"
               >
                 View all <ChevronRight className="h-3 w-3" />
               </Link>
@@ -221,10 +224,10 @@ export default function DashboardHome() {
           <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-white">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertTriangle className="h-5 w-5 text-violet-500" />
                 Recent Alerts
               </h3>
-              <Link href="/alerts" className="text-xs font-medium text-amber-600 hover:text-amber-500">
+              <Link href="/alerts" className="text-xs font-medium text-violet-600 hover:text-violet-500">
                 View All
               </Link>
             </div>
@@ -275,8 +278,8 @@ function StatCard({
   value: number | string
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow dark:border-zinc-800 dark:bg-zinc-900/50">
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+    <div className="glow-card rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-violet-500/10 dark:bg-zinc-900/50">
+      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-500/10">
         {icon}
       </div>
       <p className="text-2xl font-bold text-zinc-900 dark:text-white">{value}</p>

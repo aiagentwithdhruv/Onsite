@@ -162,21 +162,21 @@ export default function IntelligencePage() {
   if (mode === 'empty' && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-400">
           <TrendingUp className="h-8 w-8" />
         </div>
         <h1 className="mb-2 text-3xl font-bold text-zinc-900 dark:text-white">Sales Intelligence</h1>
         <p className="mb-8 max-w-md text-zinc-500 dark:text-zinc-400">
           Upload your Zoho CRM leads export (CSV) to get actionable insights, team performance metrics, and pipeline analysis.
-          <br /><span className="mt-2 inline-block text-xs text-amber-500">Data persists locally — no re-upload on refresh</span>
+          <br /><span className="mt-2 inline-block text-xs text-violet-500">Data persists locally — no re-upload on refresh</span>
         </p>
         <div
-          className="group flex w-full max-w-md cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-zinc-300 bg-white px-12 py-10 transition-all hover:border-amber-500 hover:bg-amber-50/50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-amber-500 dark:hover:bg-amber-500/5"
+          className="group flex w-full max-w-md cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-zinc-300 bg-white px-12 py-10 transition-all hover:border-violet-500 hover:bg-violet-50/50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-violet-500 dark:hover:bg-violet-500/5"
           onClick={() => fileRef.current?.click()}
           onDragOver={e => e.preventDefault()}
           onDrop={onDrop}
         >
-          <Upload className="mb-4 h-12 w-12 text-zinc-400 transition-colors group-hover:text-amber-500" />
+          <Upload className="mb-4 h-12 w-12 text-zinc-400 transition-colors group-hover:text-violet-500" />
           <p className="mb-1 text-lg font-semibold text-zinc-700 dark:text-zinc-200">Drop your CSV file here</p>
           <p className="text-sm text-zinc-400">or click to browse &middot; supports large files (300K+ rows)</p>
         </div>
@@ -188,7 +188,7 @@ export default function IntelligencePage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
-        <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-500" />
+        <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-violet-500" />
         <p className="text-sm text-zinc-500">{loadingText}</p>
       </div>
     )
@@ -237,7 +237,7 @@ export default function IntelligencePage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-violet-500 hover:text-violet-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
           >
             <Upload className="h-3.5 w-3.5" /> Upload New File
           </button>
@@ -275,7 +275,7 @@ export default function IntelligencePage() {
           </div>
         ))}
         {Object.values(filters).some(Boolean) && (
-          <button onClick={() => setFilters({})} className="text-xs text-amber-500 hover:text-amber-400">Clear all</button>
+          <button onClick={() => setFilters({})} className="text-xs text-violet-500 hover:text-violet-400">Clear all</button>
         )}
       </div>
 
@@ -286,7 +286,7 @@ export default function IntelligencePage() {
           { label: 'Demo Booked', value: demoBooked, color: 'text-cyan-500', icon: Phone },
           { label: 'Demo Done', value: demoDone, color: 'text-purple-500', icon: Target },
           { label: 'Sales Done', value: saleDone, color: 'text-green-500', icon: TrendingUp },
-          { label: 'Purchased', value: purchased, color: 'text-amber-500', icon: Award },
+          { label: 'Purchased', value: purchased, color: 'text-violet-500', icon: Award },
           { label: 'Priority', value: priority, color: 'text-pink-500', icon: Flame },
           { label: 'Prospects', value: prospects, color: 'text-indigo-500', icon: Target },
           { label: 'Qualified', value: qualified, color: 'text-red-500', icon: Award },
@@ -325,7 +325,7 @@ export default function IntelligencePage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? 'border-violet-500 text-violet-600 dark:text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             {tab}
           </button>
@@ -355,8 +355,8 @@ function Card({ title, children, className = '' }: { title: string; children: Re
 
 function InsightBox({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-      <h4 className="mb-1 text-sm font-semibold text-amber-700 dark:text-amber-400">{title}</h4>
+    <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-500/20 dark:bg-violet-500/5">
+      <h4 className="mb-1 text-sm font-semibold text-violet-700 dark:text-violet-400">{title}</h4>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">{children}</p>
     </div>
   )
@@ -365,7 +365,7 @@ function InsightBox({ title, children }: { title: string; children: React.ReactN
 function SmartCard({ title, metric, desc, meta }: { title: string; metric: string; desc: string; meta: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
-      <h4 className="text-xs font-semibold text-amber-600 dark:text-amber-400">{title}</h4>
+      <h4 className="text-xs font-semibold text-violet-600 dark:text-violet-400">{title}</h4>
       <p className="my-1 text-lg font-bold text-zinc-800 dark:text-white">{metric}</p>
       <p className="text-xs text-zinc-500">{desc}</p>
       <p className="mt-1 text-[10px] text-zinc-400">{meta}</p>
@@ -547,7 +547,7 @@ function TeamTab({ data, now }: { data: Row[]; now: Date }) {
                 <div className="flex justify-between"><span className="text-zinc-500">Total Leads</span><span className="font-semibold text-blue-500">{total.toLocaleString()}</span></div>
                 <div className="flex justify-between"><span className="text-zinc-500">Demos Done</span><span className="font-semibold text-purple-500">{demos.toLocaleString()} ({pct(demos, total)})</span></div>
                 <div className="flex justify-between"><span className="text-zinc-500">Sales Done</span><span className="font-semibold text-green-500">{sales.toLocaleString()} ({pct(sales, total)})</span></div>
-                <div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-amber-500">{pri.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-violet-500">{pri.toLocaleString()}</span></div>
                 <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700"><div className="h-full rounded-full bg-green-500" style={{ width: `${Math.min(sales / Math.max(total, 1) * 100 * 10, 100)}%` }} /></div>
               </div>
             </Card>
@@ -882,7 +882,7 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onUpload} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:border-amber-500 hover:text-amber-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <button onClick={onUpload} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:border-violet-500 hover:text-violet-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <Upload className="h-3.5 w-3.5" /> Upload New File
           </button>
           <button onClick={onClear} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-500 hover:border-red-400 hover:text-red-500 dark:border-zinc-700 dark:bg-zinc-800">
@@ -897,7 +897,7 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
           { label: 'Demo Booked', value: k.demo_booked || 0, color: 'text-cyan-500', icon: Phone },
           { label: 'Demo Done', value: k.demo_done || 0, color: 'text-purple-500', icon: Target },
           { label: 'Sales Done', value: k.sale_done || 0, color: 'text-green-500', icon: TrendingUp },
-          { label: 'Purchased', value: k.purchased || 0, color: 'text-amber-500', icon: Award },
+          { label: 'Purchased', value: k.purchased || 0, color: 'text-violet-500', icon: Award },
           { label: 'Priority', value: k.priority || 0, color: 'text-pink-500', icon: Flame },
           { label: 'Prospects', value: k.prospects || 0, color: 'text-indigo-500', icon: Target },
           { label: 'Qualified', value: k.qualified || 0, color: 'text-red-500', icon: Award },
@@ -915,7 +915,7 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
 
       <div className="flex gap-0 border-b border-zinc-200 dark:border-zinc-800">
         {TABS.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? 'border-amber-500 text-amber-600' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}>{tab}</button>
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? 'border-violet-500 text-violet-600' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}>{tab}</button>
         ))}
       </div>
 
@@ -939,7 +939,7 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
 
       {activeTab === 'Team' && (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(team.managers || []).map((m: { name: string; total: number; demos: number; sales: number; priority: number }) => (<Card key={m.name} title={m.name}><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-zinc-500">Total</span><span className="font-semibold text-blue-500">{m.total.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-zinc-500">Sales</span><span className="font-semibold text-green-500">{m.sales.toLocaleString()} ({pct(m.sales, m.total)})</span></div><div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-amber-500">{m.priority}</span></div></div></Card>))}</div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(team.managers || []).map((m: { name: string; total: number; demos: number; sales: number; priority: number }) => (<Card key={m.name} title={m.name}><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-zinc-500">Total</span><span className="font-semibold text-blue-500">{m.total.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-zinc-500">Sales</span><span className="font-semibold text-green-500">{m.sales.toLocaleString()} ({pct(m.sales, m.total)})</span></div><div className="flex justify-between"><span className="text-zinc-500">Priority</span><span className="font-semibold text-violet-500">{m.priority}</span></div></div></Card>))}</div>
           <Card title="Team Leaderboard"><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b text-[10px] font-semibold uppercase text-zinc-400"><th className="py-2 pr-3">Deal Owner</th><th className="py-2 pr-3">Manager</th><th className="py-2 pr-2">Total</th><th className="py-2 pr-2">Sales</th><th className="py-2 pr-2">Conv %</th><th className="py-2">Stale</th></tr></thead><tbody>{(team.owners || []).map((o: { name: string; manager: string; total: number; sales: number; stale: number }) => (<tr key={o.name} className="border-b border-zinc-100 dark:border-zinc-800"><td className="py-2 pr-3 font-medium">{o.name}</td><td className="py-2 pr-3 text-zinc-500">{o.manager}</td><td className="py-2 pr-2">{o.total.toLocaleString()}</td><td className="py-2 pr-2">{o.sales}</td><td className="py-2 pr-2"><Badge color={o.total ? (o.sales / o.total * 100 > 5 ? 'green' : 'red') : 'zinc'}>{pct(o.sales, o.total)}</Badge></td><td className="py-2">{o.stale > 0 ? <Badge color="red">{o.stale}</Badge> : '0'}</td></tr>))}</tbody></table></div></Card>
         </div>
       )}
@@ -965,9 +965,9 @@ function SummaryDashboard({ summary, activeTab, setActiveTab, onUpload, onClear 
       )}
 
       {(activeTab === 'Pipeline' || activeTab === 'Sources' || activeTab === 'Deep Dive') && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/20 dark:bg-amber-500/5">
-          <p className="text-sm text-amber-700 dark:text-amber-400">Upload a fresh CSV for full {activeTab} analytics with filters and deep-dive data.</p>
-          <button onClick={onUpload} className="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-400">Upload CSV</button>
+        <div className="rounded-xl border border-violet-200 bg-violet-50 p-6 text-center dark:border-violet-500/20 dark:bg-violet-500/5">
+          <p className="text-sm text-violet-700 dark:text-violet-400">Upload a fresh CSV for full {activeTab} analytics with filters and deep-dive data.</p>
+          <button onClick={onUpload} className="glow-btn mt-3 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">Upload CSV</button>
         </div>
       )}
     </div>

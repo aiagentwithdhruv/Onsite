@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, Bell, ChevronDown, User as UserIcon, LogOut } from 'lucide-react'
+import { Search, Bell, ChevronDown, User as UserIcon, LogOut, Menu, Sun, Moon } from 'lucide-react'
+import { useTheme } from '@/lib/useTheme'
 import type { User } from '@/lib/types'
 
 interface HeaderProps {
@@ -12,10 +13,12 @@ interface HeaderProps {
   unreadAlerts: number
   user: User | null
   onSignOut: () => void
+  onMobileMenuOpen?: () => void
 }
 
-export default function Header({ title, onSearch, unreadAlerts, user, onSignOut }: HeaderProps) {
+export default function Header({ title, onSearch, unreadAlerts, user, onSignOut, onMobileMenuOpen }: HeaderProps) {
   const router = useRouter()
+  const { theme, toggle: toggleTheme } = useTheme()
   const [searchValue, setSearchValue] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -41,8 +44,20 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
     : '?'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/80 px-6 backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-900/80">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">{title}</h1>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/80 px-4 backdrop-blur-sm sm:px-6 dark:border-violet-500/10 dark:bg-zinc-900/80">
+      <div className="flex items-center gap-3">
+        {onMobileMenuOpen && (
+          <button
+            type="button"
+            className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:hover:bg-white/5"
+            onClick={onMobileMenuOpen}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-4">
         <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
@@ -52,9 +67,18 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
             placeholder="Search leads, companies..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="h-9 w-64 rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 transition-colors focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className="h-9 w-64 rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 transition-colors focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </form>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/5 dark:hover:text-zinc-300"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
 
         <Link
           href="/alerts"
@@ -74,7 +98,7 @@ export default function Header({ title, onSearch, unreadAlerts, user, onSignOut 
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-zinc-100 dark:hover:bg-white/5"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-400">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-600 dark:text-violet-400">
               {initials}
             </div>
             {user && (

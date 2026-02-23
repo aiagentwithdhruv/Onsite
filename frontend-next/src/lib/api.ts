@@ -107,6 +107,28 @@ export const getTelegramConfig = () => api.get<{ configured: boolean }>('/admin/
 export const updateTelegramConfig = (body: { telegram_bot_token?: string | null }) =>
   api.patch('/admin/telegram-config', body)
 
+export type LLMModelItem = { id: string; label: string; description: string; provider: string; router_id?: string | null }
+export type LLMConfigStatus = {
+  anthropic: boolean
+  openai: boolean
+  openrouter: boolean
+  moonshot: boolean
+  models: LLMModelItem[]
+  model_primary: string
+  model_fast: string
+  model_fallback: string
+}
+export const getLLMConfig = () => api.get<LLMConfigStatus>('/admin/llm-config')
+export const updateLLMConfig = (body: {
+  anthropic_api_key?: string | null
+  openai_api_key?: string | null
+  openrouter_api_key?: string | null
+  moonshot_api_key?: string | null
+  model_primary?: string | null
+  model_fast?: string | null
+  model_fallback?: string | null
+}) => api.patch<LLMConfigStatus & { message?: string }>('/admin/llm-config', body)
+
 export const getDashboardSummary = () => api.get('/intelligence/summary')
 export const getDealOwners = () => api.get<{ deal_owners: string[] }>('/intelligence/deal-owners')
 export const getTeamAttention = () => api.get<{ items: TeamAttentionItem[] }>('/intelligence/team-attention')

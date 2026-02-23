@@ -52,7 +52,7 @@ export default function AgentsPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
-        <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-500" />
+        <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-violet-500" />
         <p className="text-sm text-zinc-500">Loading agent profiles...</p>
       </div>
     )
@@ -91,7 +91,7 @@ export default function AgentsPage() {
         <KpiCard icon={Users} label="Agents" value={totalAgents} color="text-blue-500" />
         <KpiCard icon={Target} label="Total Leads" value={totalLeads} color="text-purple-500" />
         <KpiCard icon={TrendingUp} label="Total Sales" value={totalSales} color="text-green-500" />
-        <KpiCard icon={BarChart3} label="Avg Conv %" value={`${avgConversion}%`} color="text-amber-500" />
+        <KpiCard icon={BarChart3} label="Avg Conv %" value={`${avgConversion}%`} color="text-violet-500" />
         <KpiCard icon={Award} label="Top Performer" value={topPerformer?.name || '-'} color="text-indigo-500" small />
       </div>
 
@@ -104,7 +104,7 @@ export default function AgentsPage() {
           { key: 'stale' as const, label: 'Most Stale' },
         ].map(s => (
           <button key={s.key} onClick={() => setSortBy(s.key)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${sortBy === s.key ? 'bg-amber-500 text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${sortBy === s.key ? 'bg-violet-600 text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400'}`}>
             {s.label}
           </button>
         ))}
@@ -125,7 +125,7 @@ export default function AgentsPage() {
                 onClick={() => setExpandedId(isExpanded ? null : profile.id)}
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-sm font-bold text-amber-600">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-sm font-bold text-violet-600">
                     {profile.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
                   <div>
@@ -243,13 +243,13 @@ export default function AgentsPage() {
                           value={noteText}
                           onChange={e => setNoteText(e.target.value)}
                           placeholder="Add a note..."
-                          className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-700 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                          className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-700 placeholder:text-zinc-400 focus:border-violet-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                           onKeyDown={e => { if (e.key === 'Enter') handleAddNote(profile.id) }}
                         />
                         <button
                           onClick={() => handleAddNote(profile.id)}
                           disabled={addingNote || !noteText.trim()}
-                          className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-400 disabled:opacity-50"
+                          className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
                         >
                           <Send className="h-3.5 w-3.5" />
                         </button>

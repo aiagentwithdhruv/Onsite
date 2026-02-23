@@ -33,7 +33,7 @@ export default function BriefsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
       </div>
     )
   }
@@ -60,7 +60,7 @@ export default function BriefsPage() {
 
       <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
         <div className="mb-4 flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-amber-500" />
+          <Lightbulb className="h-5 w-5 text-violet-500" />
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Today&apos;s Brief</h3>
         </div>
         {content ? (

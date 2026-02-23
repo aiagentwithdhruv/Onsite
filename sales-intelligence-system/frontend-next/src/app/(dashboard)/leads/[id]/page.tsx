@@ -68,7 +68,7 @@ export default function LeadDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
       </div>
     )
   }
@@ -77,7 +77,7 @@ export default function LeadDetailPage() {
     return (
       <div className="text-center">
         <p className="text-zinc-500 dark:text-zinc-400">{error || 'Lead not found'}</p>
-        <Link href="/leads" className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-500">
+        <Link href="/leads" className="mt-2 inline-block text-sm font-medium text-violet-600 hover:text-violet-500">
           Back to Leads
         </Link>
       </div>
@@ -138,7 +138,7 @@ export default function LeadDetailPage() {
             <button
               onClick={handleResearch}
               disabled={researchLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-amber-400 disabled:opacity-50"
+              className="glow-btn flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
             >
               {researchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               Research
@@ -150,7 +150,7 @@ export default function LeadDetailPage() {
           {lead.email && (
             <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
               <Mail className="h-4 w-4 shrink-0" />
-              <a href={`mailto:${lead.email}`} className="hover:text-amber-600 dark:hover:text-amber-400">
+              <a href={`mailto:${lead.email}`} className="hover:text-violet-600 dark:hover:text-violet-400">
                 {lead.email}
               </a>
             </div>
@@ -158,7 +158,7 @@ export default function LeadDetailPage() {
           {lead.phone && (
             <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
               <Phone className="h-4 w-4 shrink-0" />
-              <a href={`tel:${lead.phone}`} className="hover:text-amber-600 dark:hover:text-amber-400">
+              <a href={`tel:${lead.phone}`} className="hover:text-violet-600 dark:hover:text-violet-400">
                 {lead.phone}
               </a>
             </div>

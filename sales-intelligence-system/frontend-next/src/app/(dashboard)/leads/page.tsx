@@ -110,7 +110,7 @@ export default function LeadsPage() {
               placeholder="Search company or contact..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -121,7 +121,7 @@ export default function LeadsPage() {
                 setStageFilter(e.target.value)
                 setPage(1)
               }}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
               {STAGES.map((s) => (
                 <option key={s} value={s}>
@@ -138,7 +138,7 @@ export default function LeadsPage() {
                 setSortBy(e.target.value)
                 setPage(1)
               }}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -159,7 +159,7 @@ export default function LeadsPage() {
       ) : error ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
           <p className="mb-3 text-zinc-500 dark:text-zinc-400">{error}</p>
-          <button onClick={fetchLeads} className="text-sm font-medium text-amber-600 hover:text-amber-500">
+          <button onClick={fetchLeads} className="text-sm font-medium text-violet-600 hover:text-violet-500">
             Retry
           </button>
         </div>
@@ -251,7 +251,7 @@ export default function LeadsPage() {
                       onClick={() => setPage(pageNum)}
                       className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                         page === pageNum
-                          ? 'bg-amber-500 text-zinc-900'
+                          ? 'bg-violet-600 text-white'
                           : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800'
                       }`}
                     >

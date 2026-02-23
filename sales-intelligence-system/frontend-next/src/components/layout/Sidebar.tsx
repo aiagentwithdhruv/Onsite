@@ -40,7 +40,7 @@ function getRoleBadgeColor(role: string): string {
     case 'admin':
       return 'bg-rose-500/20 text-rose-400'
     case 'manager':
-      return 'bg-amber-500/20 text-amber-400'
+      return 'bg-fuchsia-500/20 text-fuchsia-400'
     case 'team_lead':
       return 'bg-emerald-500/20 text-emerald-400'
     default:
@@ -64,21 +64,21 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/5 bg-zinc-900 transition-all duration-300',
+        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-violet-500/10 bg-[#0f0a1f] transition-all duration-300',
         collapsed ? 'w-[72px]' : 'w-64'
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
+      <div className="flex h-16 items-center justify-between border-b border-violet-500/10 px-4">
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+            <div className="glow-logo flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 text-violet-400">
               <Zap className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold tracking-tight text-white">ONSITE</span>
           </Link>
         )}
         {collapsed && (
-          <Link href="/" className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+          <Link href="/" className="glow-logo mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 text-violet-400">
             <Zap className="h-5 w-5" />
           </Link>
         )}
@@ -93,9 +93,9 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                 <Link
                   href={item.href}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                     isActive
-                      ? 'bg-amber-500/10 text-amber-400'
+                      ? 'glow-active bg-violet-500/10 text-violet-400'
                       : 'text-zinc-400 hover:bg-white/5 hover:text-white',
                     collapsed && 'justify-center'
                   )}
@@ -119,8 +119,8 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                 <Link
                   href={adminItem.href}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-white',
-                    pathname === adminItem.href && 'bg-amber-500/10 text-amber-400',
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-all hover:bg-white/5 hover:text-white',
+                    pathname === adminItem.href && 'glow-active bg-violet-500/10 text-violet-400',
                     collapsed && 'justify-center'
                   )}
                 >
@@ -132,8 +132,8 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
                 <Link
                   href={settingsItem.href}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-white',
-                    pathname === settingsItem.href && 'bg-amber-500/10 text-amber-400',
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-all hover:bg-white/5 hover:text-white',
+                    pathname === settingsItem.href && 'glow-active bg-violet-500/10 text-violet-400',
                     collapsed && 'justify-center'
                   )}
                 >
@@ -147,10 +147,10 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
       </nav>
 
       {user && (
-        <div className={cn('border-t border-white/5 p-4', collapsed ? 'p-2' : '')}>
+        <div className={cn('border-t border-violet-500/10 p-4', collapsed ? 'p-2' : '')}>
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-sm font-semibold text-amber-400">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-sm font-semibold text-violet-400">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
@@ -161,14 +161,14 @@ export default function Sidebar({ user, unreadAlerts, collapsed, onToggle }: Sid
               </div>
             </div>
           ) : (
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20 text-sm font-semibold text-amber-400">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20 text-sm font-semibold text-violet-400">
               {initials}
             </div>
           )}
         </div>
       )}
 
-      <div className="border-t border-white/5 p-2">
+      <div className="border-t border-violet-500/10 p-2">
         <button
           onClick={onToggle}
           className="flex w-full items-center justify-center rounded-lg py-2.5 text-zinc-500 transition-colors hover:bg-white/5 hover:text-zinc-300"

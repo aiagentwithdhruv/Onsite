@@ -173,7 +173,7 @@ export default function SettingsPage() {
 
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-700/50 dark:bg-zinc-900/40">
         <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-          <User className="h-5 w-5 text-amber-500" />
+          <User className="h-5 w-5 text-violet-500" />
           Profile
         </h3>
         <dl className="space-y-3">
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                   placeholder="Paste bot token from @BotFather"
                   value={telegramToken}
                   onChange={(e) => { setTelegramToken(e.target.value); setTelegramSaveError(null) }}
-                  className="min-w-[240px] rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="min-w-[240px] rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-500/20 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
                 />
                 <button
                   type="button"
@@ -239,7 +239,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={saveTelegramToken}
                   disabled={telegramSaving || !telegramToken.trim()}
-                  className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
                 >
                   {telegramSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   Save
@@ -263,7 +263,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={clearTelegramAndShowInput}
-                className="text-xs font-medium text-amber-600 hover:underline dark:text-amber-400"
+                className="text-xs font-medium text-violet-600 hover:underline dark:text-violet-400"
               >
                 Change
               </button>

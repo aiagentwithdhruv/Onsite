@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
       </div>
     )
   }
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
       {funnel.length > 0 && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-            <BarChart3 className="h-5 w-5 text-amber-500" />
+            <BarChart3 className="h-5 w-5 text-violet-500" />
             Pipeline Funnel
           </h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
       {repPerf.length > 0 && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-            <Users className="h-5 w-5 text-amber-500" />
+            <Users className="h-5 w-5 text-violet-500" />
             Rep Performance
           </h3>
           <div className="overflow-x-auto">
@@ -139,7 +139,7 @@ export default function AnalyticsPage() {
       {sources.length > 0 && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-            <TrendingUp className="h-5 w-5 text-amber-500" />
+            <TrendingUp className="h-5 w-5 text-violet-500" />
             Source Analysis
           </h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

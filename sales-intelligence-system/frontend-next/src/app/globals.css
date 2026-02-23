@@ -3,9 +3,9 @@
 :root {
   --background: #fafafa;
   --foreground: #18181b;
-  --sidebar: #18181b;
-  --accent: #f59e0b;
-  --accent-muted: rgba(245, 158, 11, 0.15);
+  --sidebar: #0f0a1f;
+  --accent: #8b5cf6;
+  --accent-muted: rgba(139, 92, 246, 0.15);
 }
 
 @theme inline {
@@ -31,6 +31,75 @@ body {
 
 .dark .bg-grid-pattern {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgb(139 92 246 / 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(139 92 246 / 0.03) 1px, transparent 1px);
+}
+
+/* Dark mode body background */
+.dark body {
+  --background: #09090b;
+  --foreground: #fafafa;
+}
+
+/* Smooth color transitions for theme toggle */
+body,
+.dark body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar (dark mode) */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(88 28 135 / 0.4);
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(139 92 246 / 0.6);
+}
+
+/* Focus ring utility */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}
+
+/* Premium glow effects */
+.glow-card {
+  transition: box-shadow 0.3s ease;
+}
+.glow-card:hover {
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.dark .glow-card:hover {
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.12), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Active glow for nav items */
+.glow-active {
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
+}
+
+/* Subtle glow for primary buttons */
+.glow-btn {
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.glow-btn:hover {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* Logo glow pulse */
+.glow-logo {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+  transition: box-shadow 0.3s ease;
+}
+.glow-logo:hover {
+  box-shadow: 0 0 28px rgba(139, 92, 246, 0.35);
 }
