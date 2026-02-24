@@ -143,7 +143,7 @@
 
 ### 2. Sales Intelligence System (BUILT, NOT DEPLOYED)
 
-**Path:** `sales-intelligence-system/`
+**Path:** `sales-intelligence/`
 
 AI-powered sales intelligence on top of Zoho CRM:
 1. **Prioritize** — AI ranks leads Hot/Warm/Cold with reasons, daily call list
@@ -156,7 +156,7 @@ AI-powered sales intelligence on top of Zoho CRM:
 - DB: Supabase (PostgreSQL + pgvector)
 - AI: LangGraph + Claude (primary) + GPT-4o (fallback) + Haiku (cheap)
 - CRM: Zoho CRM REST API v8
-- Alerts: Telegram, Discord, WhatsApp (Gupshup), Email (Resend)
+- Alerts: Telegram, Discord, WhatsApp (Meta Cloud API), Email (Resend)
 - Hosting Plan: Railway (backend) + Vercel (frontend)
 - Supabase Project: `jfuvhaampbngijfxgnnf`
 
@@ -427,23 +427,18 @@ Onsite/
 ├── README.md                      ← Repo overview
 ├── QUOTATION-SYSTEM-COMPLETE.md   ← Quotation system status
 ├── QUOTATION-GENERATOR-SETUP.md   ← Setup instructions
-├── SALES-TEAM-QUICK-START.md      ← Quick start for sales team
-├── TROUBLESHOOTING.md             ← Debug guide
-├── UPDATES_LOG.md                 ← Changelog (White Label, Additional Users)
-├── Quotation_temp/                ← Reference templates (CSV + PDF)
-├── sales_agent_system_design.docx.pdf  ← Original v1.0 design doc
-└── sales-intelligence-system/     ← AI Sales Intelligence (NOT DEPLOYED)
-    ├── 01-SYSTEM-DESIGN-UPDATED.md
-    ├── 02-ZOHO-INTEGRATION-SPEC.md
-    ├── 03-DATABASE-SCHEMA.md
-    ├── 04-LANGGRAPH-AGENTS-SPEC.md
-    ├── 05-BUILD-PLAN-REVISED.md
-    ├── PROGRESS.md
-    ├── DEPLOY.md
-    ├── GAMMA-SLIDES-CONTENT.md
-    ├── backend/                   ← FastAPI + LangGraph agents
-    ├── frontend-next/             ← Next.js 16 dashboard
-    └── database/                  ← 11 Supabase migrations
+├── sales-intelligence/            ← AI Sales Intelligence
+│   ├── backend/                   ← FastAPI + LangGraph agents (port 8000)
+│   └── frontend-next/             ← Next.js 16 dashboard (port 3000)
+├── quotations/                    ← Quotation PDFs, templates, generator
+├── database/                      ← Supabase SQL migrations
+├── docs/
+│   ├── design/                    ← System specs (01-05)
+│   └── guides/                    ← Progress, troubleshooting, quick-start
+├── scripts/                       ← Utility scripts (start-backend, setup_database, import)
+├── knowledge/                     ← Competitors, market research
+├── runbooks/                      ← Deployment runbooks
+└── _archive/                      ← Old frontend, backup
 ```
 
 ---
@@ -475,14 +470,14 @@ If this folder is inside the larger n8n project, these skills from `.context/cla
 
 When working on Onsite:
 1. **Read this file first** — it has everything
-2. **For quotation changes** — edit `quotation-generator.html` and `QuotationGenerator.gs` in sync (keep pricing in both files synchronized)
-3. **For sales intelligence** — check `sales-intelligence-system/PROGRESS.md` for current state, and `.context` file for technical decisions
+2. **For quotation changes** — edit `quotations/quotation-generator.html` and `quotations/QuotationGenerator.gs` in sync (keep pricing in both files synchronized)
+3. **For sales intelligence** — check `docs/guides/PROGRESS.md` for current state, backend code in `sales-intelligence/backend/`
 4. **For sales strategy** — reference the Sales Playbook section above
 5. **For competitor analysis** — use the market research above, refresh from onsiteteams.com if needed
 6. **For new features** — check Automation Opportunities section, prioritize revenue-driving ones
 7. **Keep pricing data current** — verify against onsiteteams.com/onsite-pricing periodically
 8. **For n8n workflows** — check the n8n Workflows section for existing workflow IDs and credentials
-9. **For deployment** — see `sales-intelligence-system/DEPLOY.md` for Docker/Railway/Vercel instructions
+9. **For deployment** — see `runbooks/deploy-sales-intelligence.md` for deployment instructions
 
 ### Tone for Onsite Communications
 - Professional but practical (construction industry, not tech startups)
@@ -537,4 +532,4 @@ When updating this file, also check if these files need updates:
 - `LOADOUT.md` — file inventory, version, changelog
 - `knowledge/competitors.md` — if competitor data changed
 - `knowledge/construction-market.md` — if market data changed
-- `sales-intelligence-system/SKILL.md` — if codebase/architecture changed
+- `sales-intelligence/` — if codebase/architecture changed

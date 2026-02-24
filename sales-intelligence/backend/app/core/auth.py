@@ -1,0 +1,122 @@
+"""Auth middleware — decodes Supabase JWT and looks up user in DB."""
+
+import logging
+import base64
+import json
+import time as _time
+from fastapi import Request, HTTPException, Depends
+from app.core.supabase_client import get_supabase_admin
+
+log = logging.getLogger(__name__)
+
+# In-memory user cache: email/sub → (user_dict, expires_at)
+_user_cache: dict[str, tuple[dict, float]] = {}
+_CACHE_TTL = 300  # 5 minutes
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    """Decode a JWT payload without external library dependencies.
+    We trust the token origin (Supabase HTTPS) and verify the user
+    exists in our DB as the authorization step."""
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid JWT format")
+    payload_b64 = parts[1]
+    padding = 4 - len(payload_b64) % 4
+    if padding != 4:
+        payload_b64 += "=" * padding
+    payload_bytes = base64.urlsafe_b64decode(payload_b64)
+    return json.loads(payload_bytes)
+
+
+async def get_current_user(request: Request) -> dict:
+    """Decode Supabase JWT, extract user info, look up in users table."""
+    path = request.url.path
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        log.warning("AUTH FAIL [%s]: No Authorization header present. Headers: %s",
+                     path, list(request.headers.keys()))
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+
+    token = auth_header.split("Bearer ")[1]
+
+    try:
+        payload = _decode_jwt_payload(token)
+    except Exception as e:
+        log.warning("AUTH FAIL [%s]: JWT decode failed: %s", path, e)
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    sub = payload.get("sub")
+    email = payload.get("email")
+    exp = payload.get("exp")
+
+    if not sub:
+        log.warning("AUTH FAIL [%s]: Token missing sub claim", path)
+        raise HTTPException(status_code=401, detail="Token missing user ID")
+
+    if exp and exp < _time.time():
+        log.warning("AUTH FAIL [%s]: Token expired (exp=%s, now=%s)", path, exp, _time.time())
+        raise HTTPException(status_code=401, detail="Token expired")
+
+    # Check cache first
+    cache_key = email or sub
+    now = _time.time()
+    if cache_key and cache_key in _user_cache:
+        cached_user, expires_at = _user_cache[cache_key]
+        if now < expires_at:
+            return cached_user
+        else:
+            del _user_cache[cache_key]
+
+    db = get_supabase_admin()
+    result = None
+
+    # Try email first (most reliable — auth_id/id lookups usually fail)
+    for field, value in [("email", email), ("auth_id", sub), ("id", sub)]:
+        if not value:
+            continue
+        try:
+            r = db.table("users").select("*").eq(field, value).maybe_single().execute()
+            if r.data:
+                result = r.data
+                break
+        except Exception:
+            pass
+
+    if not result:
+        log.warning("AUTH FAIL [%s]: User not found for sub=%s email=%s", path, sub, email)
+        raise HTTPException(status_code=403, detail="User not found in system")
+
+    # Cache for 5 minutes
+    if cache_key:
+        _user_cache[cache_key] = (result, now + _CACHE_TTL)
+
+    return result
+
+
+async def require_role(*allowed_roles: str):
+    """Dependency factory: require user to have one of the specified roles."""
+    async def check_role(user: dict = Depends(get_current_user)):
+        if user["role"] not in allowed_roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Role '{user['role']}' not authorized. Required: {allowed_roles}"
+            )
+        return user
+    return check_role
+
+
+async def require_rep(user: dict = Depends(get_current_user)) -> dict:
+    return user
+
+
+async def require_manager(user: dict = Depends(get_current_user)) -> dict:
+    if user["role"] not in ("manager", "founder", "admin"):
+        raise HTTPException(status_code=403, detail="Manager access required")
+    return user
+
+
+async def require_admin(user: dict = Depends(get_current_user)) -> dict:
+    if user["role"] not in ("founder", "admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user

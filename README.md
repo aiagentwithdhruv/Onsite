@@ -1,133 +1,144 @@
-# Onsite Automation Suite
+# Onsite — AI-Powered Sales Intelligence & Automation
 
-**Internal automation tools for Onsite Teams** - Construction Management Software
+**Internal tools for Onsite Teams** — Construction Management Software
 
-> 🔒 Private Repository - ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED
-
----
-
-## 🚀 Available Tools
-
-### 1. Quotation Generator
-Automated quotation/proforma invoice generator for the sales team.
-
-**Features:**
-- ✅ Auto-generate professional PDF quotations
-- ✅ National (INR) & International (USD) pricing
-- ✅ Email to client & salesperson automatically
-- ✅ Save PDF to Google Drive
-- ✅ Multiple plans: Business, Business+, Enterprise
-- ✅ Add-ons: GPS, Tally, Zoho integrations
-- ✅ Auto-calculated discounts & GST
-- ✅ Proforma Invoice option
-- ✅ Remembers salesperson details
-
-**Files:**
-- `quotation-generator.html` - Main UI (host this)
-- `QuotationGenerator.gs` - Google Apps Script backend
+> ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED | [onsiteteams.com](https://www.onsiteteams.com)
 
 ---
 
-## 📦 Quick Start
+## What This Does
 
-### For Sales Team
-1. Open the hosted quotation generator URL
-2. Enter your name → email auto-fills
-3. Fill client details
-4. Select plan, users, duration
-5. Click **Send** → Done!
+Upload your CRM/pipeline CSV and the system:
+- **Scores leads** Hot/Warm/Cold with AI-powered reasoning
+- **Detects anomalies** — stale deals, missing follow-ups, pipeline risks
+- **Sends smart alerts** to your team via Telegram, WhatsApp, and Email
+- **Generates daily briefs** — personalized morning briefings per rep
+- **Profiles agents** — performance analysis across 33 deal owners
 
-### For Developers
-See `QUOTATION-GENERATOR-SETUP.md` for full setup instructions.
-
----
-
-## 🌐 Hosting Options
-
-### Option 1: GitHub Pages (Recommended)
-```bash
-# Enable GitHub Pages in repository settings
-# Set source to: main branch, / (root)
-# Access at: https://aiagentwithdhruv.github.io/Onsite/quotation-generator.html
-```
-
-### Option 2: Google Sites
-1. Create a new Google Site
-2. Add embed block
-3. Paste HTML code
-4. Publish
-
-### Option 3: Company Website
-Upload `quotation-generator.html` to your server.
+Built for reps, team leads, and founders to act on leads faster.
 
 ---
 
-## 📁 Repository Structure
+## Project Structure
 
 ```
 Onsite/
-├── README.md                      # This file
-├── quotation-generator.html       # Quotation Generator UI
-├── QuotationGenerator.gs          # Google Apps Script backend
-├── QUOTATION-GENERATOR-SETUP.md   # Setup instructions
-├── SALES-TEAM-QUICK-START.md      # Quick start for sales team
-├── TROUBLESHOOTING.md             # Common issues & fixes
-└── Quotation_temp/                # Reference templates (not needed)
+  sales-intelligence/            # AI Sales Intelligence System
+    backend/                     # FastAPI + LangGraph agents (port 8000)
+    frontend-next/               # Next.js 16 dashboard (port 3000)
+
+  quotations/                    # Quotation generator + templates
+    QuotationGenerator.gs        # Google Apps Script backend
+    quotation-generator.html     # Web UI
+    *.pdf / *.csv                # Generated quotations
+
+  database/                      # Supabase SQL migrations (11 files)
+  docs/
+    design/                      # System specs (01-05)
+    guides/                      # Progress, troubleshooting, quick-start
+  scripts/                       # Utility scripts
+  knowledge/                     # Market research, competitors, glossary
+  runbooks/                      # Deployment guides
 ```
 
 ---
 
-## 🔧 Configuration
+## Tech Stack
 
-### Google Apps Script
-1. Go to [script.google.com](https://script.google.com)
-2. Create new project
-3. Paste `QuotationGenerator.gs`
-4. Deploy as Web App
-5. Update URL in `quotation-generator.html`
-
-### Google Drive Folders
-- National quotations: `Quotation/National`
-- International quotations: `Quotation/International`
+| Layer | Tech |
+|-------|------|
+| **Frontend** | Next.js 16, React 19, Tailwind 4, Recharts |
+| **Backend** | FastAPI (Python), LangGraph agents |
+| **Database** | Supabase (PostgreSQL + pgvector) |
+| **AI** | Claude (primary), GPT-4o (fallback), Haiku (scoring) |
+| **CRM** | Zoho CRM REST API v8 |
+| **Alerts** | Telegram, WhatsApp (Meta Cloud API), Email (Resend), Discord |
 
 ---
 
-## 🛣️ Roadmap
+## Run Locally
 
-Future automation tools planned:
-- [ ] Invoice Generator
-- [ ] Lead Tracker
-- [ ] Proposal Generator
-- [ ] Client Onboarding Automation
-- [ ] Contract Management
-- [ ] Payment Reminders
+### Backend
 
----
+```bash
+cd sales-intelligence/backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # fill Supabase + AI keys
+uvicorn app.main:app --port 8000 --reload
+```
 
-## 👥 Team Access
+### Frontend
 
-| Name | Role | Access |
-|------|------|--------|
-| Dhruv | Admin | Full |
-| Sales Team | Users | Quotation Generator |
+```bash
+cd sales-intelligence/frontend-next
+npm install
+cp .env.example .env.local   # set NEXT_PUBLIC_SUPABASE_URL, API_URL
+npm run dev
+```
 
----
+- Backend: **http://localhost:8000** | Health: `/health`
+- Frontend: **http://localhost:3000**
 
-## 📞 Support
+### Database Setup
 
-For issues or feature requests:
-- Email: dhruv.tomar@onsiteteams.com
-- Internal: Create GitHub Issue
+Run migrations in Supabase SQL Editor from `database/` folder, or:
 
----
-
-## 📄 License
-
-**Proprietary** - ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED
-
-All rights reserved. Internal use only.
+```bash
+python3 scripts/setup_database.py
+```
 
 ---
 
-*Powered by Onsite - Construction Management Software*
-*https://www.onsiteteams.com*
+## Dashboard Pages
+
+| Page | What It Shows |
+|------|---------------|
+| **Home** | Pipeline value, hot leads, priority call list, daily brief |
+| **Intelligence** | CSV upload, KPIs, 8 analysis tabs, filters |
+| **Leads** | Hot prospects + stale leads from pipeline analysis |
+| **Agent Profiles** | 33 deal owners with performance, strengths, concerns |
+| **Analytics** | Pipeline funnel, rep performance, source analysis, trends |
+| **Alerts** | Smart alerts with severity, multi-channel delivery |
+| **Briefs** | AI-generated daily briefings per user |
+| **Settings** | LLM config, notification preferences |
+
+---
+
+## Alert Channels
+
+| Channel | Status | Config |
+|---------|--------|--------|
+| Telegram | Working | Bot token + chat ID per user |
+| WhatsApp | Ready | Meta Cloud API (direct, no BSP) |
+| Email | Ready | Resend API |
+| Discord | Ready | Webhook URL per user |
+
+---
+
+## Quotation Generator
+
+Automated quotation/proforma invoice generator for the sales team.
+
+- Auto-generate professional PDF quotations (INR & USD)
+- Multiple plans: Business, Business+, Enterprise, White Label
+- Add-ons: GPS, Tally, Zoho integrations
+- Email to client + save to Google Drive
+
+Files in `quotations/` folder.
+
+---
+
+## Team
+
+| Name | Role |
+|------|------|
+| Dhruv Tomar | Founder / Admin |
+| Sales Team (21 users) | Reps, Team Leads, Managers |
+
+---
+
+**Proprietary** — ABEYAANTRIX TECHNOLOGY PRIVATE LIMITED. All rights reserved.
+
+*Powered by [Onsite](https://www.onsiteteams.com) — Construction Management Software*

@@ -58,7 +58,7 @@ Expected tables: users, leads, lead_scores, lead_notes, lead_activities, lead_re
 ## Step 2: Deploy Backend to Railway
 
 ```bash
-cd sales-intelligence-system/backend
+cd sales-intelligence/backend
 
 # Railway CLI
 railway login
@@ -84,7 +84,7 @@ curl https://<railway-url>/health
 ## Step 3: Deploy Frontend to Vercel
 
 ```bash
-cd sales-intelligence-system/frontend-next
+cd sales-intelligence/frontend-next
 
 # Vercel CLI
 vercel login
