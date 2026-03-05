@@ -12,25 +12,36 @@ Usage:
 """
 
 import json
+import os
 import sys
 import urllib.request
 
-N8N_HOST = "https://n8n.srv1184808.hstgr.cloud"
-N8N_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjRjYjI3OC0wMTBjLTQ5NjQtYTY4ZC1jNWUzMDAxNTE0ZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiZmE4YTYyNjAtNzVjNC00YzZjLTkwMTAtMjhiNGNhMTVkOTFmIiwiaWF0IjoxNzcyMjkwOTQwfQ.wHonErgb3s8BKxd2o6eBUpYUL4Y6OWP5Qo4LvIux1KA"
+# Load .env file (same directory as this script)
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(_env_path):
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _k, _v = _line.split("=", 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
+N8N_HOST = os.environ.get("N8N_HOST", "https://n8n.srv1184808.hstgr.cloud")
+N8N_API_KEY = os.environ["N8N_API_KEY"]
 
 # === SHARED JAVASCRIPT HELPERS ===
 # This gets prepended to every Code node
 SHARED_JS = r"""
 // === ONSITE CONFIG ===
 const Z = {
-  cid: '1000.D98P3ZGFZFNRDUQCA5W3BU754H93RD',
-  cs: '184564298f04d2fdf7d88284b066379be4908ddbb2',
-  rt: '1000.a58fce66a90c3b0c05fd0abae49a2484.f3b7bf8173c395f6a58a8d1430b912d0'
+  cid: '%ZOHO_CID%',
+  cs: '%ZOHO_CS%',
+  rt: '%ZOHO_RT%'
 };
 const G = {
-  k: '699d5e2ebdf70f643a41e774',
-  s: 'be2886a0ce0f4a6c990c1c59df972fc9',
-  ch: '642ead91fe1098cbbd157509'
+  k: '%GALLABOX_KEY%',
+  s: '%GALLABOX_SECRET%',
+  ch: '%GALLABOX_CHANNEL%'
 };
 const MGR = {Sumit:'918291400026',Akshansh:'919654225317',Dhruv:'918770101822'};
 const REPS = {Sunil:'919289602555',Anjali:'917020774603',Bhavya:'919900425676',Mohan:'918220494443',Gayatri:'919993786319',Shailendra:'919589613771','Amit U':'918762879435',Hitangi:'919082286699','Amit Kumar':'916263582436'};
@@ -1048,8 +1059,8 @@ const myRole = ROLES[repName] || 'rep';
 const msgLower = msg.toLowerCase();
 
 // === SUPABASE CONVERSATION MEMORY ===
-const SB_URL = 'https://jfuvhaampbngijfxgnnf.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdXZoYWFtcGJuZ2lqZnhnbm5mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTA2MTUwOCwiZXhwIjoyMDg2NjM3NTA4fQ.hLgv7fW-GZDjf5vPVoXTwipYA6MG1QGelY_DbfAOEpI';
+const SB_URL = '%SUPABASE_URL%';
+const SB_KEY = '%SUPABASE_KEY%';
 const SB_HEADERS = {'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
 
 // Fetch recent conversation history for this user
@@ -1120,7 +1131,7 @@ if (!queryingAll) {
 }
 
 // === AI INTENT DETECTION (Grok 4.1 Fast via OpenRouter) ===
-const OR_KEY = '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';
+const OR_KEY = '%OPENROUTER_KEY%';
 
 // Fast-path: obvious intents (no AI call needed)
 let intent = null;
@@ -1798,6 +1809,21 @@ def build_workflow_json(num: str) -> dict:
     import uuid
     wf = WORKFLOWS[num]
     js_code = SHARED_JS + wf["js"]
+
+    # Inject credentials from environment
+    _env_replacements = {
+        "%ZOHO_CID%": os.environ.get("ZOHO_CID", ""),
+        "%ZOHO_CS%": os.environ.get("ZOHO_CS", ""),
+        "%ZOHO_RT%": os.environ.get("ZOHO_RT", ""),
+        "%GALLABOX_KEY%": os.environ.get("GALLABOX_KEY", ""),
+        "%GALLABOX_SECRET%": os.environ.get("GALLABOX_SECRET", ""),
+        "%GALLABOX_CHANNEL%": os.environ.get("GALLABOX_CHANNEL", ""),
+        "%SUPABASE_URL%": os.environ.get("SUPABASE_URL", ""),
+        "%SUPABASE_KEY%": os.environ.get("SUPABASE_KEY", ""),
+        "%OPENROUTER_KEY%": os.environ.get("OPENROUTER_KEY", ""),
+    }
+    for placeholder, value in _env_replacements.items():
+        js_code = js_code.replace(placeholder, value)
 
     # Inject FB token for automation 6
     if num == "6":
