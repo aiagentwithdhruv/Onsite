@@ -694,6 +694,41 @@
         </div>
       </div>
       
+      <!-- Enterprise Add-Ons (visible only for Enterprise plan) -->
+      <div class="card" id="enterpriseAddonsSection" style="display: none;">
+        <div class="section-title">⭐ Enterprise Add-Ons</div>
+        <small style="color: var(--text-light); display: block; margin-bottom: 16px;">Select add-ons and enter custom pricing for each</small>
+        <div class="checkbox-group">
+          <label class="checkbox-option" onclick="toggleEnterpriseAddon(this)">
+            <input type="checkbox" name="enterpriseAddons" value="customRequirements">
+            <span>Custom Requirements</span>
+            <span class="addon-price">Custom</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleEnterpriseAddon(this)">
+            <input type="checkbox" name="enterpriseAddons" value="vendorPortal">
+            <span>Vendor Portal</span>
+            <span class="addon-price">Custom</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleEnterpriseAddon(this)">
+            <input type="checkbox" name="enterpriseAddons" value="clientPortal">
+            <span>Client Portal</span>
+            <span class="addon-price">Custom</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleEnterpriseAddon(this)">
+            <input type="checkbox" name="enterpriseAddons" value="whiteLabelSolution">
+            <span>White Labelled Solution</span>
+            <span class="addon-price">Custom</span>
+          </label>
+          <label class="checkbox-option" onclick="toggleEnterpriseAddon(this)">
+            <input type="checkbox" name="enterpriseAddons" value="sapIntegration">
+            <span>SAP Integration</span>
+            <span class="addon-price">Custom</span>
+          </label>
+        </div>
+        <div class="form-grid" style="margin-top: 20px; display: none;" id="enterpriseAddonPricing">
+        </div>
+      </div>
+
       <!-- Add-ons -->
       <div class="card" id="addonsSection">
         <div class="section-title">➕ Add-Ons</div>
@@ -770,8 +805,8 @@
             <small style="color: var(--text-light); font-size: 0.8rem;">Default is SWIFT for international quotes.</small>
           </div>
           <div class="form-group full-width">
-            <label>Special Notes (Optional)</label>
-            <textarea id="specialNotes" placeholder="Any special terms or notes for this quotation..."></textarea>
+            <label>Special Terms & Conditions (Optional)</label>
+            <textarea id="specialNotes" rows="4" placeholder="Add any special terms, conditions, or notes for this quotation...&#10;Example: Implementation timeline, custom SLA, special discount conditions, etc."></textarea>
           </div>
         </div>
         
@@ -1148,22 +1183,26 @@
       const enterpriseAmount = document.getElementById('enterpriseAmount');
       const whiteLabelOptions = document.getElementById('whiteLabelOptions');
       const addonsSection = document.getElementById('addonsSection');
+      const enterpriseAddonsSection = document.getElementById('enterpriseAddonsSection');
 
       if (plan === 'enterprise') {
         standardOptions.style.display = 'none';
         enterpriseAmount.style.display = 'block';
         whiteLabelOptions.style.display = 'none';
         addonsSection.style.display = 'none';
+        enterpriseAddonsSection.style.display = 'block';
       } else if (plan === 'white_label') {
         standardOptions.style.display = 'none';
         enterpriseAmount.style.display = 'none';
         whiteLabelOptions.style.display = 'grid';
         addonsSection.style.display = 'none';
+        enterpriseAddonsSection.style.display = 'none';
       } else {
         standardOptions.style.display = 'grid';
         enterpriseAmount.style.display = 'none';
         whiteLabelOptions.style.display = 'none';
         addonsSection.style.display = 'block';
+        enterpriseAddonsSection.style.display = 'none';
 
         // Auto-fill special offer price from selected plan
         const p = PRICING[selectedRegion];
@@ -1198,6 +1237,49 @@
         section.style.display = input.checked ? 'block' : 'none';
       }
       calculateTotal();
+    }
+
+    // Toggle Enterprise Add-on
+    function toggleEnterpriseAddon(el) {
+      el.classList.toggle('checked');
+      const input = el.querySelector('input[type="checkbox"]');
+      updateEnterpriseAddonPricing();
+      calculateTotal();
+    }
+
+    // Update Enterprise Add-on Pricing Inputs
+    function updateEnterpriseAddonPricing() {
+      const checkedAddons = document.querySelectorAll('input[name="enterpriseAddons"]:checked');
+      const pricingDiv = document.getElementById('enterpriseAddonPricing');
+      const p = PRICING[selectedRegion];
+      const c = p.currency;
+
+      const addonLabels = {
+        customRequirements: 'Custom Requirements',
+        vendorPortal: 'Vendor Portal',
+        clientPortal: 'Client Portal',
+        whiteLabelSolution: 'White Labelled Solution',
+        sapIntegration: 'SAP Integration'
+      };
+
+      if (checkedAddons.length === 0) {
+        pricingDiv.style.display = 'none';
+        pricingDiv.innerHTML = '';
+        return;
+      }
+
+      pricingDiv.style.display = 'grid';
+      let html = '';
+      checkedAddons.forEach(addon => {
+        const val = addon.value;
+        const existingInput = document.getElementById('entPrice_' + val);
+        const existingValue = existingInput ? existingInput.value : '0';
+        html += `<div class="form-group">
+          <label>${addonLabels[val]} Price (${c})</label>
+          <input type="number" id="entPrice_${val}" value="${existingValue}" min="0" onchange="calculateTotal()" placeholder="Enter price">
+        </div>`;
+      });
+      pricingDiv.innerHTML = html;
     }
 
     // Toggle White Label Platform
@@ -1272,6 +1354,25 @@
           addonsSummaryHTML += `<div class="summary-row"><span>${addonLabels[val]}${durationLabel}</span><span>${c}${amt.toLocaleString()}</span></div>`;
         }
         addonsTotal += amt;
+      });
+
+      // Enterprise Add-ons (custom-priced)
+      const enterpriseAddonLabels = {
+        customRequirements: 'Custom Requirements',
+        vendorPortal: 'Vendor Portal',
+        clientPortal: 'Client Portal',
+        whiteLabelSolution: 'White Labelled Solution',
+        sapIntegration: 'SAP Integration'
+      };
+      const enterpriseAddons = document.querySelectorAll('input[name="enterpriseAddons"]:checked');
+      enterpriseAddons.forEach(addon => {
+        const val = addon.value;
+        const priceInput = document.getElementById('entPrice_' + val);
+        const amt = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+        if (amt > 0) {
+          addonsTotal += amt;
+          addonsSummaryHTML += `<div class="summary-row"><span>${enterpriseAddonLabels[val]}</span><span>${c}${amt.toLocaleString()}</span></div>`;
+        }
       });
 
       // Apply discount
@@ -1373,6 +1474,10 @@
         additionalUsersDiscount: document.getElementById('additionalUsersDiscount').value || '0',
         specialOfferPerUserPrice: document.getElementById('specialOfferPerUserPrice').value || '0',
         addons: Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value),
+        enterpriseAddons: Array.from(document.querySelectorAll('input[name="enterpriseAddons"]:checked')).map(cb => {
+          const priceInput = document.getElementById('entPrice_' + cb.value);
+          return { name: cb.value, price: priceInput ? (parseFloat(priceInput.value) || 0) : 0 };
+        }),
         discount: document.getElementById('discount').value,
         paymentTerms: document.getElementById('paymentTerms').value,
         paymentAccount: document.getElementById('paymentAccount') ? document.getElementById('paymentAccount').value : '',
@@ -1465,7 +1570,15 @@
         document.getElementById('clientEmail').value = '';
         document.getElementById('clientPhone').value = '';
         document.getElementById('specialNotes').value = '';
-        
+
+        // Clear enterprise add-ons
+        document.querySelectorAll('input[name="enterpriseAddons"]:checked').forEach(cb => {
+          cb.checked = false;
+          cb.closest('.checkbox-option').classList.remove('checked');
+        });
+        document.getElementById('enterpriseAddonPricing').innerHTML = '';
+        document.getElementById('enterpriseAddonPricing').style.display = 'none';
+
         // Clean up form
         if (document.body.contains(form)) {
           document.body.removeChild(form);
@@ -1566,7 +1679,22 @@
           itemsHTML += `<tr><td>${addonNames[addon]}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td><td style="text-align:center;">${addonDuration} Year${addonDuration > 1 ? 's' : ''}</td><td style="text-align:right;">${c}${amt.toLocaleString()}</td></tr>`;
         }
       });
-      
+
+      // Enterprise Add-ons (custom-priced)
+      const enterpriseAddonNames = {
+        customRequirements: 'Custom Requirements',
+        vendorPortal: 'Vendor Portal',
+        clientPortal: 'Client Portal',
+        whiteLabelSolution: 'White Labelled Solution',
+        sapIntegration: 'SAP Integration'
+      };
+      (data.enterpriseAddons || []).forEach(ea => {
+        if (ea.price > 0) {
+          addonsTotal += ea.price;
+          itemsHTML += `<tr><td>${enterpriseAddonNames[ea.name] || ea.name}</td><td style="text-align:center;">-</td><td style="text-align:right;">${c}${ea.price.toLocaleString()}</td><td style="text-align:center;">1 Year</td><td style="text-align:right;">${c}${ea.price.toLocaleString()}</td></tr>`;
+        }
+      });
+
       const discountPct = parseFloat(data.discount) || 0;
       const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
       const afterDiscount = subtotal + addonsTotal - discountAmt;
@@ -1588,9 +1716,25 @@
       const features = {
         business: ['Payments & Expenses', 'File Management', 'Labor Attendance & Salary', 'CRM (Leads & Quotation)', 'Material Request & Inventory', 'Task & Sub-task Hierarchy', 'Issue/Snag List', 'Subcon Work Order & RA Billing', 'Multiple Roles & Permission'],
         business_plus: ['Everything in Business +', 'Design Management', 'BOQ & RA Bills', 'Budget Control', 'Central Warehouse', 'RFQ', 'Purchase Orders', 'Assets & Tools', 'Equipment & Machinery', 'Staff Payroll', 'Site Inspection', 'Multi-Level Approval'],
-        enterprise: ['Everything in Business+ +', 'Unlimited Users', 'GPS Attendance', 'Custom Roles', 'Custom Dashboard', 'Accounting Integration', 'Vendor Portal', 'Client Portal', 'White Label (Add-on)', 'SAP Integration (Add-on)']
+        enterprise: ['Everything in Business+ +', 'Unlimited Users', 'GPS Attendance', 'Custom Roles', 'Custom Dashboard', 'Accounting Integration (Zoho, Tally)']
       };
-      
+
+      // Add selected enterprise add-ons to features list
+      if (data.plan === 'enterprise' && data.enterpriseAddons) {
+        const enterpriseAddonFeatureNames = {
+          customRequirements: 'Custom Requirements',
+          vendorPortal: 'Vendor Portal',
+          clientPortal: 'Client Portal',
+          whiteLabelSolution: 'White Labelled Solution',
+          sapIntegration: 'SAP Integration'
+        };
+        data.enterpriseAddons.forEach(ea => {
+          if (ea.price > 0) {
+            features.enterprise.push(enterpriseAddonFeatureNames[ea.name] || ea.name);
+          }
+        });
+      }
+
       let featuresHTML = '';
       const f = features[data.plan] || features.business_plus;
       for (let i = 0; i < f.length; i += 2) {
@@ -1719,7 +1863,7 @@
         <li><strong>Activation:</strong> Premium services activated within 2 hours of receiving payment.</li>
         <li><strong>Support:</strong> AWS Server, Training, Setup & Onboarding Support included.</li>
         <li><strong>Renewal:</strong> Auto-renewal unless cancelled 7 days before expiry.</li>
-        ${data.specialNotes ? `<li><strong>Special Notes:</strong> ${data.specialNotes}</li>` : ''}
+        ${data.specialNotes ? `<li><strong>Special Terms:</strong> ${data.specialNotes}</li>` : ''}
       </ul>
       <div style="margin-top: 8px; font-size: 10px; color: #78350f;">
         Terms of Service: <a href="https://www.onsiteteams.com/terms/">onsiteteams.com/terms</a>

@@ -97,11 +97,7 @@ const FEATURES = {
     'GPS Attendance',
     'Custom Roles',
     'Custom Dashboard',
-    'Accounting Integration (Zoho, Tally)',
-    'Vendor Portal',
-    'Client Portal',
-    'White Labelled Solution (Add-on)',
-    'SAP Integration (Add-on)'
+    'Accounting Integration (Zoho, Tally)'
   ]
 };
 
@@ -373,7 +369,30 @@ function calculateAmounts(data) {
       amount: totalAddonAmount
     });
   });
-  
+
+  // Enterprise Add-ons (custom-priced)
+  const enterpriseAddonNames = {
+    customRequirements: 'Custom Requirements',
+    vendorPortal: 'Vendor Portal',
+    clientPortal: 'Client Portal',
+    whiteLabelSolution: 'White Labelled Solution',
+    sapIntegration: 'SAP Integration'
+  };
+  const enterpriseAddons = data.enterpriseAddons || [];
+  enterpriseAddons.forEach(ea => {
+    const price = parseFloat(ea.price) || 0;
+    if (price > 0) {
+      addonsTotal += price;
+      items.push({
+        description: enterpriseAddonNames[ea.name] || ea.name,
+        users: '-',
+        rate: `${c}${price.toLocaleString()}`,
+        duration: '1 Year',
+        amount: price
+      });
+    }
+  });
+
   // Calculate discount
   const discountPct = parseFloat(data.discount) || 0;
   const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
@@ -453,7 +472,22 @@ function generateHTML(data, calc) {
   });
   
   // Features list
-  const features = FEATURES[data.plan] || FEATURES.business_plus;
+  const features = (FEATURES[data.plan] || FEATURES.business_plus).slice();
+  // Add selected enterprise add-ons to features
+  if (data.plan === 'enterprise' && data.enterpriseAddons) {
+    const entAddonFeatureNames = {
+      customRequirements: 'Custom Requirements',
+      vendorPortal: 'Vendor Portal',
+      clientPortal: 'Client Portal',
+      whiteLabelSolution: 'White Labelled Solution',
+      sapIntegration: 'SAP Integration'
+    };
+    data.enterpriseAddons.forEach(ea => {
+      if ((parseFloat(ea.price) || 0) > 0) {
+        features.push(entAddonFeatureNames[ea.name] || ea.name);
+      }
+    });
+  }
   let featuresHTML = '';
   for (let i = 0; i < features.length; i += 2) {
     featuresHTML += `
@@ -740,7 +774,7 @@ function generateHTML(data, calc) {
       <li><strong>Activation:</strong> Premium services activated within 2 hours of receiving payment.</li>
       <li><strong>Support:</strong> AWS Server, Training, Setup & Onboarding Support included.</li>
       <li><strong>Renewal:</strong> Auto-renewal unless cancelled 7 days before expiry.</li>
-      ${data.specialNotes ? `<li><strong>Special Notes:</strong> ${data.specialNotes}</li>` : ''}
+      ${data.specialNotes ? `<li><strong>Special Terms:</strong> ${data.specialNotes}</li>` : ''}
     </ul>
     <div style="margin-top: 8px; font-size: 10px; color: #78350f;">
       Terms of Service: <a href="${CONFIG.WEBSITE}/terms/">onsiteteams.com/terms</a>
