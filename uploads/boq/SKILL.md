@@ -2,8 +2,8 @@
 
 > Fix any construction CSV/Excel file (BOQ, Rate Library, Material Stock, Material Library) into Onsite-compatible format. Learns from every fix.
 
-**Version:** 2.0.0
-**Last verified:** 2026-02-23
+**Version:** 2.1.0
+**Last verified:** 2026-03-01
 **Platform:** Onsite Teams v8.17.4
 **Self-updates:** After every file fix, append learnings to `ERROR-LOG.md`
 
@@ -60,14 +60,37 @@ VALID:
 2.10        → Valid (10th sub-item, NOT confused with 2.1)
 ```
 
-INVALID (will cause `Error convert strindex_int64`):
+INVALID (will cause `Error convert strindex_int64` or `strIndex_int64`):
 ```
 a, b, c, d  → Letters NOT allowed
 A, B, C     → Letters NOT allowed
+EX.1, CON.11, FIN.1 → Text-code prefixes NOT allowed
+EX.1A, EX.1B → Alphanumeric sub-items NOT allowed
 1-1         → Hyphens NOT allowed
 1/1         → Slashes NOT allowed
 1.0.1       → Parent "1.0" must exist first
 ```
+
+**How to fix text-code serials (EX.1, CON.11, etc.):**
+1. Parse PREFIX from each code (EX, CON, FW, SS, etc.) → each prefix = section (level 1)
+2. Parse NUMBER from each code (1, 11, 12, etc.) → each number group = sub-section (level 2)
+3. Parse SUFFIX letter (A, B, C, etc.) → each suffix = item (level 3)
+4. **CRITICAL: Skip multiples of 10** at every decimal level to avoid `.10` → `.1` display issue
+5. Sequence: `.1, .2, .3, ..., .9, .11, .12, ...` (skip .10, .20, .30, etc.)
+6. Keep max 9 children per parent at each level
+
+**Skip function (use in ALL BOQ serial numbering):**
+```python
+def next_num(n):
+    n += 1
+    while n % 10 == 0:
+        n += 1
+    return n
+```
+
+**WARNING:** Onsite strips trailing zeros from decimal serial numbers.
+`3.10` displays as `3.1`, `5.20` displays as `5.2`. This is a platform behavior.
+Never use `.01, .02, ... .09, .10` format — the `.10` WILL display as `.1`.
 
 **Parent-child hierarchy rules:**
 - Every child MUST have a valid parent row
@@ -77,10 +100,13 @@ A, B, C     → Letters NOT allowed
 
 **Actual error messages from Onsite:**
 - `Error convert strindex_int64 : row not valid 3` → Letter-based serial number (a, b, c)
+- `Error convert strIndex_int64 : row not valid 1` → Text-code serial numbers (EX.1, CON.11, FIN.1) — any non-numeric characters
 - `row not valid for serial_number` → Duplicate serial numbers
 - `Parent Serial Number not valid` → Missing parent hierarchy
+- `Error convert unitSalePrice_float64 : row not valid 0` → Space or non-numeric in Unit Sale Price (space ≠ empty!)
 - `Error convert unitSalePrice_float64` → Comma in price
 - `Error convert quantity_float64` → Comma in quantity
+- `Unit not found in onsite database ls, no, rm, month, ha, mt` → Invalid units (lists which ones failed)
 
 **Example (FINAL working format):**
 ```csv
@@ -235,6 +261,21 @@ Jindal aluminium,,kg,18,385,76042100,ALUMINIUM MATERIAL,
 | `Ton`, `MT` | `tonne` | Full spelling |
 | `Boxes`, `Sheets` | `nos` | Use nos |
 | `Pieces` | `pcs` | Use pcs |
+| `Cum`, `cu.m`, `CUM` | `cum` | Lowercase |
+| `Sqm`, `SQM`, `sq.mtr` | `sqm` | Lowercase |
+| `Each`, `EACH` | `each` | Lowercase |
+| `Quintal`, `QUINTAL` | `quintal` | Lowercase |
+| `Liters`, `LITERS`, `liters` | `Litre` | Capital L, no 's' |
+| `mtr`, `MTR` | `meter` | Full spelling |
+| `point`, `Point` | `points` | Plural |
+| `Job`, `JOB`, `job` | `nos` | Use nos (unit of work) |
+| `Set`, `SET` | `set` | Lowercase |
+| `No`, `NO` | `nos` | Full form |
+| `Ha`, `ha`, `HA` | `sqm` | Convert qty×10000, price÷10000 |
+| `Month`, `month`, `MONTH` | `Monthly` | Capital M |
+| `lump sum`, `Lump Sum`, `LUMP SUM` | `lumpsum` | One word, lowercase |
+| `rmt`, `Rmt` | `RMT` | Uppercase |
+| `Km`, `KM` | `km` | Lowercase |
 
 ---
 
@@ -260,6 +301,17 @@ Jindal aluminium,,kg,18,385,76042100,ALUMINIUM MATERIAL,
 | 16 | Trailing spaces | Spaces in cells | Trim all cells |
 | 17 | Merged cells from Excel | Multi-row cells | Unmerge, keep in parent row |
 | 18 | Unicode corruption | `µ` shows as `�` | Fix encoding or replace with `u` |
+| 19 | Space in numeric fields | Space char ` ` in Unit Sale Price or Quantity | `.strip()` ALL numeric columns — space ≠ empty |
+| 20 | Text-code serial numbers | Serial like EX.1, CON.11, FIN.1 | Detect parent/child by data presence, rebuild numeric hierarchy |
+| 21 | Hectare unit | `Ha` not in Onsite | Convert to `sqm`: qty×10000, price÷10000 |
+| 22 | "lump sum" two words | `lump sum`, `Lump Sum` | Join to `lumpsum` (one word, lowercase) |
+| 23 | Wrong column headers (road/ERP) | Type, Description, Code, Narration, Rate, Tax Percentage | Map to Serial Number, Item Name, Item code, Notes, Unit Sale Price, GST Percent |
+| 24 | Wrong column headers (client) | Sr.No, Item Description, GST %, Qty, Remarks | Map to Serial Number, Item Name, GST Percent, Estimated Quantity, Notes |
+| 25 | Commas in quantity | `3,604.00` | Strip commas from quantities too, not just prices |
+| 26 | "Job"/"JOB" unit | Job used as work unit | Map to `nos` |
+| 27 | "Month" unit | Month used for time-based items | Map to `Monthly` (capital M) |
+| 28 | Trailing zero display (X.10→X.1) | Serials like 3.10, 5.20 display as 3.1, 5.2 | Skip multiples of 10: .9 → .11 (never use .10/.20/.30) |
+| 29 | Too many children per parent | Section has 10+ items at same level | Use 3-level hierarchy; parse text-code prefixes for proper sub-grouping |
 
 ---
 
@@ -404,16 +456,17 @@ If NEW issue type found → also ADD to this SKILL.md issues table.
 
 | File | Location (relative to Onsite/) | Purpose |
 |------|-------------------------------|---------|
-| BOQ Format Guide (full) | `knowledge/boq-fix/ONSITE_BOQ_FORMAT_GUIDE.md` | Complete upload format spec with examples |
-| BOQ Template (original/broken) | `knowledge/boq-fix/templates/BOQ-Upload-Template-ORIGINAL.csv` | Shows common errors (letter serials, wrong units) |
-| BOQ Template (fixed) | `knowledge/boq-fix/templates/BOQ-Upload-Template-FIXED.csv` | Intermediate fix |
-| BOQ Template (final/working) | `knowledge/boq-fix/templates/BOQ-Upload-Template-FINAL.csv` | Verified working upload |
-| Error screenshot | `knowledge/boq-fix/screenshots/onsite-boq-upload-error-strindex.jpeg` | Actual Onsite UI error for letter serials |
-| Platform knowledge base | `knowledge/onsite-platform-knowledge-base.md` | Modules, material library, JBVNL reference |
-| CSV creation instructions | `knowledge/onsite-csv-instructions.md` | Rules for each upload type |
-| AI system prompt | `knowledge/onsite-ai-system-prompt.md` | Compact rules for AI assistants |
-| Complete upload reference | `knowledge/onsite-complete-upload-reference.md` | Full spec: all formats, validation, errors |
-| Error log | `knowledge/boq-fix/ERROR-LOG.md` | Cumulative learnings from every fix |
+| **ALL SCENARIOS (master)** | `uploads/boq/ALL-SCENARIOS.md` | **Every possible error + fix (45+ scenarios)** |
+| BOQ Format Guide (full) | `uploads/boq/ONSITE_BOQ_FORMAT_GUIDE.md` | Complete upload format spec with examples |
+| BOQ Template (original/broken) | `uploads/boq/templates/BOQ-Upload-Template-ORIGINAL.csv` | Shows common errors (letter serials, wrong units) |
+| BOQ Template (fixed) | `uploads/boq/templates/BOQ-Upload-Template-FIXED.csv` | Intermediate fix |
+| BOQ Template (final/working) | `uploads/boq/templates/BOQ-Upload-Template-FINAL.csv` | Verified working upload |
+| Error screenshot | `uploads/boq/screenshots/onsite-boq-upload-error-strindex.jpeg` | Actual Onsite UI error for letter serials |
+| Platform knowledge base | `uploads/onsite-platform-knowledge-base.md` | Modules, material library, JBVNL reference |
+| CSV creation instructions | `uploads/onsite-csv-instructions.md` | Rules for each upload type |
+| AI system prompt | `uploads/onsite-ai-system-prompt.md` | Compact rules for AI assistants |
+| Complete upload reference | `uploads/onsite-complete-upload-reference.md` | Full spec: all formats, validation, errors |
+| Error log | `uploads/boq/ERROR-LOG.md` | Cumulative learnings from every fix |
 | BOQ HVAC example | `Archived/.../BOQ_HVAC_Formatted.csv` | Correct HVAC BOQ format |
 | Rate Library example | `Archived/.../say_infra_Rate_Library_FIXED.csv` | Correct Rate Library format |
 | Quotation templates | `Quotation_temp/` | Reference for quotation CSV format |

@@ -436,7 +436,11 @@ Onsite/
 │   ├── design/                    ← System specs (01-05)
 │   └── guides/                    ← Progress, troubleshooting, quick-start
 ├── scripts/                       ← Utility scripts (start-backend, setup_database, import)
-├── knowledge/                     ← Competitors, market research
+├── uploads/                       ← Data conversion & domain knowledge
+│   ├── boq/                      ← BOQ fix skill, format guide, error log, client files
+│   ├── material-library/         ← Material Library skill, format guide, client files
+│   ├── competitors.md
+│   └── construction-market.md
 ├── runbooks/                      ← Deployment runbooks
 └── _archive/                      ← Old frontend, backup
 ```
@@ -508,7 +512,7 @@ After ANY of these events, update the relevant section of this file:
 | New team member joins | Add to Team Members table | Key Contacts |
 | New n8n workflow created | Add workflow ID + purpose | n8n Workflows |
 | Credential rotated | Update credential ID | Key Contacts & Credentials |
-| New competitor discovered | Add to competitor table + `knowledge/competitors.md` | Market Research |
+| New competitor discovered | Add to competitor table + `uploads/competitors.md` | Market Research |
 | Bug fixed in codebase | Add to Known Issues (mark resolved) | Known Issues |
 | Feature deployed to production | Move from "Blockers" to "Completed" | Sales Intelligence |
 | Revenue/ARR change | Update Impact Metrics | Dhruv's Role |
@@ -530,6 +534,6 @@ flag it: "This section may be stale (last verified: {date}). Verify before using
 ### Cross-File Updates
 When updating this file, also check if these files need updates:
 - `LOADOUT.md` — file inventory, version, changelog
-- `knowledge/competitors.md` — if competitor data changed
-- `knowledge/construction-market.md` — if market data changed
+- `uploads/competitors.md` — if competitor data changed
+- `uploads/construction-market.md` — if market data changed
 - `sales-intelligence/` — if codebase/architecture changed

@@ -1,7 +1,7 @@
 # ONSITE TEAMS - BOQ & DATA UPLOAD FORMAT GUIDE
 
-> **Version:** 1.0  
-> **Last Updated:** February 2026  
+> **Version:** 1.1
+> **Last Updated:** March 2026  
 > **Purpose:** Complete reference for all CSV upload formats in Onsite Teams platform
 
 ---
@@ -240,6 +240,20 @@ P.P. WHITE,,kg,18,38,32091090,POWDER COATING MATERIAL,
 | `Boxes` | `nos` | Use nos |
 | `Sheets` | `nos` | Use nos |
 | `Pieces` | `pcs` | Use pcs |
+| `Cum` | `cum` | Lowercase |
+| `Sqm` | `sqm` | Lowercase |
+| `Each` | `each` | Lowercase |
+| `Quintal` | `quintal` | Lowercase |
+| `Liters` | `Litre` | Capital L, singular |
+| `mtr` | `meter` | Full spelling |
+| `sq.mtr` | `sqm` | No dots/spaces |
+| `point` | `points` | Plural |
+| `Job` / `JOB` | `nos` | Use nos |
+| `Set` | `set` | Lowercase |
+| `Ha` / `ha` | `sqm` | qty×10000, price÷10000 |
+| `Month` | `Monthly` | Capital M |
+| `lump sum` | `lumpsum` | One word |
+| `Km` / `KM` | `km` | Lowercase |
 
 ---
 
@@ -252,12 +266,14 @@ P.P. WHITE,,kg,18,38,32091090,POWDER COATING MATERIAL,
 | `row not valid for serial_number` | Duplicate serial numbers | Ensure each serial number is unique |
 | `Parent Serial Number not valid` | Missing parent hierarchy | Add parent row (e.g., add `11` before `11.1`) |
 | `Error convert strindex_int64` | Letter-based serials (a,b,c) | Convert to numeric (2.01, 2.02, 2.03) |
+| `Error convert strIndex_int64 : row not valid 1` | Text-code serials (EX.1, CON.11) | Rebuild numeric hierarchy based on parent/child detection |
 
 ### 5.2 Numeric Field Errors
 
 | Error Message | Cause | Solution |
 |---------------|-------|----------|
 | `Error convert unitSalePrice_float64` | Comma in price (`7,257.97`) | Remove commas (`7257.97`) |
+| `Error convert unitSalePrice_float64 : row not valid 0` | Space in price column (space ≠ empty) | `.strip()` all numeric columns |
 | `Error convert quantity_float64` | Comma in quantity (`1,266`) | Remove commas (`1266`) |
 | `Invalid rows found in file` | Missing required fields | Add GST, HSN, Description |
 
@@ -272,6 +288,25 @@ P.P. WHITE,,kg,18,38,32091090,POWDER COATING MATERIAL,
 | Error Message | Cause | Solution |
 |---------------|-------|----------|
 | `Duplicate material name` | Same name appears twice | Remove duplicates, keep first occurrence |
+
+---
+
+## 5.5 Column Header Variants (Common Mismatches)
+
+BOQ files from different sources use different column names. Map to Onsite's exact headers:
+
+| Source Header | Onsite Header | Seen In |
+|---------------|---------------|---------|
+| `Type` | `Serial Number` | Government BOQs |
+| `Sr.No` / `Sr. No.` / `S.No` | `Serial Number` | Client BOQs |
+| `Description` / `Item Description` | `Item Name` | Road/ERP BOQs, client BOQs |
+| `Code` | `Item code` | Road BOQs |
+| `Unit` (already correct) | `unit` | Most files (case matters!) |
+| `Tax Percentage` / `GST %` | `GST Percent` | Road/client BOQs |
+| `Quantity` / `Qty` | `Estimated Quantity` | Road/client BOQs |
+| `Rate` | `Unit Sale Price` | Road/client BOQs |
+| `SAC/HSN` / `HSN/SAC` | `HSN Code` | Road/client BOQs |
+| `Narration` / `Remarks` | `Notes` | Road/client BOQs |
 
 ---
 
