@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-03-21T17:53:59.255675",
+  "account": "akshansh@onsitesteam.com",
+  "region": "us",
+  "total_leads": 19,
+  "daily_limit": 25,
+  "sent": 19,
+  "errors": 0,
+  "dry_run": false,
+  "results": [
+    {
+      "status": "sent",
+      "to": "hdomloj@cive.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "ap@dh-homes.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "muvietta@caseandassoc.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "bpierce@dh-homes.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "stephane.mcshane@maximconsulting.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "ken@headinc.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "psomerville@aplico.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "mcoontz@rockstep.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "jeffb@anslowbryant.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "matt@am-constructiongroup.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "wcarter@wcconstructioncompany.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "skersch@gap-eng.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "cramirez@renogreen.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "ccrenshaw@cmccorp.us",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "albert.vega@anslowbryant.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "dan@tdkco.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "rsnell@bayoucitysteel.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "chrisp@pipelinerealty.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "kpittman@nashindustriesinc.com",
+      "from": "akshansh@onsitesteam.com"
+    }
+  ]
+}

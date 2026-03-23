@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-03-21T15:14:32.041262",
+  "account": "akshansh@onsitesteam.com",
+  "region": "us",
+  "total_leads": 24,
+  "daily_limit": 25,
+  "sent": 24,
+  "errors": 0,
+  "dry_run": true,
+  "results": [
+    {
+      "status": "dry_run",
+      "to": "jprueter@cmgincservices.com",
+      "subject": "CMG, Inc. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "jekeller@blockcompanies.com",
+      "subject": "Block Companies, LLC \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "kenny@kmrtexas.com",
+      "subject": "KMR Construction, LLC \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "amiron@mfein.com",
+      "subject": "Martin Fein Interests, Ltd. (FEIN) \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "mmonroe@allenharrisonco.com",
+      "subject": "Allen Harrison Company \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "hdomloj@cive.com",
+      "subject": "CIVE\u00ae \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "ap@dh-homes.com",
+      "subject": "DH Homes \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "muvietta@caseandassoc.com",
+      "subject": "Case & Associates General Contractors Ltd. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "bpierce@dh-homes.com",
+      "subject": "DH Homes \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "stephane.mcshane@maximconsulting.com",
+      "subject": "Maxim Consulting Group \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "ken@headinc.com",
+      "subject": "Head, Inc. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "psomerville@aplico.com",
+      "subject": "Associated Pipe Line Contractors, Inc. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "mcoontz@rockstep.com",
+      "subject": "RockStep Capital \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "jeffb@anslowbryant.com",
+      "subject": "Anslow Bryant Construction, Ltd. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "matt@am-constructiongroup.com",
+      "subject": "AM Construction Group \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "wcarter@wcconstructioncompany.com",
+      "subject": "WC Construction \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "skersch@gap-eng.com",
+      "subject": "Gap Engineering Inc. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "cramirez@renogreen.com",
+      "subject": "Reno Green Landscaping \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "ccrenshaw@cmccorp.us",
+      "subject": "CMC Development & Construction \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "albert.vega@anslowbryant.com",
+      "subject": "Anslow Bryant Construction, Ltd. \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "dan@tdkco.com",
+      "subject": "TDK Construction Company \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "rsnell@bayoucitysteel.com",
+      "subject": "Bayou City Steel \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "chrisp@pipelinerealty.com",
+      "subject": "Pipeline Realty \u2014 still using spreadsheets for site tracking?"
+    },
+    {
+      "status": "dry_run",
+      "to": "kpittman@nashindustriesinc.com",
+      "subject": "Nash Industries, Inc \u2014 still using spreadsheets for site tracking?"
+    }
+  ]
+}

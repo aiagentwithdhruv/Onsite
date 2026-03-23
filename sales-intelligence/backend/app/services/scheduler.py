@@ -83,6 +83,50 @@ async def _run_evening_summary():
         log.error("Evening summary failed: %s", e, exc_info=True)
 
 
+async def _run_followup_check():
+    """Check for due follow-ups and send reminders. Every 15 min."""
+    try:
+        from app.services.followup_reminders import check_and_send_reminders
+        result = await check_and_send_reminders()
+        if result.get("sent", 0) > 0:
+            log.info("Follow-up reminders: sent %s", result["sent"])
+    except Exception as e:
+        log.error("Follow-up check failed: %s", e, exc_info=True)
+
+
+async def _run_morning_followup_summary():
+    """Send morning summary of today's follow-ups to each rep. 8 AM IST."""
+    try:
+        from app.services.followup_reminders import send_morning_followup_summary
+        log.info("Starting morning follow-up summary (8 AM)")
+        result = await send_morning_followup_summary()
+        log.info("Morning follow-up summary: sent=%s", result.get("sent", 0))
+    except Exception as e:
+        log.error("Morning follow-up summary failed: %s", e, exc_info=True)
+
+
+async def _run_friday_weekly_review():
+    """Friday 6 PM IST — Team Overview + Rep Scorecards + Hygiene Report Card."""
+    try:
+        from app.services.weekly_reports import send_friday_reports
+        log.info("Starting Friday weekly review (6 PM)")
+        result = await send_friday_reports()
+        log.info("Friday review done: sent=%s, failed=%s", result.get("sent", 0), result.get("failed", 0))
+    except Exception as e:
+        log.error("Friday weekly review failed: %s", e, exc_info=True)
+
+
+async def _run_monday_weekly_kickoff():
+    """Monday 8 AM IST — Stale Pipeline + Quick Wins per rep."""
+    try:
+        from app.services.weekly_reports import send_monday_reports
+        log.info("Starting Monday weekly kickoff (8 AM)")
+        result = await send_monday_reports()
+        log.info("Monday kickoff done: sent=%s, failed=%s", result.get("sent", 0), result.get("failed", 0))
+    except Exception as e:
+        log.error("Monday weekly kickoff failed: %s", e, exc_info=True)
+
+
 def start_scheduler():
     """Start all scheduled jobs. Called on app startup."""
     # Daily pipeline: 7:30 AM IST (2:00 AM UTC)
@@ -146,10 +190,50 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # Follow-up reminders: every 15 minutes during business hours (8 AM - 8 PM IST = 2:30 - 14:30 UTC)
+    scheduler.add_job(
+        _run_followup_check,
+        "interval",
+        minutes=15,
+        id="followup_check",
+        replace_existing=True,
+    )
+
+    # Morning follow-up summary: 8 AM IST (2:30 AM UTC)
+    scheduler.add_job(
+        _run_morning_followup_summary,
+        "cron",
+        hour=2, minute=30,
+        id="morning_followup_summary",
+        replace_existing=True,
+    )
+
+    # Friday weekly review: 6 PM IST (12:30 PM UTC)
+    scheduler.add_job(
+        _run_friday_weekly_review,
+        "cron",
+        day_of_week="fri",
+        hour=12, minute=30,
+        id="friday_weekly_review",
+        replace_existing=True,
+    )
+
+    # Monday weekly kickoff: 8 AM IST (2:30 AM UTC)
+    scheduler.add_job(
+        _run_monday_weekly_kickoff,
+        "cron",
+        day_of_week="mon",
+        hour=2, minute=45,  # 8:15 AM IST (offset from other 8 AM jobs)
+        id="monday_weekly_kickoff",
+        replace_existing=True,
+    )
+
     scheduler.start()
     log.info(
         "Scheduler started: daily_pipeline, delta_sync, full_sync, weekly_report, "
-        "morning_digest (8AM), afternoon_digest (2PM), evening_summary (6PM)"
+        "morning_digest (8AM), afternoon_digest (2PM), evening_summary (6PM), "
+        "followup_check (every 15min), morning_followup_summary (8AM), "
+        "friday_weekly_review (Fri 6PM), monday_weekly_kickoff (Mon 8:15AM)"
     )
 
 

@@ -1,0 +1,397 @@
+{
+  "status": "success",
+  "source": "apollo_csv",
+  "region": "us",
+  "total_parsed": 24,
+  "skipped": {
+    "no_email": 0,
+    "invalid": 0,
+    "duplicate": 0
+  },
+  "leads": [
+    {
+      "email": "jprueter@cmgincservices.com",
+      "first_name": "Jeff",
+      "last_name": "Prueter",
+      "company_name": "CMG, Inc.",
+      "custom_variables": {
+        "firstName": "Jeff",
+        "lastName": "Prueter",
+        "companyName": "CMG, Inc.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Business Development",
+        "phone": "",
+        "website": "https://cmgincservices.com"
+      }
+    },
+    {
+      "email": "jekeller@blockcompanies.com",
+      "first_name": "Jason",
+      "last_name": "Keller",
+      "company_name": "Block Companies, LLC",
+      "custom_variables": {
+        "firstName": "Jason",
+        "lastName": "Keller",
+        "companyName": "Block Companies, LLC",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://blockcompanies.com"
+      }
+    },
+    {
+      "email": "kenny@kmrtexas.com",
+      "first_name": "Kenny",
+      "last_name": "Roch",
+      "company_name": "KMR Construction, LLC",
+      "custom_variables": {
+        "firstName": "Kenny",
+        "lastName": "Roch",
+        "companyName": "KMR Construction, LLC",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "CEO",
+        "phone": "",
+        "website": "https://kmrtexas.com"
+      }
+    },
+    {
+      "email": "amiron@mfein.com",
+      "first_name": "Abraham",
+      "last_name": "Miron",
+      "company_name": "Martin Fein Interests, Ltd. (FEIN)",
+      "custom_variables": {
+        "firstName": "Abraham",
+        "lastName": "Miron",
+        "companyName": "Martin Fein Interests, Ltd. (FEIN)",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Regional Director of Maintenance",
+        "phone": "",
+        "website": "https://feincommunities.com"
+      }
+    },
+    {
+      "email": "mmonroe@allenharrisonco.com",
+      "first_name": "Meredith",
+      "last_name": "Monroe",
+      "company_name": "Allen Harrison Company",
+      "custom_variables": {
+        "firstName": "Meredith",
+        "lastName": "Monroe",
+        "companyName": "Allen Harrison Company",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director",
+        "phone": "",
+        "website": "https://allenharrison.com"
+      }
+    },
+    {
+      "email": "hdomloj@cive.com",
+      "first_name": "Hugo",
+      "last_name": "Domloj",
+      "company_name": "CIVE\u00ae",
+      "custom_variables": {
+        "firstName": "Hugo",
+        "lastName": "Domloj",
+        "companyName": "CIVE\u00ae",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Chief Executive Officer",
+        "phone": "",
+        "website": "https://cive.com"
+      }
+    },
+    {
+      "email": "ap@dh-homes.com",
+      "first_name": "Abraham",
+      "last_name": "Polatsek",
+      "company_name": "DH Homes",
+      "custom_variables": {
+        "firstName": "Abraham",
+        "lastName": "Polatsek",
+        "companyName": "DH Homes",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Business Development",
+        "phone": "",
+        "website": "https://dh-homes.com"
+      }
+    },
+    {
+      "email": "muvietta@caseandassoc.com",
+      "first_name": "Mark",
+      "last_name": "Uvietta",
+      "company_name": "Case & Associates General Contractors Ltd.",
+      "custom_variables": {
+        "firstName": "Mark",
+        "lastName": "Uvietta",
+        "companyName": "Case & Associates General Contractors Ltd.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://casegc.com"
+      }
+    },
+    {
+      "email": "bpierce@dh-homes.com",
+      "first_name": "Bob",
+      "last_name": "Pierce",
+      "company_name": "DH Homes",
+      "custom_variables": {
+        "firstName": "Bob",
+        "lastName": "Pierce",
+        "companyName": "DH Homes",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Construction/ Operations",
+        "phone": "",
+        "website": "https://dh-homes.com"
+      }
+    },
+    {
+      "email": "stephane.mcshane@maximconsulting.com",
+      "first_name": "Stephane",
+      "last_name": "McShane",
+      "company_name": "Maxim Consulting Group",
+      "custom_variables": {
+        "firstName": "Stephane",
+        "lastName": "McShane",
+        "companyName": "Maxim Consulting Group",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director",
+        "phone": "",
+        "website": "https://maximconsulting.com"
+      }
+    },
+    {
+      "email": "ken@headinc.com",
+      "first_name": "Ken",
+      "last_name": "Fraser",
+      "company_name": "Head, Inc.",
+      "custom_variables": {
+        "firstName": "Ken",
+        "lastName": "Fraser",
+        "companyName": "Head, Inc.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://headinc.com"
+      }
+    },
+    {
+      "email": "psomerville@aplico.com",
+      "first_name": "Paul",
+      "last_name": "Somerville",
+      "company_name": "Associated Pipe Line Contractors, Inc.",
+      "custom_variables": {
+        "firstName": "Paul",
+        "lastName": "Somerville",
+        "companyName": "Associated Pipe Line Contractors, Inc.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Chief Executive Officer",
+        "phone": "",
+        "website": "https://associatedpipeline.com"
+      }
+    },
+    {
+      "email": "mcoontz@rockstep.com",
+      "first_name": "Michael",
+      "last_name": "Coontz",
+      "company_name": "RockStep Capital",
+      "custom_variables": {
+        "firstName": "Michael",
+        "lastName": "Coontz",
+        "companyName": "RockStep Capital",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Construction",
+        "phone": "",
+        "website": "https://rockstep.com"
+      }
+    },
+    {
+      "email": "jeffb@anslowbryant.com",
+      "first_name": "Jeff",
+      "last_name": "Bryant",
+      "company_name": "Anslow Bryant Construction, Ltd.",
+      "custom_variables": {
+        "firstName": "Jeff",
+        "lastName": "Bryant",
+        "companyName": "Anslow Bryant Construction, Ltd.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Operations",
+        "phone": "",
+        "website": "https://anslowbryant.com"
+      }
+    },
+    {
+      "email": "matt@am-constructiongroup.com",
+      "first_name": "Matthew",
+      "last_name": "Montano",
+      "company_name": "AM Construction Group",
+      "custom_variables": {
+        "firstName": "Matthew",
+        "lastName": "Montano",
+        "companyName": "AM Construction Group",
+        "city": "Spring",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Chief Executive Officer",
+        "phone": "",
+        "website": "https://amconstructionus.com"
+      }
+    },
+    {
+      "email": "wcarter@wcconstructioncompany.com",
+      "first_name": "William",
+      "last_name": "Carter",
+      "company_name": "WC Construction",
+      "custom_variables": {
+        "firstName": "William",
+        "lastName": "Carter",
+        "companyName": "WC Construction",
+        "city": "Spring",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://wcconstructioncompany.com"
+      }
+    },
+    {
+      "email": "skersch@gap-eng.com",
+      "first_name": "Stan",
+      "last_name": "Kersch",
+      "company_name": "Gap Engineering Inc.",
+      "custom_variables": {
+        "firstName": "Stan",
+        "lastName": "Kersch",
+        "companyName": "Gap Engineering Inc.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://gap-eng.com"
+      }
+    },
+    {
+      "email": "cramirez@renogreen.com",
+      "first_name": "Carlos",
+      "last_name": "Ramirez",
+      "company_name": "Reno Green Landscaping",
+      "custom_variables": {
+        "firstName": "Carlos",
+        "lastName": "Ramirez",
+        "companyName": "Reno Green Landscaping",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://renogreen.com"
+      }
+    },
+    {
+      "email": "ccrenshaw@cmccorp.us",
+      "first_name": "Christian",
+      "last_name": "Crenshaw",
+      "company_name": "CMC Development & Construction",
+      "custom_variables": {
+        "firstName": "Christian",
+        "lastName": "Crenshaw",
+        "companyName": "CMC Development & Construction",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Chief Executive Officer",
+        "phone": "",
+        "website": "https://cmccorp.us"
+      }
+    },
+    {
+      "email": "albert.vega@anslowbryant.com",
+      "first_name": "Albert",
+      "last_name": "Vega",
+      "company_name": "Anslow Bryant Construction, Ltd.",
+      "custom_variables": {
+        "firstName": "Albert",
+        "lastName": "Vega",
+        "companyName": "Anslow Bryant Construction, Ltd.",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Safety Director",
+        "phone": "",
+        "website": "https://anslowbryant.com"
+      }
+    },
+    {
+      "email": "dan@tdkco.com",
+      "first_name": "Khatri",
+      "last_name": "Dan",
+      "company_name": "TDK Construction Company",
+      "custom_variables": {
+        "firstName": "Khatri",
+        "lastName": "Dan",
+        "companyName": "TDK Construction Company",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://tdkco.com"
+      }
+    },
+    {
+      "email": "rsnell@bayoucitysteel.com",
+      "first_name": "Ryan",
+      "last_name": "Snell",
+      "company_name": "Bayou City Steel",
+      "custom_variables": {
+        "firstName": "Ryan",
+        "lastName": "Snell",
+        "companyName": "Bayou City Steel",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Owner",
+        "phone": "",
+        "website": "https://bayoucitysteel.com"
+      }
+    },
+    {
+      "email": "chrisp@pipelinerealty.com",
+      "first_name": "Christopher",
+      "last_name": "Powell",
+      "company_name": "Pipeline Realty",
+      "custom_variables": {
+        "firstName": "Christopher",
+        "lastName": "Powell",
+        "companyName": "Pipeline Realty",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Director of Leasing/Brokerage",
+        "phone": "",
+        "website": "https://pipelinerealty.com"
+      }
+    },
+    {
+      "email": "kpittman@nashindustriesinc.com",
+      "first_name": "Kris",
+      "last_name": "Pittman",
+      "company_name": "Nash Industries, Inc",
+      "custom_variables": {
+        "firstName": "Kris",
+        "lastName": "Pittman",
+        "companyName": "Nash Industries, Inc",
+        "city": "Houston",
+        "senderName": "Akshansh - Onsite Teams",
+        "title": "Chief Executive Officer",
+        "phone": "",
+        "website": "https://nashindustriesinc.com"
+      }
+    }
+  ]
+}

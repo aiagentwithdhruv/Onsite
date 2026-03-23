@@ -1,0 +1,12 @@
+---
+description: Onsite codebase, BOQ/CSV formats, and tech stack
+globs: "**/*.ts,**/*.tsx,**/*.py,**/*.js,**/*.jsx"
+alwaysApply: false
+---
+
+# Onsite Engineering
+
+- **Stack:** Quotation = HTML + Google Apps Script. Sales Intelligence = Next.js 16, FastAPI, Supabase.
+- **BOQ CSV:** Header order exact. Serial numbers numeric only (1, 1.1, 1.1.1); no letters, hyphens. Child rows need parent. Units from valid list; numbers without commas.
+- **User requirements:** (1) Weightage + engineering quantity for same item. (2) Financial: per entity equity + per bank interest (different rates/tenures, credit/debit balanced).
+- **Refs:** `knowledge/boq-fix/SKILL.md`, `knowledge/onsite-platform-knowledge-base.md`, `docs/ONSITE_USER_REQUIREMENTS_DEMO.md`.

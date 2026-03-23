@@ -289,3 +289,5 @@ Each entry follows this format:
 49. **Multi-project workbooks** — same Excel file contains separate project sheets. Generate one CSV per project sheet
 50. **Make/brand info** (KEI, Polycab, ABB, Legrand etc.) should be preserved in Notes column as "Make: X"
 51. **Formula cells** (starting with "=") in numeric columns should return empty — openpyxl data_only=True doesn't always resolve them
+52. **Material Stock upload REQUIRES Material Library first** — Onsite validates every Material Name against the library. If the material doesn't exist in library, upload fails with "Material 'X' does not exist in library". **Upload order: Library CSV → then Stock CSV.**
+53. **BOQ → Material Estimation** is a new workflow: parse BOQ line items → classify by trade/work type → apply CPWD/DSR consumption norms → output Material Library CSV + Material Stock CSV. Script: `boq_material_estimator.py`

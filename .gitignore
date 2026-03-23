@@ -25,6 +25,8 @@ out/
 .DS_Store
 *.log
 *.tsbuildinfo
+.cursor/
+.claude/worktrees/
 
 # Large data (keep repo light)
 *.csv

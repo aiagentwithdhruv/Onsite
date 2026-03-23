@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Onsite Pulse</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
+  }
+  .header .logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .header .title { font-size: 17px; font-weight: 700; color: #f8fafc; }
+  .header .subtitle { font-size: 11px; color: #94a3b8; }
+  .header-text { min-width: 0; }
+
+  /* Login Screen */
+  .login-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .login-screen h2 { font-size: 22px; color: #f8fafc; text-align: center; }
+  .login-screen p { color: #94a3b8; text-align: center; max-width: 300px; font-size: 14px; }
+  .name-select, .pin-input {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 16px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 12px;
+    color: #f8fafc;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .name-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='2' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+  .pin-input {
+    text-align: center;
+    letter-spacing: 8px;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: text;
+    display: none;
+  }
+  .pin-input::placeholder { letter-spacing: 2px; font-size: 14px; font-weight: 400; }
+  .name-select:focus, .pin-input:focus { border-color: #f59e0b; outline: none; }
+  .login-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .login-btn:active { transform: scale(0.98); }
+  .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .login-error {
+    color: #f87171;
+    font-size: 13px;
+    text-align: center;
+    display: none;
+  }
+
+  /* Chat Screen */
+  .chat-screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
+  .chat-screen.active { display: flex; }
+  .login-screen.hidden { display: none; }
+
+  /* Messages */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+  .msg {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .msg.bot {
+    background: #1e293b;
+    border: 1px solid #334155;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.typing {
+    background: #1e293b;
+    border: 1px solid #334155;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    color: #94a3b8;
+  }
+  .msg.error { background: #7f1d1d; border-color: #991b1b; }
+
+  /* Quick Actions */
+  .quick-actions {
+    padding: 6px 12px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .quick-actions::-webkit-scrollbar { display: none; }
+  .quick-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    color: #e2e8f0;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .quick-btn:active { background: #334155; border-color: #f59e0b; }
+
+  /* Input Area */
+  .input-area {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 24px;
+    color: #f8fafc;
+    font-size: 16px;
+    outline: none;
+    min-width: 0;
+  }
+  .input-area input:focus { border-color: #f59e0b; }
+  .input-area input::placeholder { color: #64748b; }
+  .send-btn {
+    width: 48px; height: 48px;
+    min-width: 48px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+  }
+  .send-btn:active { transform: scale(0.9); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* User badge */
+  .user-badge {
+    margin-left: auto;
+    padding: 5px 10px;
+    background: #334155;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #f59e0b;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .role-badge {
+    margin-left: 4px;
+    padding: 2px 6px;
+    background: #f59e0b20;
+    border-radius: 10px;
+    font-size: 10px;
+    color: #f59e0b;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* Desktop: cap width for readability */
+  @media (min-width: 600px) {
+    body { max-width: 480px; margin: 0 auto; border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; }
+  }
+
+  /* Typing dots animation */
+  .typing-dots::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">P</div>
+  <div class="header-text">
+    <div class="title">Onsite Pulse</div>
+    <div class="subtitle">Your sales data assistant</div>
+  </div>
+  <div class="user-badge" id="userBadge" style="display:none"></div>
+</div>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <h2>Welcome to Pulse</h2>
+  <p>Select your name and enter your PIN to access your dashboard</p>
+  <select class="name-select" id="nameSelect">
+    <option value="">Select your name...</option>
+    <option value="Sunil">Sunil</option>
+    <option value="Anjali">Anjali</option>
+    <option value="Bhavya">Bhavya</option>
+    <option value="Mohan">Mohan</option>
+    <option value="Gayatri">Gayatri</option>
+    <option value="Shailendra">Shailendra</option>
+    <option value="Amit U">Amit U</option>
+    <option value="Hitangi">Hitangi</option>
+    <option value="Amit Kumar">Amit Kumar</option>
+    <option value="Jyoti">Jyoti</option>
+    <option value="Shruti">Shruti</option>
+    <option value="Sumit">Sumit</option>
+    <option value="Akshansh">Akshansh</option>
+    <option value="Dhruv">Dhruv</option>
+  </select>
+  <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="pin-input" id="pinInput" placeholder="Enter 4-digit PIN">
+  <div class="login-error" id="loginError"></div>
+  <button class="login-btn" id="loginBtn" disabled>Start Chatting</button>
+</div>
+
+<!-- Chat Screen -->
+<div class="chat-screen" id="chatScreen">
+  <div class="messages" id="messages"></div>
+  <div class="quick-actions" id="quickActions">
+    <button class="quick-btn" data-msg="my demos">My Demos</button>
+    <button class="quick-btn" data-msg="my sales">My Sales</button>
+    <button class="quick-btn" data-msg="my pipeline">Pipeline</button>
+    <button class="quick-btn" data-msg="my follow-ups">Follow-ups</button>
+    <button class="quick-btn" data-msg="my rank">My Rank</button>
+    <button class="quick-btn" data-msg="our pricing">Pricing</button>
+    <button class="quick-btn" data-msg="write a follow-up email for my last lead">Write Email</button>
+    <button class="quick-btn" data-msg="how to handle objection: too expensive">Objections</button>
+  </div>
+  <div class="input-area">
+    <input type="text" id="msgInput" placeholder="Ask about demos, sales, pipeline..." autocomplete="off" enterkeyhint="send">
+    <button class="send-btn" id="sendBtn">&#9654;</button>
+  </div>
+</div>
+
+<script>
+const WEBHOOK_URL = 'https://n8n.srv1184808.hstgr.cloud/webhook/pulse-chat';
+let currentUser = '';
+let currentRole = '';
+
+// Elements
+const loginScreen = document.getElementById('loginScreen');
+const chatScreen = document.getElementById('chatScreen');
+const nameSelect = document.getElementById('nameSelect');
+const pinInput = document.getElementById('pinInput');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const userBadge = document.getElementById('userBadge');
+const messagesEl = document.getElementById('messages');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const quickActions = document.getElementById('quickActions');
+
+// === MOBILE VIEWPORT FIX ===
+// On mobile, keyboard changes viewport — use visualViewport to keep input visible
+function fixViewport() {
+  if (window.visualViewport) {
+    const onResize = () => {
+      const vv = window.visualViewport;
+      document.body.style.height = vv.height + 'px';
+      // Scroll messages to bottom when keyboard opens
+      requestAnimationFrame(() => {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+    };
+    window.visualViewport.addEventListener('resize', onResize);
+    window.visualViewport.addEventListener('scroll', onResize);
+  }
+}
+fixViewport();
+
+// Show PIN field when name selected
+nameSelect.addEventListener('change', () => {
+  if (nameSelect.value) {
+    pinInput.style.display = 'block';
+    setTimeout(() => pinInput.focus(), 100);
+  } else {
+    pinInput.style.display = 'none';
+  }
+  loginError.style.display = 'none';
+  checkLoginReady();
+});
+
+pinInput.addEventListener('input', () => {
+  loginError.style.display = 'none';
+  checkLoginReady();
+});
+
+// Enter key on PIN field -> login
+pinInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !loginBtn.disabled) loginBtn.click();
+});
+
+function checkLoginReady() {
+  loginBtn.disabled = !(nameSelect.value && pinInput.value.length === 4);
+}
+
+loginBtn.addEventListener('click', async () => {
+  const name = nameSelect.value;
+  const pin = pinInput.value.trim();
+  if (!name || pin.length !== 4) return;
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Verifying...';
+  loginError.style.display = 'none';
+
+  try {
+    const resp = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, pin, message: '__login__' })
+    });
+    const data = await resp.json();
+
+    if (data.status === 'auth_failed') {
+      loginError.textContent = data.reply || 'Wrong PIN. Try again.';
+      loginError.style.display = 'block';
+      pinInput.value = '';
+      pinInput.focus();
+      loginBtn.textContent = 'Start Chatting';
+      checkLoginReady();
+      return;
+    }
+
+    // Login success
+    currentUser = name;
+    currentRole = data.role || 'rep';
+    loginScreen.classList.add('hidden');
+    chatScreen.classList.add('active');
+
+    let badgeHTML = name;
+    if (currentRole === 'admin') badgeHTML += ' <span class="role-badge">Admin</span>';
+    else if (currentRole === 'team_lead') badgeHTML += ' <span class="role-badge">Lead</span>';
+    userBadge.innerHTML = badgeHTML;
+    userBadge.style.display = 'block';
+
+    // Add admin quick actions
+    if (currentRole === 'admin') {
+      const teamBtn = document.createElement('button');
+      teamBtn.className = 'quick-btn';
+      teamBtn.dataset.msg = 'team overview';
+      teamBtn.textContent = 'Team Overview';
+      quickActions.appendChild(teamBtn);
+      teamBtn.addEventListener('click', () => sendMessage('team overview'));
+    }
+    if (currentRole === 'admin' || currentRole === 'team_lead') {
+      const allDemos = document.createElement('button');
+      allDemos.className = 'quick-btn';
+      allDemos.dataset.msg = 'all demos';
+      allDemos.textContent = 'All Demos';
+      quickActions.appendChild(allDemos);
+      allDemos.addEventListener('click', () => sendMessage('all demos'));
+    }
+
+    addMessage(data.reply, 'bot');
+    setTimeout(() => msgInput.focus(), 300);
+  } catch (err) {
+    loginError.textContent = 'Connection error. Try again.';
+    loginError.style.display = 'block';
+    loginBtn.textContent = 'Start Chatting';
+    checkLoginReady();
+  }
+});
+
+// Quick actions
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const msg = btn.dataset.msg;
+    if (msg) sendMessage(msg);
+  });
+});
+
+// Send
+sendBtn.addEventListener('click', () => {
+  const msg = msgInput.value.trim();
+  if (msg) sendMessage(msg);
+});
+
+msgInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const msg = msgInput.value.trim();
+    if (msg) sendMessage(msg);
+  }
+});
+
+function addMessage(text, type) {
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  requestAnimationFrame(() => {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+  return div;
+}
+
+async function sendMessage(msg) {
+  addMessage(msg, 'user');
+  msgInput.value = '';
+  msgInput.disabled = true;
+  sendBtn.disabled = true;
+
+  const typingEl = document.createElement('div');
+  typingEl.className = 'msg typing';
+  typingEl.innerHTML = 'Pulse is thinking<span class="typing-dots"></span>';
+  messagesEl.appendChild(typingEl);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const resp = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: currentUser, message: msg })
+    });
+
+    typingEl.remove();
+
+    if (!resp.ok) {
+      addMessage('Something went wrong. Try again in a moment.', 'error');
+    } else {
+      const data = await resp.json();
+      const reply = data.reply || data[0]?.reply || 'No response received.';
+      addMessage(reply, 'bot');
+    }
+  } catch (err) {
+    typingEl.remove();
+    addMessage('Connection error. Check your internet and try again.', 'error');
+  }
+
+  msgInput.disabled = false;
+  sendBtn.disabled = false;
+  msgInput.focus();
+}
+</script>
+</body>
+</html>

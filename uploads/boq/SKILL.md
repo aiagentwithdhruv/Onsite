@@ -173,7 +173,10 @@ Material Name,Opening Stock,Estimated Quantity,Budgeted Unit Rate
 | C | Estimated Quantity | Yes | Number >= 0 |
 | D | Budgeted Unit Rate | Yes | Number >= 0 |
 
-**CRITICAL: Name matching is the #1 cause of upload failures.**
+**CRITICAL: Materials MUST exist in the Material Library before uploading stock.**
+Upload order: **Material Library CSV → then Material Stock CSV.** If materials don't exist, upload fails with "Material 'X' does not exist in library".
+
+**Name matching is the #1 cause of upload failures.**
 
 Known library names with intentional typos (use EXACTLY):
 ```

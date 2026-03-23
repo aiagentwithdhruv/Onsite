@@ -65,6 +65,15 @@ const CRM_OWNER_MAP = {
   'Team':'Team'
 };
 
+// Primary Zoho CRM owner name per rep (Zoho COQL breaks with 3+ OR conditions)
+const CRM_PRIMARY = {
+  Sunil:'Sunil Demo', Anjali:'Anjali Bajaj', Bhavya:'Bhavya Pattegudde Janappa',
+  Mohan:'Mohan C', Gayatri:'Gayatri Surlkar', Shailendra:'Shailendra Gour',
+  'Amit U':'Amit Balasaheb Udagatti', Hitangi:'Hitangi Arora', 'Amit Kumar':'Amit Kumar',
+  Desi:'Desi Yulia', Jyoti:'Jyoti', Shruti:'Shruti', Chadni:'Chadni',
+  Sumit:'Sumit', Akshansh:'Akshansh', Dhruv:'Dhruv'
+};
+
 // TEST MODE: set true to send all messages to Dhruv only
 const TEST_MODE = false;
 const TEST_PHONE = '918770101822';
@@ -78,6 +87,11 @@ const MONITOR_PHONE = '918770101822';
 const pad = n => String(n).padStart(2, '0');
 const now = new Date();
 const TODAY = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+const yd = new Date(now); yd.setDate(yd.getDate() - 1);
+const YESTERDAY = `${yd.getFullYear()}-${pad(yd.getMonth()+1)}-${pad(yd.getDate())}`;
+// Premium customer data: [company, city, state, region(IN/ME/AF/SE), category(C/I/M/A/G), amount, is_renewal(0/1), age_months]
+const PCUST = [["Tactile Construction","Chennai","Tamil Nadu","IN","C",18500,0,11],["JP Construction","Puducherry","Andaman and Nicobar Islands","IN","C",106200,0,6],["4K sports Infra Pvt Limited","Hyderabad","Andhra Pradesh","IN","C",182900,0,7],["Bhavya Developers","Andhra Pradesh","Andhra Pradesh","IN","C",180000,1,38],["LuxeSpace Living Private Limited","Vijayawada","Andhra Pradesh","IN","G",178180,0,7],["Sree datla construction","Godavari","Andhra Pradesh","IN","C",88500,1,23],["Sri Apoorva cmc llp","Hyderabad","Andhra Pradesh","IN","G",85018,0,7],["Sumanth Homes","Tirupathi","Andhra Pradesh","IN","G",65000,0,20],["Lucentt Architects","Anantapur","Andhra Pradesh","IN","A",65000,1,17],["Lucentt Architects","Anantapur","Andhra Pradesh","IN","A",45902,0,17],["NM CONSTRUCTION AND INTERIORS PRIVA","Vijaywada","Andhra Pradesh","IN","I",27000,1,0],["Olive Leaf Architects and Interiors","Hyderabad","Andhra Pradesh","IN","I",20000,0,45],["NM CONSTRUCTION AND INTERIORS PRIVA","Vijaywada","Andhra Pradesh","IN","I",16402,1,51],["Global Fire Industries","Hyedrabad","Andhra Pradesh","IN","M",5900,1,17],["Nahata Buildcons & Consultancy","West Kameng","Arunachal Pradesh","IN","G",42473,0,13],["MK Brothers","Parasamba","Arunachal Pradesh","IN","G",5000,1,26],["Assam Power Generation Corporation ","Guwahati","Assam","IN","G",69530,1,18],["Parag Associates","","Assam","IN","G",66287,1,21],["Phoenix Enterprise","Sivasagar","Assam","IN","G",42480,0,6],["MAA ENGINEERING & ASSOCIATES","Guwahati","Assam","IN","C",40000,1,30],["DJ Baruah Engineers & Architects","Jorhat-785001","Assam","IN","C",30090,0,7],["MAA ENGINEERING & ASSOCIATES","Guwahati","Assam","IN","C",28084,1,30],["Le decor","Assam","Assam","IN","I",7800,0,48],["Archforum Designs","GOLAGHAT","Assam","IN","I",7500,0,42],["Nanak Luxury Homes","Australia","Australia","IN","G",63119,0,13],["M/S. KUWAR CONSTRUCTION","Darbhanga","Bihar","IN","C",121068,1,19],["AFC India","Ballia","Bihar","IN","G",100000,1,28],["SOLARTIVE TECHNO INDUSTRIES PRIVATE","PATNA","Bihar","IN","G",63720,0,18],["Dharmendra Kumar Yadav Construction","Bihar","Bihar","IN","C",50000,0,23],["M/S. KUWAR CONSTRUCTION","Darbhanga","Bihar","IN","C",50000,0,19],["Vector Home Interior Solution Pvt L","Patna","Bihar","IN","I",7080,0,26],["Kahlon Infra LLP","Chandigarh","Chandigarh","IN","C",150000,1,28],["Kahlon Infra LLP","Chandigarh","Chandigarh","IN","C",17699,0,28],["Shree construction and developers","Ambikapur","Chhattisgarh","IN","C",100000,1,20],["Greenboxbuildcon","Bhilai chhattis","Chhattisgarh","IN","G",86730,1,47],["Build Right Infra","Raipur","Chhattisgarh","IN","C",80000,0,15],["Shankara Enterprises","Raipur","Chhattisgarh","IN","G",75520,0,7],["Mangalmurti group","Raipur","Chhattisgarh","IN","G",64900,0,14],["SHRI VINAYAK CONSTRUCTION","Raipur","Chhattisgarh","IN","C",56640,0,7],["yoga electrical","Balaghat","Chhattisgarh","IN","M",25000,0,44],["Architect Mithlesh Sinha","Raipur","Chhattisgarh","IN","A",12744,0,9],["DHANASVI INFRA","","Dadra and Nagar Haveli and Daman and Diu","IN","C",78666,0,1],["Vanraj Infrastructura","Dadra and Nagrh","Daman and Diu","IN","C",11504,1,53],["Awla Infratech","New delhi","Delhi","IN","C",141600,0,1],["Manchanda Interior","Dwarka","Delhi","IN","I",139200,1,41],["Jetking Engineering","Delhi","Delhi","IN","C",120360,0,4],["STAR ENGINEERING CHEMICALS APPLICAT","Delhi","Delhi","IN","C",88412,0,15],["Solutions INC","Delhi","Delhi","IN","G",82600,0,6],["Reinvent Homes Private Limited","Delhi","Delhi","IN","G",76700,0,10],["SG Designs and Builds Private Limit","South Delhi","Delhi","IN","I",74457,0,11],["Isotect contracts Pvt. Ltd","Delhi","Delhi","IN","G",68425,0,12],["NAS Architects","South East Delh","Delhi","IN","A",67500,1,57],["Sai Fire Appliances Pvt Ltd","Delhi","Delhi","IN","M",53100,0,9],["Manchanda Interior","Dwarka","Delhi","IN","I",45000,1,41],["NAS Architects","South East Delh","Delhi","IN","A",25063,0,57],["Anand Raheja","Goa","Goa","IN","G",75520,1,18],["Soni sawant associates llp","Goa","Goa","IN","G",47082,0,22],["Laksh Builder","Goa","Goa","IN","C",17698,0,27],["Laksh Builder","Goa","Goa","IN","C",17500,1,13],["Mahamaya Builders","","Goa","IN","C",10000,1,34],["SL INFRAA","Surat","Gujarat","IN","C",294000,0,6],["Grishva INFRAPROJECT Llp","Gujarat","Gujarat","IN","C",250560,1,0],["Jyona power","Surat","Gujarat","IN","G",200725,1,15],["JAY KHODIYAR CONSTRUCTION","Gujarat","Gujarat","IN","C",187620,1,18],["SL Enterprises","Surat","Gujarat","IN","G",171567,0,6],["TCC Projects Pvt LTD","Ahmedabad","Gujarat","IN","G",152220,1,32],["Aakshar Electricals","Ahmedabad","Gujarat","IN","M",125316,1,55],["Ideaz Interior Designer and Consult","Gujarat","Gujarat","IN","I",100000,1,27],["Innovation Interior","Gujarat","Gujarat","IN","I",85000,1,15],["Innovation Interior","Gujarat","Gujarat","IN","I",70682,0,15],["Aakshar Electricals","Ahmedabad","Gujarat","IN","M",49900,1,55],["ELECTRO VOLT ELECTRICAL","Surat","Gujarat","IN","M",35190,1,31],["Karman Architects","Vadodra","Gujarat","IN","A",16506,0,17],["Mi Architect and Associates","Ahmedabad","Gujarat","IN","A",12800,0,19],["Alvi pmc consltancy","Surat","Gujarat","IN","A",8000,0,27],["Vidyuth engineers","Bhiwadi","Haryana","IN","C",177590,0,22],["Fab furnishers pvt ltd","Gurugram","Haryana","IN","I",118000,0,4],["SAI DEVELOPZONE PRIVATE LIMITED","Gurugram","Haryana","IN","G",113209,0,8],["M/s Adore Build Projects","Faridabad","Haryana","IN","G",98305,0,5],["Freshpro  Agri Infra Pvt Ltd","Kurukshetra","Haryana","IN","C",94400,0,8],["Gypsum structural india pvt ltd","Gurugram","Haryana","IN","G",90000,0,2],["Gobito Construction India pvt ltd","Gurugram","Haryana","IN","C",88500,0,12],["AANANDAM STUDIO AND DESIGNING LLP","Gurgaon","Haryana","IN","I",60180,0,10],["XTORD DESIGNS PRIVATE LIMITED","Gurugram","Haryana","IN","I",45640,0,51],["SINGH JOT BUILDING LIFTING SERVICE","Haryana","Haryana","IN","M",3500,0,42],["Revolution","Solan","Himachal Pradesh","IN","G",47200,0,2],["Whizkids","Shimla","Himachal Pradesh","IN","G",47200,0,26],["Sanshraya design","palampur","Himachal Pradesh","IN","I",25000,1,24],["ESQ BUILDTECH","Nalagarh","Himachal Pradesh","IN","G",24072,0,16],["Rishi Ranjan Gupta Construction","Kullu","Himachal Pradesh","IN","C",22450,0,27],["Sanshraya design","palampur","Himachal Pradesh","IN","I",18000,0,24],["Akbar Husain Shaikh","Hyderabad","Telangana","IN","G",10000,1,40],["PT High Gate Properties","Kuta, Bali","Indonasia","SE","G",94236,0,3],["PT. Dewata Lestari Konstruksi","Bali","Indonasia","SE","G",74816,0,6],["PT. Lumina Property Group","Bali","Indonasia","SE","G",67410,0,2],["Star Construction","Jakarta","Indonasia","SE","C",15900,0,5],["Cokro Pondasi","","Indonesia","SE","G",45915,0,20],["PT. Umira Sinergi Global","indonesia","Indonesia","SE","G",43790,0,15],["Cokro Pondasi","","Indonesia","SE","G",42035,1,20],["Moona Architect","East Java","Indonesia","SE","A",31806,0,14],["Moona Architect","East Java","Indonesia","SE","A",15903,0,14],["PT. Bali Interior Persada","Bali","Indonesia","SE","I",2913,0,14],["Moona Architect","East Java","Indonesia","SE","A",2550,0,14],["ARFAN MEHMOOD","Jammu","Jammu & Kashmir","IN","G",115050,0,8],["Majid Hussain","Jammu & Kashmir","Jammu & Kashmir","IN","G",72000,1,16],["Majid Hussain","Doda jammu and ","Jammu & Kashmir","IN","G",60416,0,16],["Jannat Jubilant Construction","Jammu","Jammu & Kashmir","IN","C",42480,1,48],["Kay and Q Infrastructures Pvt Ltd","Jammu","Jammu & Kashmir","IN","C",20000,0,16],["KD Infrastructures","Kargil","Jammu & Kashmir","IN","C",18000,0,10],["Kamla Electric Store","Noamundi","Jharkhand","IN","G",302670,1,41],["Vasundhara Builders","Jharkhand","Jharkhand","IN","C",106200,0,10],["Aadityah Infra Projects","Jamshedpur","Jharkhand","IN","C",106200,0,6],["Architek Zone","Jamshedpur","Jharkhand","IN","G",82836,1,19],["Dev International","RANCHI","Jharkhand","IN","G",65051,0,21],["3t Developers","JHARKHAND","Jharkhand","IN","C",53100,1,51],["HR Construction Solutions","Bengaluru","Karnataka","IN","C",300000,0,46],["Srinivasa Earth Movers","Bangalore","Karnataka","IN","G",300000,0,3],["ENEWATE PROJECTS PRIVATE LIMITED","Bangalore","Karnataka","IN","G",145700,0,3],["Nakhsha Builder","Mysuru","Karnataka","IN","C",141600,0,53],["Nakhsha Builder","Mysuru","Karnataka","IN","C",136000,0,53],["Technospan","bangalore","Karnataka","IN","G",120360,1,15],["Cfolios Design and Construction Sol","Karnataka","Karnataka","IN","I",105408,1,50],["Proverk Interior & Construction pri","Bangalore","Karnataka","IN","I",53100,0,8],["UPCOUNTRY DECOR PRIVATE LIMITED","Mohali Sas naga","Karnataka","IN","I",48911,0,18],["Fire Lite Solutions","Bangalore","Karnataka","IN","M",31860,0,8],["Cube Consultants and Buildcon","Bengaluru","Karnataka","IN","A",22000,1,43],["Cube Consultants and Buildcon","Bengaluru","Karnataka","IN","A",21877,0,43],["Fire Army safety solutions","Bengaluru","Karnataka","IN","M",20060,0,26],["Vinay consultant","Chitradura karn","Karnataka","IN","A",10000,0,45],["Dsouza Electricals","Bajpe","Karnataka","IN","M",10000,0,8],["BandM  Infra pvt ltd","kochi","Kerala","IN","C",170000,1,18],["Antony Thomas Contracting Pvt Ltd","Kochi","Kerala","IN","G",142560,0,11],["HARI AND COMPANY","Eramallor","Kerala","IN","G",88500,0,30],["HEDERA HOMES LLP","KANNUR","Kerala","IN","G",84960,1,45],["Oranzai Builders","aluva","Kerala","IN","C",83779,0,10],["EP DISIGIN AND BUILDERS","NILAMBUR","Kerala","IN","C",75520,0,33],["PENTARCH THE TECH DESIGNERS & BUILD","","Kerala","IN","I",50000,1,44],["Turnkey Construction","kerala","Kerala","IN","I",42480,1,45],["Turnkey Construction","","Kerala","IN","I",37642,1,50],["shades architectural asociates","kerala","Kerala","IN","A",23597,0,33],["Aspier architecture company","Thrissur","Kerala","IN","A",19500,1,42],["Alamco Architecture","Kerala","Kerala","IN","A",17700,1,20],["Amazon electrical","Kerala","Kerala","IN","M",15000,0,20],["AIGCC GROUP","","Kuwait","ME","G",80550,1,23],["TAWAZUN UNITED CO","Kuwait","Kuwait","ME","G",33395,0,22],["MSLR Pvt ltd","New delhi","Madhya Pradesh","IN","G",784700,0,1],["Perfect Tech Aids Pvt Ltd","Indore","Madhya Pradesh","IN","G",81715,0,7],["A R Enterprises","","Madhya Pradesh","IN","G",76700,0,10],["Samashthiti Construction","Indore","Madhya Pradesh","IN","C",75000,1,21],["JK Engg an Infra","Bhopal","Madhya Pradesh","IN","C",66000,0,50],["Evoge INFRASTRUCTURE SERVICES PRIVA","Bhopal","Madhya Pradesh","IN","C",60770,0,4],["Hydrantt water and fire solan pvt p","Indore","Madhya Pradesh","IN","M",21800,0,8],["LNT DESIGN &CONSTRUCTION","MP","Madhya Pradesh","IN","I",20000,1,52],["LNT DESIGN &CONSTRUCTION","","Madhya Pradesh","IN","I",17000,1,52],["Outsideln consultants","Indore","Madhya Pradesh","IN","A",12000,1,57],["Hasan and kushal Architect","","Madhya Pradesh","IN","A",7080,1,52],["Design & Build Associates","Jabalpur","Madhya Pradesh","IN","I",6000,0,53],["ONE ROOF ARCHITECTS","Chindwada","Madhya Pradesh","IN","A",5900,1,36],["Rocks & Logs (I) Pvt Ltd","Mumbai","Maharashtra","IN","G",214305,1,15],["Adiraj Construction Company","Pune","Maharashtra","IN","C",197532,1,0],["TRIVIE","Mumbai","Maharashtra","IN","G",173018,0,8],["ulhas enterprises","Nagpur","Maharashtra","IN","G",150000,1,20],["INTEGRATED BUILDINGS |STRUCTURAL & ","Mumbai","Maharashtra","IN","A",132750,0,10],["Chaudhary Enterprises Turnkey India","Mumbai","Maharashtra","IN","I",127000,0,3],["Jasfo Design Pvt Ltd","Mumbai","Maharashtra","IN","I",118000,0,2],["Shivam developer","Pune","Maharashtra","IN","C",105138,1,42],["Innovation Engineering and Construc","Nagpuř","Maharashtra","IN","C",100000,1,28],["Design Discipline","Nagpur","Maharashtra","IN","I",53100,0,1],["M S Architectural Sol","mumbai","Maharashtra","IN","A",50000,0,9],["Rashmi Electrical","MUMBAI","Maharashtra","IN","M",50000,1,16],["Fernandes electricals","NA","Maharashtra","IN","M",35365,0,18],["MS Architectural Solutions","Mumbai","Maharashtra","IN","A",34190,0,20],["TYK Design & Renovation sdn bhd","","Malasiya","SE","I",33448,0,18],["HJ design Studio and Construction","Imphal","Manipur","IN","I",7500,0,47],["Megindia Construction","Shilong","Meghalaya","IN","C",50976,0,8],["MAACHKON","Meghalaya","Meghalaya","IN","G",50976,0,9],["Gauraav Siinghal","Brahmanpara, Tu","Meghalaya","IN","G",31500,0,26],["ALGA Infrastructures","Mizoram","Mizoram","IN","C",10000,1,21],["D&B Enterprise","Mumbai","Maharashtra","IN","G",3540,1,34],["Gadhmai building materials PTV limi","","Nepal","IN","G",15000,0,26],["M/s Bro Engineering Movement","","Nepal","IN","C",15000,1,29],["Axis design and build","Nepal","Nepal","IN","I",14999,0,27],["MKT SALES CORPORATION","Pratap Ganj","New Delhi","IN","G",11000,0,30],["Blueline Urban Projects Limited","lagos","Nigeria","AF","G",147340,0,17],["MACRO ACRES LIMITED","Abuja, Nigeria.","Nigeria","AF","G",84206,0,15],["Manash Company","","Odisa","IN","G",90000,1,47],["Fakir  Charan Sahu","Odisa","Odisa","IN","G",26000,1,27],["Manash Company","","Odisa","IN","G",23599,1,47],["RS Construction","Odisa","Odisa","IN","C",12000,1,50],["Truudreamss Engineering and Service","Odisa","Odisa","IN","C",10619,0,30],["SUSHREESARADA CONSTRUCTION.PVT LTD","","Odisa","IN","C",10618,0,37],["M/s United traders","Keonjhar","Odisha","IN","G",83962,1,22],["Prowintech Solutions Pvt Ltd","Odisa","Odisha","IN","G",81120,0,10],["Manash Company","Odisha","Odisha","IN","G",57624,1,47],["AK Construction","Balangir , Odis","Odisha","IN","C",50000,0,43],["DD ENGINEERING","odisha","Odisha","IN","C",28320,0,1],["BEFIT CONSTRUCTION AND INNOVATION P","Berhampur","Odisha","IN","C",26550,0,1],["Archito design studio","Na","Odisha","IN","I",26000,1,52],["Prachi interior","Bhuvneshwar","Odisha","IN","I",20000,1,25],["Prachi interior","Bhuvneshwar","Odisha","IN","I",10000,0,25],["Sarooj Construction LLC","oman","Oman","ME","C",253198,0,20],["AIGCC GROUP","oman","Oman","SE","G",180500,1,23],["ALPHA POOLS OMAN","Oman","Oman","ME","G",117882,1,26],["Burj Al Abrar Trading and contracti","Muscat","Oman","IN","G",91841,0,20],["Horizon Line Construction","Muscat","Oman","ME","C",66930,1,23],["Janleven Quirante","Philipines","Philipines","SE","G",91905,0,21],["HD Engineering","Guyana South Am","Philippines","IN","C",203071,0,1],["Jericho Aguas","Philippines","Philippines","SE","G",60150,0,21],["JB Infrastructure","Punjab","Punjab","IN","C",57525,1,44],["Gagandeep singh & associates","Amritsar","Punjab","IN","G",55000,1,53],["Sarao engineering&projects Llp","Patiala","Punjab","IN","C",53100,1,30],["DESIGN N' BUILD ARCHITECTS","Chandigarh","Punjab","IN","I",49560,0,9],["Jai Durga Co-operative Society","Punjab","Punjab","IN","G",45666,1,51],["INVICTUS PROIECTS","Punjab","Punjab","IN","G",30570,1,39],["A.G Construction co","MOHALI","Punjab","IN","C",25960,0,52],["GURASEES DESIGNS & HOME SOLUTIONS","","Punjab","IN","I",5780,0,33],["Gogna Architects","Punjab","Punjab","IN","A",5000,0,29],["BBM SPORTS LANDSCAPE - TRADING AND ","qatar","Qatar","ME","G",161733,0,21],["HYDRO MASTER","Doha","Qatar","ME","G",98198,0,26],["V Decor Trading","Doha, Qatar","Qatar","ME","I",86627,0,25],["BBM SPORTS LANDSCAPE - TRADING AND ","qatar","Qatar","ME","G",68954,0,10],["Reidius Infra","","Rajashthan","IN","C",300000,0,35],["Anupam traders","","Rajashthan","IN","G",40000,1,48],["GM Buildcon","Sikar","Rajashthan","IN","G",32000,1,38],["Reidius Infra","","Rajashthan","IN","C",21240,1,35],["SARLA INFRA AND INNOVATIONS","Udaipur","Rajashthan","IN","C",18000,1,49],["Lalchand","","Rajashthan","IN","G",15000,1,39],["ARCHITECTURE AVENUE","Jaipur","Rajashthan","IN","A",10620,1,40],["RM Consultant And Asset Management","Ganganagar","Rajashthan","IN","A",10000,1,33],["Skyfall Construction llp","Udaipur","Rajasthan","IN","C",132750,0,4],["Semantics Infra","udaipur","Rajasthan","IN","C",118000,0,12],["GREEN BRICK PROJECT PRIVATE LIMITED","Jaipur","Rajasthan","IN","G",110000,0,45],["Mahaveer Builder","Udaipur","Rajasthan","IN","C",106200,0,6],["BAGAI BUILDCON LLP","Jaipur","Rajasthan","IN","G",94400,1,21],["SHRIRAM AND COMPANY","JODHPUR","Rajasthan","IN","G",76700,0,43],["Akash Interiors","Jaipur","Rajasthan","IN","I",45135,0,4],["Taher Interior decoration","Dangapur","Rajasthan","IN","I",21240,1,37],["Aksa Interiors","udaipur","Rajasthan","IN","I",7630,0,26],["Greystone Contracting LTD","","Saudi Arabia","ME","G",283000,0,25],["T&I Construction","SAR","Saudi Arabia","ME","C",205461,1,19],["1. Thawabit Al Jazeera Contracting ","","Saudi Arabia","ME","G",195699,0,16],["Alam almasih general contracting co","Riyadh","Saudi Arabia","ME","G",182832,0,6],["T&I Construction","SAR","Saudi Arabia","ME","C",167322,0,19],["Awtar construction for general cont","Saudi Arabia","Saudi Arabia","ME","C",140832,0,21685],["C4C Civils","","South Africa","AF","C",41421,0,7],["ADDRESS DEVELOPERS","Coimbatore","Tamil Nadu","IN","C",300000,1,16],["Theeran and co","na","Tamil Nadu","IN","G",250000,1,36],["Sri Ezhumalaiyan Constructions","Nagapattinam","Tamil Nadu","IN","C",198240,0,28],["Booshnam Associates Pvt Ltd","Chennai","Tamil Nadu","IN","G",128854,0,11],["Jaymithran Infrastructures llp","Coimbatore","Tamil Nadu","IN","C",120000,0,1],["Blend Infra-Interiors","Periyakuppam","Tamil Nadu","IN","I",82600,0,7],["BARA PROJECTS","Chennai 600095","Tamil Nadu","IN","G",82600,0,7],["Amis building consultants Pvt. Ltd.","Chennai","Tamil Nadu","IN","A",75000,0,28],["Design and Craft Infra Pvt Ltd","Chennai","Tamil Nadu","IN","I",65000,0,3],["Spacify Interiors","Chennai","Tamil Nadu","IN","I",65000,0,51],["Am Architects","Ramanathapuram","Tamil Nadu","IN","A",32992,0,15],["Eskay Electricals Pvt ltd","Thanjavur","Tamil Nadu","IN","M",30000,0,10],["Imams Architects(Bryaan Consultancy","Chennai","Tamil Nadu","IN","A",27000,0,12],["NRE INDUSTRIES LLP","Hyderabad","Telangana","IN","G",159300,0,6],["M/S SANDHYA CONSTRUCTIONS","Peddapalli","Telangana","IN","C",143960,0,20],["Star power structural projects llp","Hyderabad","Telangana","IN","G",135000,0,3],["JP ENTERPRISES INDIA PVT LTD","Hyderabad","Telangana","IN","G",118000,0,14],["NHF Infra Pvt Ltd","Hyderabad","Telangana","IN","C",91450,0,9],["Subishi Infra","Hyderabad","Telangana","IN","C",65062,0,51],["Design Nature Art","Hyderabad","Telangana","IN","I",59000,1,26],["Virata Interiors Exteriors","Hyderabad","Telangana","IN","I",31506,0,5],["KVR ELECTRICALS","Hyderabad","Telangana","IN","M",18599,0,23],["GK Contruction","Agartala","Tripura","IN","G",10001,0,7],["Sourav Chaudhuri","Agartala","Tripura","IN","G",8000,0,4],["D N CONSTRUCTIONS","Padmapur","Tripura","IN","C",5900,1,42],["Electro RAK","Dubai","UAE","ME","G",624754,0,5],["Blueline Urban Projects Limited","Nigeria","UAE","ME","G",385779,1,17],["Beyond horizon contracting","Dubai","UAE","ME","G",330330,0,6],["FOLOURGO Construction LLC","Dubai","UAE","ME","C",210166,0,2],["Al mamzar decore cont LLC","dubai","UAE","ME","I",205461,0,23],["Four Square Steel Constructions Con","Dubai","UAE","ME","C",196795,0,13],["Indus Construction LLC","Umm Al Quwain, ","UAE","ME","C",179697,0,26],["Idyllic interiors","Dubai","UAE","ME","I",176955,0,12],["Al mamzar decore cont LLC","UAE","UAE","ME","I",125132,0,23],["Bareilly Development Authority","Bareilly","Uttar Pradesh","IN","G",849600,0,4],["Woodofa Lifestyle Pvt Ltd","Noida","Uttar Pradesh","IN","I",194700,0,15],["FlaktGroup India Pvt Ltd","Greater Noida","Uttar Pradesh","IN","G",160000,0,3],["SCENTRE INFRA AND CONSULTATION LLP","Gautam Budda Na","Uttar Pradesh","IN","C",119745,0,10],["B.K CONSTRUCTION & CO.","Agra","Uttar Pradesh","IN","C",108560,0,6],["M/S Rass Contractor and Engineer","Ghaziabad","Uttar Pradesh","IN","C",80098,0,35],["Swastika Design","Varanasi","Uttar Pradesh","IN","I",55319,0,39],["PARMATMA DESIGN AND BUILD PRIVATE L","Noida","Uttar Pradesh","IN","I",42480,0,26],["Shivaya Fire Protection opc pvt ltd","Banaras","Uttar Pradesh","IN","M",40000,1,43],["Shivaya Fire Protection opc pvt ltd","Banaras","Uttar Pradesh","IN","M",35400,0,43],["Brick Box Architects","Uttar Pradesh","Uttar Pradesh","IN","A",27612,1,56],["Lines N Curves Architectural Consul","Uttar Pradesh","Uttar Pradesh","IN","A",23600,1,53],["Studio Milieu Architects","Noida","Uttar Pradesh","IN","A",23600,1,27],["Murti India","","UttarPradesh","IN","G",33000,0,25],["Raghvendra & Associates","","UttarPradesh","IN","G",10000,1,41],["Murti India","","UttarPradesh","IN","G",7000,0,25],["RT Realtors","Haldwani","Uttarakhand","IN","G",84960,0,15],["SKT Buildcon Pvt Ltd","Uttarakhand","Uttarakhand","IN","G",56640,1,26],["F.M Enterprise","Budgam","Uttarakhand","IN","G",40120,0,24],["Lohaar Engineering and Construction","Kashipur","Uttarakhand","IN","C",27186,0,28],["Livanchal Infraspace LLP","Nanital","Uttarakhand","IN","C",27140,0,6],["Anbu Engineering Services","Srinagar","Uttarakhand","IN","C",20000,1,23],["Salva Interiors","Bhatkal","Uttarakhand","IN","I",11800,1,54],["Soumyadip Ghosh","Jalpaiguri","West Bengal","IN","G",72865,0,2],["Nirmal Sales Corporation","Jabakusum","West Bengal","IN","G",63720,1,48],["Alok Kumar Sarkar","Hooghly","West Bengal","IN","G",63402,1,50],["Infrastyle Ventures","Siliguri","West Bengal","IN","C",48273,0,3],["Ricky Rai Construction","West Bengal","West Bengal","IN","C",35400,1,21],["Shiv Sankalp Construction","bengal","West Bengal","IN","C",31110,0,11],["NEAR ME INTERIORS PRIVATE LIMITED","KOLKATA","West Bengal","IN","I",23600,1,52],["Surman Design and Construction","GOBARDANGA, Nor","West Bengal","IN","I",23482,1,20],["The woodland interior & constructio","Siliguri","West Bengal","IN","I",20000,0,24],["Dfine Homes.","","karnataka","IN","G",24000,1,41],["NUMMBERBOL TRADING HOUSE","","karnataka","IN","G",23600,1,54],["CLASS MYSORE","","karnataka","IN","G",20000,1,38],["MAS Technical Co","","kuwait","ME","G",97686,0,14],["MAS Technical Co","","kuwait","ME","G",66080,0,14]];
+
 let MONTH_START = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`;
 let MONTH_NAME = now.toLocaleString('en-US', {month:'long', year:'numeric'});
 let MONTH_END = TODAY;
@@ -459,8 +473,22 @@ return [{ json: { total, urgent: urgentLeads.length, warning: warningLeads.lengt
 
 AUTO_3_JS = r"""
 // === AUTOMATION 3: Daily Rep Scorecard ===
-// Demos broken down by Deal Owner (Leads_Owner)
+// Step 1: Send morning kickoff template to all reps (opens 24h session window)
+// Step 2: Send scorecard data as follow-up message
 
+// --- STEP 1: Send template to all reps first ---
+for (const [name, phone] of Object.entries({...REPS, ...ALL_TEAM})) {
+  await waTemplate(phone, name);
+}
+// Also send to managers
+for (const [name, phone] of Object.entries(MGR)) {
+  await waTemplate(phone, name);
+}
+
+// Small delay to let templates deliver before sending data messages
+await new Promise(r => setTimeout(r, 3000));
+
+// --- STEP 2: Pull CRM data and send scorecard ---
 const totalDemos = await qCount(`SELECT COUNT(id) as total FROM Leads WHERE Demo_Done_Date between '${MONTH_START}' and '${TODAY}'`);
 const totalSales = await qCount(`SELECT COUNT(id) as total FROM Leads WHERE Sale_Done_Date between '${MONTH_START}' and '${TODAY}'`);
 const vh = await qCount("SELECT COUNT(id) as total FROM Leads WHERE Sales_Stage = 'Very High Prospect'");
@@ -803,16 +831,24 @@ const msgLower = msg.toLowerCase();
 
 // === INTENT DETECTION ===
 let intent = 'chat';
+let dateFilter = null;
 const wantsNotes = /\b(note|notes|remark|remarks|description|detail|details)\b/.test(msgLower);
-if (/\b(demo|demos)\b/.test(msgLower)) intent = 'demos';
+if (/\b(lead.*assign|assign.*lead|new lead|leads.*got|leads.*received|leads.*given|kitne lead|lead.*aaye|lead.*mila)\b/.test(msgLower)) { intent = 'leads_assigned'; }
+else if (/\b(demo|demos)\b/.test(msgLower)) intent = 'demos';
 else if (/\b(sale|sales|closed|won|conversion|revenue|paisa|kitna kamaya)\b/.test(msgLower)) intent = 'sales';
 else if (/\b(pipeline|prospect|hp|vhp|high prospect)\b/.test(msgLower)) intent = 'pipeline';
 else if (/\b(follow.?up|pending|overdue|task)\b/.test(msgLower)) intent = 'followups';
 else if (/\b(help|kya kar|what can|commands?)\b/.test(msgLower)) intent = 'help';
 else if (/\b(hi|hello|hey|good morning|gm|namaste)\b/.test(msgLower)) intent = 'greeting';
+else if (/\b(premium.*customer|customer.*premium|reference.*customer|existing.*customer|paid.*user|hamara.*customer|humare.*client|client.*list|customer.*from|customer.*in)\b/.test(msgLower)) intent = 'customer_reference';
 else if (/\b(score|rank|leaderboard|position|kahan|standing)\b/.test(msgLower)) intent = 'rank';
 else if (/\b(target|goal|kitna|how much)\b/.test(msgLower)) intent = 'target';
 else if (wantsNotes) intent = 'notes';
+// Date filter for leads_assigned
+if (/\byesterday\b/.test(msgLower)) dateFilter = 'yesterday';
+else if (/\btoday\b/.test(msgLower)) dateFilter = 'today';
+else if (/\bthis week\b/.test(msgLower)) dateFilter = 'this_week';
+else if (/\blast week\b/.test(msgLower)) dateFilter = 'last_week';
 
 // === MONTH PARSING — override date range if user mentions a specific month ===
 const parsedMonth = parseMonth(msg);
@@ -822,11 +858,8 @@ if (parsedMonth) {
   MONTH_NAME = parsedMonth.name;
 }
 
-// === CRM OWNER NAME for queries ===
-const crmNames = Object.entries(CRM_OWNER_MAP).filter(([k, v]) => v === repName).map(([k]) => k);
-const ownerFilter = crmNames.length > 0
-  ? crmNames.map(n => `Leads_Owner = '${n}'`).join(' OR ')
-  : `Leads_Owner = '${repName}'`;
+// === CRM OWNER NAME for queries (single primary name — COQL breaks with 3+ OR) ===
+const ownerFilter = `Leads_Owner = '${CRM_PRIMARY[repName] || repName}'`;
 
 let reply = '';
 
@@ -981,6 +1014,173 @@ else if (intent === 'target') {
   reply += `\n_— Onsite Pulse_`;
 }
 
+// === LEADS ASSIGNED ===
+else if (intent === 'leads_assigned') {
+  let assignStart, assignEnd, assignLabel;
+  if (dateFilter === 'yesterday') {
+    assignStart = `${YESTERDAY}T00:00:00+05:30`; assignEnd = `${YESTERDAY}T23:59:59+05:30`; assignLabel = 'Yesterday';
+  } else if (dateFilter === 'this_week') {
+    const ws = new Date(now); ws.setDate(now.getDate() - now.getDay() + 1);
+    assignStart = `${ws.getFullYear()}-${pad(ws.getMonth()+1)}-${pad(ws.getDate())}T00:00:00+05:30`;
+    assignEnd = `${TODAY}T23:59:59+05:30`; assignLabel = 'This Week';
+  } else if (dateFilter === 'last_week') {
+    const ls = new Date(now); ls.setDate(now.getDate() - now.getDay() - 6);
+    const le = new Date(now); le.setDate(now.getDate() - now.getDay());
+    assignStart = `${ls.getFullYear()}-${pad(ls.getMonth()+1)}-${pad(ls.getDate())}T00:00:00+05:30`;
+    assignEnd = `${le.getFullYear()}-${pad(le.getMonth()+1)}-${pad(le.getDate())}T23:59:59+05:30`; assignLabel = 'Last Week';
+  } else {
+    assignStart = `${TODAY}T00:00:00+05:30`; assignEnd = `${TODAY}T23:59:59+05:30`; assignLabel = 'Today';
+  }
+  const assignedLeads = await qPage(`SELECT Full_Name, Company, Phone, Mobile, Lead_Source, Lead_Assigned_Time FROM Leads WHERE (${ownerFilter}) AND Lead_Assigned_Time between '${assignStart}' and '${assignEnd}' ORDER BY Lead_Assigned_Time DESC`);
+  const count = assignedLeads.length;
+  reply = `*${repName}'s Leads Assigned — ${assignLabel}*\n\n`;
+  reply += `Total: *${count}* leads\n\n`;
+  if (count > 0) {
+    assignedLeads.slice(0, 10).forEach((l, i) => {
+      const name = l.Full_Name || '?';
+      const comp = l.Company ? ` — ${l.Company}` : '';
+      const ph = l.Phone || l.Mobile || '';
+      const src = l.Lead_Source || '';
+      reply += `${i+1}. ${name}${comp}\n`;
+      if (ph) reply += `   📞 ${ph}\n`;
+      if (src) reply += `   📌 ${src}\n`;
+    });
+    if (count > 10) reply += `\n...+${count - 10} more\n`;
+    const srcMap = {};
+    assignedLeads.forEach(l => { const s = l.Lead_Source || 'Unknown'; srcMap[s] = (srcMap[s] || 0) + 1; });
+    reply += `\n*By Source:*\n`;
+    Object.entries(srcMap).sort((a,b) => b[1] - a[1]).forEach(([s, c]) => { reply += `  ${s}: ${c}\n`; });
+  } else {
+    reply += `No leads assigned ${assignLabel.toLowerCase()}.\n`;
+  }
+  reply += `\n_— Onsite Pulse_`;
+}
+
+// === CUSTOMER REFERENCE (premium customer lookup) ===
+else if (intent === 'customer_reference') {
+  const CAT_NAMES = {C:'Construction', I:'Interior', M:'MEP', A:'Consulting', G:'General'};
+  const REG_NAMES = {IN:'India', ME:'Middle East', AF:'Africa', SE:'South East Asia'};
+  const ml = msgLower;
+
+  // Detect category
+  let fCat = null;
+  if (/\b(construct|infra|builder|civil|road|bridge|housing)\b/.test(ml)) fCat = 'C';
+  else if (/\b(interior|decor|furnish|design|kitchen|modular|wood)\b/.test(ml)) fCat = 'I';
+  else if (/\b(mep|electric|plumb|hvac|fire|elevator|lift)\b/.test(ml)) fCat = 'M';
+  else if (/\b(architect|consult|pmc)\b/.test(ml)) fCat = 'A';
+
+  // Detect region
+  let fReg = null;
+  if (/\b(middle east|uae|dubai|oman|qatar|saudi|kuwait|bahrain)\b/.test(ml)) fReg = 'ME';
+  else if (/\b(africa|nigeria|kenya|south africa)\b/.test(ml)) fReg = 'AF';
+  else if (/\b(south east|indonesia|bali|philipp|malaysia)\b/.test(ml)) fReg = 'SE';
+
+  // Detect state — alias map handles typos, abbreviations, alternate spellings
+  const STATE_ALIAS = {
+    'rajasthan':'Rajasthan','rajashthan':'Rajasthan','rajastan':'Rajasthan','rajstan':'Rajasthan',
+    'maharashtra':'Maharashtra','maharastra':'Maharashtra','maha':'Maharashtra',
+    'karnataka':'Karnataka','karnatak':'Karnataka',
+    'tamil nadu':'Tamil Nadu','tamilnadu':'Tamil Nadu','tn':'Tamil Nadu',
+    'telangana':'Telangana','telengana':'Telangana','hyderabad':'Telangana',
+    'andhra pradesh':'Andhra Pradesh','andhra':'Andhra Pradesh','ap':'Andhra Pradesh',
+    'uttar pradesh':'Uttar Pradesh','up':'Uttar Pradesh','uttarpradesh':'Uttar Pradesh',
+    'madhya pradesh':'Madhya Pradesh','mp':'Madhya Pradesh',
+    'gujarat':'Gujarat','gujrat':'Gujarat','gj':'Gujarat',
+    'chhattisgarh':'Chhattisgarh','chattisgarh':'Chhattisgarh','cg':'Chhattisgarh','chhatisgarh':'Chhattisgarh',
+    'kerala':'Kerala','kl':'Kerala',
+    'delhi':'Delhi',
+    'punjab':'Punjab','pb':'Punjab',
+    'haryana':'Haryana','hr':'Haryana',
+    'west bengal':'West Bengal','wb':'West Bengal','bengal':'West Bengal',
+    'bihar':'Bihar',
+    'jharkhand':'Jharkhand','jh':'Jharkhand',
+    'odisha':'Odisha','odisa':'Odisha','orissa':'Odisha',
+    'assam':'Assam',
+    'goa':'Goa',
+    'uttarakhand':'Uttarakhand','uk':'Uttarakhand',
+    'himachal pradesh':'Himachal Pradesh','himachal':'Himachal Pradesh','hp':'Himachal Pradesh',
+    'jammu':'Jammu & Kashmir','kashmir':'Jammu & Kashmir','jk':'Jammu & Kashmir',
+    'chandigarh':'Chandigarh',
+    'tripura':'Tripura',
+    'manipur':'Manipur',
+    'meghalaya':'Meghalaya',
+    'mizoram':'Mizoram',
+    'uae':'UAE','dubai':'UAE',
+    'saudi':'Saudi Arabia','saudi arabia':'Saudi Arabia',
+    'oman':'Oman','qatar':'Qatar','kuwait':'Kuwait',
+    'indonesia':'Indonesia','indonasia':'Indonasia',
+  };
+  let fState = null;
+  // Try longest alias first (multi-word like "tamil nadu" before "tamil")
+  const sortedAliases = Object.keys(STATE_ALIAS).sort((a,b) => b.length - a.length);
+  for (const alias of sortedAliases) {
+    if (ml.includes(alias)) { fState = STATE_ALIAS[alias]; break; }
+  }
+  // Also match exact state names from data
+  if (!fState) {
+    const allStates = [...new Set(PCUST.map(c => c[2]))];
+    for (const s of allStates) {
+      if (ml.includes(s.toLowerCase())) { fState = s; break; }
+    }
+  }
+
+  // Detect city (match against data)
+  let fCity = null;
+  if (!fState) {
+    const allCities = [...new Set(PCUST.map(c => c[1]).filter(c => c && c.length > 2))];
+    for (const c of allCities) {
+      if (ml.includes(c.toLowerCase())) { fCity = c; break; }
+    }
+  }
+
+  // Filter
+  let results = PCUST;
+  // Match state with fuzzy — "Rajasthan" also matches "Rajashthan", "Odisha" matches "Odisa"
+  if (fState) {
+    const fsl = fState.toLowerCase();
+    results = results.filter(c => c[2] === fState || c[2].toLowerCase().startsWith(fsl.slice(0,5)));
+  }
+  if (fCity) results = results.filter(c => c[1].toLowerCase().includes(fCity.toLowerCase()));
+  if (fCat) results = results.filter(c => c[4] === fCat);
+  if (fReg) results = results.filter(c => c[3] === fReg);
+
+  results = [...results].sort((a,b) => b[5] - a[5]);
+  const top = results.slice(0, 5);
+
+  let label = fState || fCity || (fReg ? REG_NAMES[fReg] : null) || 'All';
+  if (fCat) label += ' \u2014 ' + CAT_NAMES[fCat];
+
+  if (top.length === 0) {
+    reply = 'No premium customers found for "' + label + '".\n\nTry: "premium customers from Maharashtra" or "interior companies Gujarat" or "construction companies middle east"\n\n\u2014 Onsite Pulse';
+  } else {
+    reply = '*Premium Customers \u2014 ' + label + '*\n\n';
+    top.forEach((c, i) => {
+      const [comp, city, st, reg, cat, amt, renew, age] = c;
+      const cityStr = city ? ' (' + city + ')' : '';
+      const status = renew ? '\ud83d\udd04 Renewal' : '\ud83c\udd95 Fresh';
+      const ageStr = age >= 24 ? Math.floor(age/12) + 'yr' : age >= 1 ? age + 'mo' : 'New';
+      const amtStr = amt >= 100000 ? (amt/100000).toFixed(1) + 'L' : (amt/1000).toFixed(0) + 'K';
+      reply += (i+1) + '. *' + comp + '*' + cityStr + '\n';
+      reply += '   ' + (fCat ? CAT_NAMES[cat] + ' | ' : '') + '\u20b9' + amtStr + ' | ' + status + ' | ' + ageStr + '\n\n';
+    });
+    reply += '--- _Copy-paste for client_ ---\n';
+    reply += '*Paid Users \u2014 ' + label + '*\n';
+    if (fCat) {
+      const byCat = {};
+      top.forEach(c => { const cn = CAT_NAMES[c[4]]; if (!byCat[cn]) byCat[cn]=[]; byCat[cn].push(c[0]); });
+      const catKeys = Object.keys(byCat);
+      for (const cat of catKeys) {
+        if (catKeys.length > 1) reply += '_' + cat + '_\n';
+        byCat[cat].forEach(name => { reply += '\u2022 ' + name + '\n'; });
+      }
+    } else {
+      top.forEach(c => { reply += '\u2022 ' + c[0] + '\n'; });
+    }
+    reply += '\n_Total ' + label + ' in database: ' + results.length + '_';
+    reply += '\n\u2014 Onsite Pulse';
+  }
+}
+
 // === GENERAL CHAT ===
 else {
   const funReplies = [
@@ -1101,6 +1301,20 @@ if (chatHistory.length > 0) {
   });
 }
 
+// === "NEED MORE" — continue last customer_reference query ===
+let _refState = null, _refCity = null, _refCat = null, _refReg = null, _refOffset = 0;
+if (/^\s*(more|need more|aur|next|agla|aage|continue|aur dikhao|aur do|show more)\s*$/i.test(msg) && chatHistory.length > 0) {
+  const lastH = chatHistory[chatHistory.length - 1];
+  if (lastH.intent === 'customer_reference' && lastH.lead_context) {
+    intent = 'customer_reference';
+    _refState = lastH.lead_context.ref_state || null;
+    _refCity = lastH.lead_context.ref_city || null;
+    _refCat = lastH.lead_context.ref_cat || null;
+    _refReg = lastH.lead_context.ref_reg || null;
+    _refOffset = (lastH.lead_context.ref_offset || 0) + 5;
+  }
+}
+
 // === DETECT TARGET REP ===
 // Admins can say "Anjali demos", "Bhavya sales", etc.
 // Team leads can query their team members
@@ -1140,11 +1354,12 @@ let searchPhone = null;
 let searchName = null;
 let searchCompany = null;
 let aiReply = null;
+let dateFilter = null;
 
 if (/^\s*(hi|hello|hey|good morning|gm|namaste|yo)\s*[!.]?\s*$/i.test(msg)) intent = 'greeting';
 else if (/^\s*(help|kya kar|what can|commands?)\s*[?]?\s*$/i.test(msg)) intent = 'help';
 
-// For everything else → ask AI
+// For everything else → ask AI (Claude Haiku 4.5 — thinks before classifying)
 if (!intent) {
   try {
     const aiResp = await http({
@@ -1152,48 +1367,70 @@ if (!intent) {
       url: 'https://openrouter.ai/api/v1/chat/completions',
       headers: { 'Authorization': `Bearer ${OR_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'x-ai/grok-4.1-fast',
-        max_tokens: 300,
+        model: 'anthropic/claude-haiku-4.5',
+        max_tokens: 600,
         temperature: 0,
         messages: [
-          { role: 'system', content: `You are an intent classifier for a sales CRM chatbot. The user is "${repName}", a sales rep at Onsite Teams (construction SaaS).
+          { role: 'system', content: `You are the brain of Onsite Pulse, a sales CRM chatbot for Onsite Teams (construction SaaS). The user is "${repName}".
 
-Given the user's message, respond with ONLY a JSON object (no markdown, no explanation):
+STEP 1 — THINK: Before classifying, reason briefly:
+- If the message looks garbled/repeated (common from voice-to-text), figure out what the user ACTUALLY meant. Voice input often produces duplicated words like "can you tell can you tell us today's demos" — the real question is just "tell us today's demos".
+- Consider typos, Hinglish, Hindi, slang, abbreviations.
+- Look at conversation history for context.
+
+STEP 2 — OUTPUT: After thinking, output a JSON object on a NEW line starting with { :
+
 {
-  "intent": one of: "demos", "sales", "pipeline", "followups", "rank", "target", "notes", "lead_search", "assistant", "greeting", "help", "chat",
+  "cleaned_message": "what the user actually meant in plain English",
+  "intent": one of: "demos", "sales", "pipeline", "followups", "rank", "target", "notes", "lead_search", "leads_assigned", "customer_reference", "assistant", "greeting", "help", "chat",
+  "target_rep": null or the NAME of the team member the user is asking about (e.g. "Bhavya", "Anjali", "Amit U"). null = asking about themselves,
   "month": null or month name if user mentions a specific month (e.g. "feb", "january", "last month"),
-  "wants_notes": true/false - whether user wants remarks/notes/details,
-  "search_phone": null or phone number if user wants to find a lead by phone,
-  "search_name": null or lead/company name if user wants to find a specific lead,
-  "search_company": null or company name if searching by company,
-  "ai_reply": null or a short friendly reply if intent is "chat" (general conversation not about CRM data)
+  "date_filter": null or one of "today", "yesterday", "this_week", "last_week" — if user mentions a specific day/time period,
+  "wants_notes": true/false,
+  "search_phone": null or phone number,
+  "search_name": null or lead/company name,
+  "search_company": null or company name,
+  "ai_reply": null or a short friendly reply if intent is "chat",
+  "ref_state": null or state name,
+  "ref_city": null or city name,
+  "ref_category": null or one of "C" (construction), "I" (interior), "M" (mep), "A" (architect/consulting)
 }
 
 Intent definitions:
-- demos: anything about demos done, demo count, demo list, presentations given
-- sales: anything about sales closed, deals won, revenue, money earned, conversions
-- pipeline: prospects, hot leads, VHP/HP, pipeline status, potential deals
-- followups: follow-ups, pending tasks, overdue calls, scheduled callbacks
-- rank: leaderboard, ranking, position in team, comparison with others
-- target: goals, targets, progress, how much more needed, days left
-- notes: remarks, notes, lead details, what was discussed
-- lead_search: finding a specific lead by phone number, name, or company name
-- assistant: ANY question about product knowledge, pricing, how to approach/pitch a client, write an email/message, handle objections, competitor comparison, sales strategy, what features Onsite has, how to close a deal, follow-up email templates, demo prep. This includes: "write a mail", "how to pitch", "what's our pricing", "how to handle objection", "compare with Procore", "help me close this deal", "draft a message", "what modules do we have"
+- demos: anything about demos done, demo count, demo list, presentations given. "today's demos" = demos with date_filter "today"
+- sales: sales closed, deals won, revenue. "today sales" = sales with date_filter "today"
+- pipeline: prospects, hot leads, VHP/HP, pipeline status
+- followups: follow-ups, pending tasks, overdue calls
+- rank: leaderboard, ranking, position in team
+- target: goals, targets, progress, days left
+- notes: remarks, notes, lead details
+- lead_search: finding a specific lead by phone, name, or company
+- leads_assigned: how many leads assigned/received. About ASSIGNMENT count (Lead_Assigned_Time), NOT pipeline
+- customer_reference: existing/premium/paid customers, client references
+- assistant: product knowledge, pricing, email drafting, objection handling, competitor comparison, sales strategy, pitch help, demo prep
 - greeting: hi, hello, good morning
-- help: asking what bot can do
-- chat: general conversation, jokes, completely unrelated questions (weather, cricket, food — NOT business/sales related)
+- help: what can the bot do
+- chat: general conversation, jokes, unrelated questions
 
-The user may write in English, Hindi, or Hinglish. Understand all three.
-
-IMPORTANT: If the user says "same lead", "that one", "this lead", "uska", "iska", etc. — refer to the conversation history to identify which lead they're talking about. Use the lead_context from previous messages.${conversationContext}` },
+CRITICAL RULES:
+1. ALWAYS set date_filter when user says "today", "aaj", "aaj ka", "yesterday", "kal", "this week", "is hafte". Don't ignore time words!
+2. "leads assigned" / "new leads" / "kitne leads" = leads_assigned (NOT pipeline)
+3. Voice input creates messy text — ALWAYS clean it first. The real intent is in there.
+4. If user says "not march today's" or "I said today not month" — they're correcting you. Set date_filter to "today".
+5. User may write in English, Hindi, or Hinglish. Understand all three.
+6. If user says "same lead", "that one", "uska" — check conversation history.
+7. TARGET_REP DETECTION: If user mentions a team member name (even misspelled like "Bhavaya"="Bhavya", "Anajli"="Anjali"), set target_rep to the correct name. Team members: Sunil, Anjali, Bhavya, Mohan, Gayatri, Shailendra, Amit U, Hitangi, Amit Kumar, Jyoti, Shruti, Sumit, Akshansh, Dhruv. If user says "my demos" or no name → target_rep = null.
+8. CONTEXT CARRY-OVER: If user says "what about X" / "and X?" / "same for X" / "uska" / "aur X ka" — carry forward the SAME intent AND date_filter from the previous conversation. E.g. if previous was demos+yesterday, and user says "what about Bhavya" → intent=demos, date_filter=yesterday, target_rep=Bhavya.
+9. FOLLOW-UP CONTEXT: If the previous message had a date_filter and the new message references it implicitly (like "and Bhavya?" after "yesterday demos"), INHERIT that date_filter. Don't reset to null.${conversationContext}` },
           { role: 'user', content: msg }
         ]
       })
     });
     const parsed = typeof aiResp === 'string' ? JSON.parse(aiResp) : aiResp;
     const aiText = (parsed?.choices?.[0]?.message?.content || '').trim();
-    // Parse JSON from AI response (handle markdown code blocks)
-    const jsonStr = aiText.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    // Parse JSON from AI response — find the JSON object (may have thinking text before it)
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : aiText.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     const ai = JSON.parse(jsonStr);
     intent = ai.intent || 'chat';
     wantsNotes = ai.wants_notes || false;
@@ -1201,6 +1438,25 @@ IMPORTANT: If the user says "same lead", "that one", "this lead", "uska", "iska"
     searchName = ai.search_name || null;
     searchCompany = ai.search_company || null;
     aiReply = ai.ai_reply || null;
+    dateFilter = ai.date_filter || null;
+
+    // AI-detected target_rep override (handles garbled voice: "Bhavaya" → "Bhavya")
+    if (ai.target_rep) {
+      const aiTarget = ai.target_rep;
+      // Find matching team member name (case-insensitive)
+      const matchedName = ALL_NAMES.find(n => n.toLowerCase() === aiTarget.toLowerCase());
+      if (matchedName && matchedName !== repName) {
+        // Check permission
+        if (myRole === 'admin') {
+          targetRep = matchedName;
+          queryingOther = true;
+        } else if (myRole === 'team_lead' && (LEAD_ACCESS[repName] || []).includes(matchedName)) {
+          targetRep = matchedName;
+          queryingOther = true;
+        }
+        // Reps: silently ignore (don't block — they might have said a name casually)
+      }
+    }
 
     // AI-detected month override
     if (ai.month) {
@@ -1211,7 +1467,9 @@ IMPORTANT: If the user says "same lead", "that one", "this lead", "uska", "iska"
     // AI failed — fallback to basic regex
     intent = 'chat';
     const ml = msgLower;
-    if (/\b(demo|demos)\b/.test(ml)) intent = 'demos';
+    if (/\b(lead.*assign|assign.*lead|new lead|leads.*got|leads.*received|leads.*given|kitne lead|lead.*aaye|lead.*mila)\b/.test(ml)) intent = 'leads_assigned';
+    else if (/\b(premium.*customer|customer.*premium|reference.*customer|existing.*customer|paid.*user|hamara.*customer|humare.*client|client.*list|customer.*from|customer.*in)\b/.test(ml)) intent = 'customer_reference';
+    else if (/\b(demo|demos)\b/.test(ml)) intent = 'demos';
     else if (/\b(sale|sales|closed|won|revenue)\b/.test(ml)) intent = 'sales';
     else if (/\b(pipeline|prospect|hp|vhp)\b/.test(ml)) intent = 'pipeline';
     else if (/\b(follow.?up|pending|overdue)\b/.test(ml)) intent = 'followups';
@@ -1219,6 +1477,10 @@ IMPORTANT: If the user says "same lead", "that one", "this lead", "uska", "iska"
     else if (/\b(target|goal)\b/.test(ml)) intent = 'target';
     else if (/\b(price|pricing|cost|plan|feature|module|write|email|mail|draft|pitch|approach|objection|competitor|compare|close|strategy|help me)\b/.test(ml)) intent = 'assistant';
     wantsNotes = /\b(note|notes|remark|remarks)\b/.test(ml);
+    if (/\byesterday\b/.test(ml)) dateFilter = 'yesterday';
+    else if (/\btoday\b/.test(ml)) dateFilter = 'today';
+    else if (/\bthis week\b/.test(ml)) dateFilter = 'this_week';
+    else if (/\blast week\b/.test(ml)) dateFilter = 'last_week';
   }
 }
 
@@ -1232,10 +1494,47 @@ if (parsedMonth) {
   MONTH_NAME = parsedMonth.name;
 }
 
+// === DATE FILTER OVERRIDE (today/yesterday/this_week/last_week) ===
+let DATE_START = MONTH_START;
+let DATE_END = MONTH_END;
+let DATE_LABEL = MONTH_NAME;
+
+if (dateFilter) {
+  const ist = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Kolkata'}));
+  const y = ist.getFullYear(), m = ist.getMonth(), d = ist.getDate();
+
+  if (dateFilter === 'today') {
+    const todayStr = `${y}-${pad(m+1)}-${pad(d)}`;
+    DATE_START = todayStr;
+    DATE_END = todayStr;
+    DATE_LABEL = 'Today';
+  } else if (dateFilter === 'yesterday') {
+    const yd = new Date(y, m, d - 1);
+    const ydStr = `${yd.getFullYear()}-${pad(yd.getMonth()+1)}-${pad(yd.getDate())}`;
+    DATE_START = ydStr;
+    DATE_END = ydStr;
+    DATE_LABEL = 'Yesterday';
+  } else if (dateFilter === 'this_week') {
+    const dow = ist.getDay() || 7; // Mon=1
+    const mon = new Date(y, m, d - dow + 1);
+    DATE_START = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
+    DATE_END = `${y}-${pad(m+1)}-${pad(d)}`;
+    DATE_LABEL = 'This Week';
+  } else if (dateFilter === 'last_week') {
+    const dow = ist.getDay() || 7;
+    const prevMon = new Date(y, m, d - dow - 6);
+    const prevSun = new Date(y, m, d - dow);
+    DATE_START = `${prevMon.getFullYear()}-${pad(prevMon.getMonth()+1)}-${pad(prevMon.getDate())}`;
+    DATE_END = `${prevSun.getFullYear()}-${pad(prevSun.getMonth()+1)}-${pad(prevSun.getDate())}`;
+    DATE_LABEL = 'Last Week';
+  }
+}
+
 // === BUILD OWNER FILTER ===
+// Uses single primary Zoho name (COQL breaks with 3+ OR conditions)
 function buildOwnerFilter(name) {
-  const crmN = Object.entries(CRM_OWNER_MAP).filter(([k, v]) => v === name).map(([k]) => k);
-  return crmN.length > 0 ? crmN.map(n => `Leads_Owner = '${n}'`).join(' OR ') : `Leads_Owner = '${name}'`;
+  const primary = CRM_PRIMARY[name];
+  return `Leads_Owner = '${primary || name}'`;
 }
 
 let ownerFilter;
@@ -1243,16 +1542,16 @@ let displayName = targetRep;
 
 if (queryingAll) {
   if (myRole === 'admin') {
-    // All reps
+    // All reps — use IN clause (COQL breaks with 3+ OR conditions)
     const allRepNames = [...Object.keys(REPS), ...Object.keys(PRE_SALES)];
-    const filters = allRepNames.map(n => buildOwnerFilter(n));
-    ownerFilter = filters.join(' OR ');
+    const inList = allRepNames.map(n => `'${CRM_PRIMARY[n] || n}'`).join(',');
+    ownerFilter = `Leads_Owner in (${inList})`;
     displayName = 'Team';
   } else if (myRole === 'team_lead') {
-    // Own + team
+    // Own + team — use IN clause
     const teamNames = [repName, ...(LEAD_ACCESS[repName] || [])];
-    const filters = teamNames.map(n => buildOwnerFilter(n));
-    ownerFilter = filters.join(' OR ');
+    const inList = teamNames.map(n => `'${CRM_PRIMARY[n] || n}'`).join(',');
+    ownerFilter = `Leads_Owner in (${inList})`;
     displayName = `${repName}'s Team`;
   }
 } else {
@@ -1264,11 +1563,13 @@ let reply = '';
 
 // === GREETING ===
 if (intent === 'greeting') {
+  const istHour = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Kolkata'})).getHours();
+  const timeGreet = istHour < 12 ? 'Good morning' : istHour < 17 ? 'Good afternoon' : 'Good evening';
   const greetings = [
     `Hey ${repName}! Ready to crush some deals today? Just ask me anything — demos, pipeline, sales. I'm here!`,
-    `Good morning ${repName}! Your friendly Pulse bot reporting for duty. Kya chahiye?`,
+    `${timeGreet} ${repName}! Your friendly Pulse bot reporting for duty. Kya chahiye?`,
     `Hello ${repName}! Pipeline check? Demo count? Sales update? Bas bol do!`,
-    `Hey hey ${repName}! Aaj ka plan kya hai? Main ready hoon data ke saath!`,
+    `${timeGreet} ${repName}! Aaj ka plan kya hai? Main ready hoon data ke saath!`,
   ];
   reply = greetings[Math.floor(Math.random() * greetings.length)];
 }
@@ -1284,7 +1585,8 @@ else if (intent === 'help') {
     `"my rank" — Team leaderboard\n` +
     `"my target" — Monthly progress\n` +
     `"my notes" — Recent leads with remarks\n` +
-    `"find lead <name/phone>" — Search CRM\n\n` +
+    `"find lead <name/phone>" — Search CRM\n` +
+    `"premium customers from <state/city>" — Existing client references\n\n` +
     `SALES ASSISTANT:\n` +
     `"our pricing" — Full pricing breakdown\n` +
     `"write a follow-up email" — Draft emails\n` +
@@ -1301,11 +1603,11 @@ else if (intent === 'help') {
 // === DEMOS ===
 else if (intent === 'demos') {
   const fields = wantsNotes ? 'Full_Name, Company, Demo_Done_Date, Business_Type, Description' : 'Full_Name, Company, Demo_Done_Date';
-  const demoCount = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${MONTH_START}' and '${MONTH_END}'`);
+  const demoCount = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${DATE_START}' and '${DATE_END}'`);
   const bookedCount = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Lead_Status = '6. Demo booked'`);
-  const demoLeads = await qPage(`SELECT ${fields} FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${MONTH_START}' and '${MONTH_END}' ORDER BY Demo_Done_Date DESC`);
+  const demoLeads = await qPage(`SELECT ${fields} FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${DATE_START}' and '${DATE_END}' ORDER BY Demo_Done_Date DESC`);
 
-  reply = `${displayName}'s Demos — ${MONTH_NAME}\n\n`;
+  reply = `${displayName}'s Demos — ${DATE_LABEL}\n\n`;
   reply += `Demos Done: ${demoCount}\n`;
   reply += `Demos Booked (pending): ${bookedCount}\n\n`;
 
@@ -1326,18 +1628,18 @@ else if (intent === 'demos') {
     });
     if (demoLeads.length > limit) reply += `...+${demoLeads.length - limit} more\n`;
   }
-  reply += `\nKeep going ${displayName}!\n— Onsite Pulse`;
+  reply += `\n— Onsite Pulse`;
 }
 
 // === SALES ===
 else if (intent === 'sales') {
   const salesFields = wantsNotes ? 'Full_Name, Company, Annual_Revenue, Sale_Done_Date, Business_Type, Description' : 'Full_Name, Company, Annual_Revenue, Sale_Done_Date';
-  const salesLeads = await qPage(`SELECT ${salesFields} FROM Leads WHERE (${ownerFilter}) AND Sale_Done_Date between '${MONTH_START}' and '${MONTH_END}' ORDER BY Sale_Done_Date DESC`);
+  const salesLeads = await qPage(`SELECT ${salesFields} FROM Leads WHERE (${ownerFilter}) AND Sale_Done_Date between '${DATE_START}' and '${DATE_END}' ORDER BY Sale_Done_Date DESC`);
   const salesCount = salesLeads.length;
   let totalRevenue = 0;
   salesLeads.forEach(l => { totalRevenue += Number(l.Annual_Revenue) || 0; });
 
-  reply = `${displayName}'s Sales — ${MONTH_NAME}\n\n`;
+  reply = `${displayName}'s Sales — ${DATE_LABEL}\n\n`;
   reply += `Sales Closed: ${salesCount}\n`;
   reply += `Total Revenue: Rs. ${fmtINR(totalRevenue)}\n\n`;
 
@@ -1363,16 +1665,38 @@ else if (intent === 'sales') {
 
 // === PIPELINE ===
 else if (intent === 'pipeline') {
-  const vhp = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Sales_Stage = 'Very High Prospect'`);
-  const hp = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Sales_Stage = 'High Prospect'`);
+  const vhpLeads = await qPage(`SELECT Full_Name, Company, Phone, Mobile, Price_PItched, Description FROM Leads WHERE (${ownerFilter}) AND Sales_Stage = 'Very High Prospect'`);
+  const hpLeads = await qPage(`SELECT Full_Name, Company, Phone, Mobile, Price_PItched, Description FROM Leads WHERE (${ownerFilter}) AND Sales_Stage = 'High Prospect'`);
   const prospect = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Sales_Stage = '1. Prospect'`);
 
   reply = `${displayName}'s Pipeline\n\n`;
-  reply += `Very High Prospect: ${vhp}\n`;
-  reply += `High Prospect: ${hp}\n`;
-  reply += `Prospect: ${prospect}\n`;
-  reply += `\nTotal hot leads: ${vhp + hp + prospect}\n`;
-  reply += vhp > 0 ? `\n${vhp} VHP leads — follow up TODAY!` : `\nFocus on converting prospects to HP!`;
+  reply += `Very High Prospect: ${vhpLeads.length}\n`;
+  if (vhpLeads.length > 0) {
+    vhpLeads.forEach((l, i) => {
+      reply += `  ${i+1}. ${l.Full_Name || '?'}`;
+      if (l.Company) reply += ` — ${l.Company}`;
+      const ph = l.Phone || l.Mobile || '';
+      if (ph) reply += `\n     Ph: ${ph}`;
+      if (l.Price_PItched) reply += ` | Price: ${l.Price_PItched}`;
+      if (l.Description) reply += `\n     Note: ${(l.Description+'').slice(0,80)}`;
+      reply += '\n';
+    });
+  }
+  reply += `\nHigh Prospect: ${hpLeads.length}\n`;
+  if (hpLeads.length > 0) {
+    hpLeads.slice(0, 15).forEach((l, i) => {
+      reply += `  ${i+1}. ${l.Full_Name || '?'}`;
+      if (l.Company) reply += ` — ${l.Company}`;
+      const ph = l.Phone || l.Mobile || '';
+      if (ph) reply += `\n     Ph: ${ph}`;
+      if (l.Price_PItched) reply += ` | Price: ${l.Price_PItched}`;
+      reply += '\n';
+    });
+    if (hpLeads.length > 15) reply += `  ... +${hpLeads.length - 15} more\n`;
+  }
+  reply += `\nProspect: ${prospect}\n`;
+  reply += `\nTotal hot leads: ${vhpLeads.length + hpLeads.length + prospect}\n`;
+  reply += vhpLeads.length > 0 ? `\n${vhpLeads.length} VHP leads — follow up TODAY!` : `\nFocus on converting prospects to HP!`;
   reply += `\n— Onsite Pulse`;
 }
 
@@ -1402,7 +1726,7 @@ else if (intent === 'followups') {
 
 // === RANK ===
 else if (intent === 'rank') {
-  const allReps = await qPage(`SELECT Leads_Owner, Sale_Done_Date FROM Leads WHERE Sale_Done_Date between '${MONTH_START}' and '${MONTH_END}'`);
+  const allReps = await qPage(`SELECT Leads_Owner, Sale_Done_Date FROM Leads WHERE Sale_Done_Date between '${DATE_START}' and '${DATE_END}'`);
 
   const ranks = {};
   (allReps || []).forEach(r => {
@@ -1414,7 +1738,7 @@ else if (intent === 'rank') {
   const myRank = sorted.findIndex(([n]) => n === repName) + 1;
   const myCount = ranks[repName] || 0;
 
-  reply = `Team Leaderboard — ${MONTH_NAME}\n\n`;
+  reply = `Team Leaderboard — ${DATE_LABEL}\n\n`;
   sorted.slice(0, 5).forEach(([name, count], i) => {
     const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i+1}`;
     const marker = name === repName ? ' <-- YOU' : '';
@@ -1428,17 +1752,217 @@ else if (intent === 'rank') {
 
 // === TARGET ===
 else if (intent === 'target') {
-  const mySales = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Sale_Done_Date between '${MONTH_START}' and '${MONTH_END}'`);
-  const myDemos = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${MONTH_START}' and '${MONTH_END}'`);
+  const mySales = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Sale_Done_Date between '${DATE_START}' and '${DATE_END}'`);
+  const myDemos = await qCount(`SELECT COUNT(id) as c FROM Leads WHERE (${ownerFilter}) AND Demo_Done_Date between '${DATE_START}' and '${DATE_END}'`);
   const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - DAY_NUM;
 
-  reply = `${displayName}'s Progress — ${MONTH_NAME}\n\n`;
+  reply = `${displayName}'s Progress — ${DATE_LABEL}\n\n`;
   reply += `Demos Done: ${myDemos}\n`;
   reply += `Sales Closed: ${mySales}\n`;
   reply += `Days Left: ${daysLeft}\n\n`;
   reply += `Conversion Rate: ${myDemos > 0 ? Math.round(mySales / myDemos * 100) : 0}%\n`;
   reply += daysLeft > 15 ? `\nStill plenty of time — keep pushing!` : `\nFinal stretch! Close those hot leads NOW!`;
   reply += `\n— Onsite Pulse`;
+}
+
+// === LEADS ASSIGNED ===
+else if (intent === 'leads_assigned') {
+  // Determine date range based on dateFilter
+  let assignStart, assignEnd, assignLabel;
+  if (dateFilter === 'yesterday') {
+    assignStart = `${YESTERDAY}T00:00:00+05:30`;
+    assignEnd = `${YESTERDAY}T23:59:59+05:30`;
+    assignLabel = 'Yesterday';
+  } else if (dateFilter === 'this_week') {
+    const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+    assignStart = `${weekStart.getFullYear()}-${pad(weekStart.getMonth()+1)}-${pad(weekStart.getDate())}T00:00:00+05:30`;
+    assignEnd = `${TODAY}T23:59:59+05:30`;
+    assignLabel = 'This Week';
+  } else if (dateFilter === 'last_week') {
+    const lwStart = new Date(now); lwStart.setDate(now.getDate() - now.getDay() - 6);
+    const lwEnd = new Date(now); lwEnd.setDate(now.getDate() - now.getDay());
+    assignStart = `${lwStart.getFullYear()}-${pad(lwStart.getMonth()+1)}-${pad(lwStart.getDate())}T00:00:00+05:30`;
+    assignEnd = `${lwEnd.getFullYear()}-${pad(lwEnd.getMonth()+1)}-${pad(lwEnd.getDate())}T23:59:59+05:30`;
+    assignLabel = 'Last Week';
+  } else {
+    // Default: today
+    assignStart = `${TODAY}T00:00:00+05:30`;
+    assignEnd = `${TODAY}T23:59:59+05:30`;
+    assignLabel = 'Today';
+  }
+
+  const assignedLeads = await qPage(`SELECT Full_Name, Company, Phone, Mobile, Lead_Source, Lead_Assigned_Time FROM Leads WHERE (${ownerFilter}) AND Lead_Assigned_Time between '${assignStart}' and '${assignEnd}' ORDER BY Lead_Assigned_Time DESC`);
+  const count = assignedLeads.length;
+
+  reply = `${displayName}'s Leads Assigned — ${assignLabel}\n\n`;
+  reply += `Total: ${count} leads\n\n`;
+
+  if (count > 0) {
+    assignedLeads.slice(0, 15).forEach((l, i) => {
+      const name = l.Full_Name || '?';
+      const comp = l.Company ? ` — ${l.Company}` : '';
+      const ph = l.Phone || l.Mobile || '';
+      const src = l.Lead_Source || '';
+      const time = (l.Lead_Assigned_Time || '').slice(11, 16);
+      reply += `${i+1}. ${name}${comp}\n`;
+      if (ph) reply += `   Ph: ${ph}\n`;
+      if (src) reply += `   Source: ${src}\n`;
+      if (time) reply += `   Time: ${time}\n`;
+    });
+    if (count > 15) reply += `\n...+${count - 15} more\n`;
+
+    // Source breakdown
+    const srcMap = {};
+    assignedLeads.forEach(l => { const s = l.Lead_Source || 'Unknown'; srcMap[s] = (srcMap[s] || 0) + 1; });
+    reply += `\nBy Source:\n`;
+    Object.entries(srcMap).sort((a,b) => b[1] - a[1]).forEach(([s, c]) => {
+      reply += `  ${s}: ${c}\n`;
+    });
+  } else {
+    reply += `No leads assigned ${assignLabel.toLowerCase()}.\n`;
+  }
+  reply += `\n— Onsite Pulse`;
+}
+
+// === CUSTOMER REFERENCE (premium customer lookup) ===
+else if (intent === 'customer_reference') {
+  const CAT_NAMES = {C:'Construction', I:'Interior', M:'MEP', A:'Consulting', G:'General'};
+  const REG_NAMES = {IN:'India', ME:'Middle East', AF:'Africa', SE:'South East Asia'};
+  const ml = msgLower;
+
+  // Detect category
+  let fCat = null;
+  if (/\b(construct|infra|builder|civil|road|bridge|housing)\b/.test(ml)) fCat = 'C';
+  else if (/\b(interior|decor|furnish|design|kitchen|modular|wood)\b/.test(ml)) fCat = 'I';
+  else if (/\b(mep|electric|plumb|hvac|fire|elevator|lift)\b/.test(ml)) fCat = 'M';
+  else if (/\b(architect|consult|pmc)\b/.test(ml)) fCat = 'A';
+
+  // Detect region
+  let fReg = null;
+  if (/\b(middle east|uae|dubai|oman|qatar|saudi|kuwait|bahrain)\b/.test(ml)) fReg = 'ME';
+  else if (/\b(africa|nigeria|kenya|south africa)\b/.test(ml)) fReg = 'AF';
+  else if (/\b(south east|indonesia|bali|philipp|malaysia)\b/.test(ml)) fReg = 'SE';
+
+  // Detect state — alias map handles typos, abbreviations, alternate spellings
+  const STATE_ALIAS = {
+    'rajasthan':'Rajasthan','rajashthan':'Rajasthan','rajastan':'Rajasthan','rajstan':'Rajasthan',
+    'maharashtra':'Maharashtra','maharastra':'Maharashtra','maha':'Maharashtra',
+    'karnataka':'Karnataka','karnatak':'Karnataka',
+    'tamil nadu':'Tamil Nadu','tamilnadu':'Tamil Nadu','tn':'Tamil Nadu',
+    'telangana':'Telangana','telengana':'Telangana','hyderabad':'Telangana',
+    'andhra pradesh':'Andhra Pradesh','andhra':'Andhra Pradesh','ap':'Andhra Pradesh',
+    'uttar pradesh':'Uttar Pradesh','up':'Uttar Pradesh','uttarpradesh':'Uttar Pradesh',
+    'madhya pradesh':'Madhya Pradesh','mp':'Madhya Pradesh',
+    'gujarat':'Gujarat','gujrat':'Gujarat','gj':'Gujarat',
+    'chhattisgarh':'Chhattisgarh','chattisgarh':'Chhattisgarh','cg':'Chhattisgarh','chhatisgarh':'Chhattisgarh',
+    'kerala':'Kerala','kl':'Kerala',
+    'delhi':'Delhi',
+    'punjab':'Punjab','pb':'Punjab',
+    'haryana':'Haryana','hr':'Haryana',
+    'west bengal':'West Bengal','wb':'West Bengal','bengal':'West Bengal',
+    'bihar':'Bihar',
+    'jharkhand':'Jharkhand','jh':'Jharkhand',
+    'odisha':'Odisha','odisa':'Odisha','orissa':'Odisha',
+    'assam':'Assam',
+    'goa':'Goa',
+    'uttarakhand':'Uttarakhand','uk':'Uttarakhand',
+    'himachal pradesh':'Himachal Pradesh','himachal':'Himachal Pradesh','hp':'Himachal Pradesh',
+    'jammu':'Jammu & Kashmir','kashmir':'Jammu & Kashmir','jk':'Jammu & Kashmir',
+    'chandigarh':'Chandigarh',
+    'tripura':'Tripura',
+    'manipur':'Manipur',
+    'meghalaya':'Meghalaya',
+    'mizoram':'Mizoram',
+    'uae':'UAE','dubai':'UAE',
+    'saudi':'Saudi Arabia','saudi arabia':'Saudi Arabia',
+    'oman':'Oman','qatar':'Qatar','kuwait':'Kuwait',
+    'indonesia':'Indonesia','indonasia':'Indonasia',
+  };
+  let fState = null;
+  // Try longest alias first (multi-word like "tamil nadu" before "tamil")
+  const sortedAliases = Object.keys(STATE_ALIAS).sort((a,b) => b.length - a.length);
+  for (const alias of sortedAliases) {
+    if (ml.includes(alias)) { fState = STATE_ALIAS[alias]; break; }
+  }
+  // Also match exact state names from data
+  if (!fState) {
+    const allStates = [...new Set(PCUST.map(c => c[2]))];
+    for (const s of allStates) {
+      if (ml.includes(s.toLowerCase())) { fState = s; break; }
+    }
+  }
+
+  // Detect city (match against data)
+  let fCity = null;
+  if (!fState) {
+    const allCities = [...new Set(PCUST.map(c => c[1]).filter(c => c && c.length > 2))];
+    for (const c of allCities) {
+      if (ml.includes(c.toLowerCase())) { fCity = c; break; }
+    }
+  }
+
+  // Filter
+  let results = PCUST;
+  // Match state with fuzzy — "Rajasthan" also matches "Rajashthan", "Odisha" matches "Odisa"
+  if (fState) {
+    const fsl = fState.toLowerCase();
+    results = results.filter(c => c[2] === fState || c[2].toLowerCase().startsWith(fsl.slice(0,5)));
+  }
+  if (fCity) results = results.filter(c => c[1].toLowerCase().includes(fCity.toLowerCase()));
+  if (fCat) results = results.filter(c => c[4] === fCat);
+  if (fReg) results = results.filter(c => c[3] === fReg);
+
+  // If "more" — use saved filters from history
+  if (_refOffset > 0 && !fState && !fCity && !fCat && !fReg) {
+    fState = _refState; fCity = _refCity; fCat = _refCat; fReg = _refReg;
+    results = PCUST;
+    if (fState) { const fsl = fState.toLowerCase(); results = results.filter(c => c[2] === fState || c[2].toLowerCase().startsWith(fsl.slice(0,5))); }
+    if (fCity) results = results.filter(c => c[1].toLowerCase().includes(fCity.toLowerCase()));
+    if (fCat) results = results.filter(c => c[4] === fCat);
+    if (fReg) results = results.filter(c => c[3] === fReg);
+  }
+  _refState = fState; _refCity = fCity; _refCat = fCat; _refReg = fReg;
+
+  results = [...results].sort((a,b) => b[5] - a[5]);
+  const top = results.slice(_refOffset, _refOffset + 5);
+
+  let label = fState || fCity || (fReg ? REG_NAMES[fReg] : null) || 'All';
+  if (fCat) label += ' \u2014 ' + CAT_NAMES[fCat];
+  const pageNum = _refOffset > 0 ? ' (Page ' + (Math.floor(_refOffset/5)+1) + ')' : '';
+
+  if (top.length === 0) {
+    reply = _refOffset > 0
+      ? 'No more customers for "' + label + '". Showing all ' + results.length + ' done.\n\n\u2014 Onsite Pulse'
+      : 'No premium customers found for "' + label + '".\n\nTry: "premium customers from Maharashtra" or "interior companies Gujarat"\n\n\u2014 Onsite Pulse';
+  } else {
+    reply = '*Premium Customers \u2014 ' + label + '*' + pageNum + '\n\n';
+    top.forEach((c, i) => {
+      const [comp, city, st, reg, cat, amt, renew, age] = c;
+      const cityStr = city ? ' (' + city + ')' : '';
+      const status = renew ? '\ud83d\udd04 Renewal' : '\ud83c\udd95 Fresh';
+      const ageStr = age >= 24 ? Math.floor(age/12) + 'yr' : age >= 1 ? age + 'mo' : 'New';
+      const amtStr = amt >= 100000 ? (amt/100000).toFixed(1) + 'L' : (amt/1000).toFixed(0) + 'K';
+      reply += (_refOffset + i + 1) + '. *' + comp + '*' + cityStr + '\n';
+      reply += '   ' + (fCat ? CAT_NAMES[cat] + ' | ' : '') + '\u20b9' + amtStr + ' | ' + status + ' | ' + ageStr + '\n\n';
+    });
+    reply += '--- _Copy-paste for client_ ---\n';
+    reply += '*Paid Users \u2014 ' + label + '*\n';
+    if (fCat) {
+      const byCat = {};
+      top.forEach(c => { const cn = CAT_NAMES[c[4]]; if (!byCat[cn]) byCat[cn]=[]; byCat[cn].push(c[0]); });
+      const catKeys = Object.keys(byCat);
+      for (const cat of catKeys) {
+        if (catKeys.length > 1) reply += '_' + cat + '_\n';
+        byCat[cat].forEach(name => { reply += '\u2022 ' + name + '\n'; });
+      }
+    } else {
+      top.forEach(c => { reply += '\u2022 ' + c[0] + '\n'; });
+    }
+    const remaining = results.length - _refOffset - top.length;
+    reply += '\n_Showing ' + (_refOffset+1) + '-' + (_refOffset+top.length) + ' of ' + results.length + '_';
+    if (remaining > 0) reply += '\n_Say "more" for next ' + Math.min(5, remaining) + '_';
+    reply += '\n\u2014 Onsite Pulse';
+  }
 }
 
 // === NOTES (standalone — recent leads with remarks/notes) ===
@@ -1638,7 +2162,7 @@ ${conversationContext}`;
       url: 'https://openrouter.ai/api/v1/chat/completions',
       headers: { 'Authorization': `Bearer ${OR_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'x-ai/grok-4.1-fast',
+        model: 'anthropic/claude-haiku-4.5',
         max_tokens: 800,
         temperature: 0.3,
         messages: [
@@ -1700,6 +2224,7 @@ if (shouldSendWA) {
 let leadCtx = {};
 if (intent === 'lead_search' && searchPhone) leadCtx.lead_phone = searchPhone;
 if (intent === 'lead_search' && (searchName || searchCompany)) leadCtx.lead_name = searchName || searchCompany;
+if (intent === 'customer_reference') { leadCtx.ref_state = _refState; leadCtx.ref_city = _refCity; leadCtx.ref_cat = _refCat; leadCtx.ref_reg = _refReg; leadCtx.ref_offset = _refOffset || 0; }
 // Carry forward lead context from last message if user is referencing "same lead"
 if (chatHistory.length > 0 && !leadCtx.lead_name && !leadCtx.lead_phone) {
   const lastCtx = chatHistory[chatHistory.length - 1]?.lead_context;
@@ -1711,6 +2236,1025 @@ if (chatHistory.length > 0 && !leadCtx.lead_name && !leadCtx.lead_phone) {
 sbStore(repName, msg, reply, intent, leadCtx).catch(() => {});
 
 return [{ json: { reply, status: 'ok', intent, repName, sentToWA } }];
+"""
+
+# === AUTO 10: EMAIL PIPELINE (triggered by Zoho status changes) ===
+# Code node polls Zoho for recently modified leads, dedupes against Supabase,
+# renders branded HTML emails, and outputs items for Gmail Send node.
+AUTO_10_JS = r"""
+// === AUTO 10: EMAIL PIPELINE ===
+const SB_URL = '%SUPABASE_URL%';
+const SB_KEY = '%SUPABASE_KEY%';
+const SB_HEADERS = {'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+
+// === REP EMAIL ADDRESSES ===
+const REP_EMAILS = {
+  'Dhruv': 'dhruv.tomar@onsiteteams.com',
+  'Bhavya': 'bhavya.j@onsiteteams.com',
+  'Anjali': 'anjali.b@onsiteteams.com',
+  'Sunil': 'sunil.kumar@onsiteteams.com',
+  'Amit U': 'amit.u@onsiteteams.com',
+  'Mohan': 'mohan.c@onsiteteams.com',
+  'Gayatri': 'gayatri.surlkar@onsiteteams.com',
+  'Shailendra': 'shailendra.g@onsiteteams.com',
+  'Amit Kumar': 'amit.k@onsiteteams.com',
+  'Hitangi': 'hitangi.a@onsiteteams.com',
+  'Shruti': 'shruti.a@onsiteteams.com',
+  'Ravi': 'ravi.gupta@onsiteteams.com',
+  'Arthi': 'aparthivarsha@onsiteteams.com',
+  'Kiran': 'k.kiran@onsiteteams.com',
+  'Yogyata': 'yogyata.airi@onsiteteams.com'
+};
+
+const TANIYA_EMAIL = 'taniya.malhotra@onsiteteams.com';
+
+const DEMO_LINKS = {
+  'Anjali': 'https://meet.google.com/hmc-pzdo-jxx',
+  'Gayatri': 'https://meet.google.com/gir-uyss-veq',
+  'Bhavya': 'https://meet.google.com/vfk-iust-xrj',
+  'Shailendra': 'https://meet.google.com/rkm-kphu-tta',
+  'Hitangi': 'https://meet.google.com/bpg-wqbb-fbz',
+  'Mohan': 'https://meet.google.com/pzr-egje-ffc',
+  'Amit U': 'https://meet.google.com/ezu-osvu-zsf',
+  'Amit Kumar': 'https://meet.google.com/qsg-gcwi-qrq',
+  'Sunil': 'https://meet.google.com/hay-bcrj-uea',
+};
+
+// Status → template mapping
+const STATUS_TO_TEMPLATE = {
+  '2. Priority Leads': 'welcome',
+  '3. Qualified': 'welcome',
+  '6. Demo booked': 'demo_booked',
+  'NATC': 'natc',
+  'User not attend session': 'user_not_attend',
+  '7. Demo done': 'demo_done',
+  '10. Not Interested (Not Potential)': 'not_interested',
+  '10. Not Interested': 'not_interested',
+  '12. Subscribed': 'onboarding_welcome'
+};
+
+// Sales Stage → template (checked if no status match)
+const STAGE_TO_TEMPLATE = {
+  'Prospect': 'prospect_nurture',
+  'High Prospect': 'vhp_hp_followup',
+  'Very High Prospect': 'vhp_hp_followup'
+};
+
+// === SUPABASE DEDUP ===
+async function sbCheckSent(leadId, templateKey, leadStatus) {
+  try {
+    const resp = await http({method:'GET',
+      url:`${SB_URL}/rest/v1/email_sent_log?lead_id=eq.${leadId}&template_key=eq.${encodeURIComponent(templateKey)}&lead_status=eq.${encodeURIComponent(leadStatus)}&select=id&limit=1`,
+      headers:{...SB_HEADERS, 'Prefer':''}});
+    const data = typeof resp === 'string' ? JSON.parse(resp) : resp;
+    return Array.isArray(data) && data.length > 0;
+  } catch(e) { return false; }
+}
+
+async function sbLogSent(obj) {
+  try {
+    await http({method:'POST', url:`${SB_URL}/rest/v1/email_sent_log`,
+      headers:SB_HEADERS,
+      body:JSON.stringify(obj)});
+  } catch(e) { /* non-critical */ }
+}
+
+// === SENDER LOGIC ===
+function getSender(lead, templateKey) {
+  if (templateKey === 'welcome' || templateKey === 'onboarding_welcome') {
+    return { name: 'Taniya Malhotra - Onsite Teams', replyTo: TANIYA_EMAIL };
+  }
+  const ownerRaw = String(lead.Leads_Owner || lead.Deal_Owner || '').trim();
+  const ownerShort = CRM_OWNER_MAP[ownerRaw] || ownerRaw;
+  const repEmail = REP_EMAILS[ownerShort];
+  if (repEmail) {
+    return { name: `${ownerShort} - Onsite Teams`, replyTo: repEmail };
+  }
+  return { name: 'Onsite Teams', replyTo: TANIYA_EMAIL };
+}
+
+// === HTML EMAIL WRAPPER ===
+function emailWrap(headline, bodyHtml, ctaUrl, ctaText, senderName, senderEmail) {
+  const cta = ctaUrl ? `<div style="text-align:center;margin:24px 0;"><a href="${ctaUrl}" style="display:inline-block;background:#c73e5a;color:#ffffff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:15px;">${ctaText || 'Learn More'}</a></div>` : '';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#f1f5f9;padding:20px 0;">
+  <div style="background:linear-gradient(135deg,#1a0b50 0%,#2d1670 100%);padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+    <img src="https://www.onsiteteams.com/_next/image?url=%2Fimages%2Flogo-white.webp&w=384&q=75" alt="Onsite Teams" height="36" style="height:36px;">
+  </div>
+  <div style="background:#ffffff;padding:32px 28px;border-radius:0 0 8px 8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <h2 style="color:#1a0b50;margin:0 0 16px;font-size:20px;">${headline}</h2>
+    <div style="color:#334155;line-height:1.7;font-size:15px;">${bodyHtml}</div>
+    ${cta}
+  </div>
+  <div style="padding:20px 24px;text-align:center;font-size:12px;color:#94a3b8;">
+    <p style="margin:4px 0;">${senderName || 'Onsite Teams'} ${senderEmail ? '| ' + senderEmail : ''}</p>
+    <p style="margin:4px 0;">Onsite Teams — Construction Management Software</p>
+    <p style="margin:4px 0;"><a href="https://www.onsiteteams.com" style="color:#6366f1;text-decoration:none;">onsiteteams.com</a></p>
+  </div>
+</div></body></html>`;
+}
+
+// === 11 EMAIL TEMPLATES ===
+function renderTemplate(key, lead, sender) {
+  const firstName = (lead.Full_Name || 'there').split(' ')[0];
+  const company = lead.Company || 'your company';
+  const ownerShort = CRM_OWNER_MAP[String(lead.Leads_Owner || '').trim()] || 'Our team';
+  const repEmail = REP_EMAILS[ownerShort] || TANIYA_EMAIL;
+  const demoLink = DEMO_LINKS[ownerShort] || '';
+
+  switch(key) {
+    case 'welcome':
+      return {
+        subject: `Welcome to Onsite Teams — Let's Build Smarter, ${firstName}`,
+        html: emailWrap(
+          `Welcome, ${firstName}!`,
+          `<p>Hi ${firstName},</p>
+          <p>Thank you for showing interest in <strong>Onsite Teams</strong> — India's leading construction management software trusted by 10,000+ companies.</p>
+          <p>Here's what Onsite can do for ${company}:</p>
+          <ul style="padding-left:20px;">
+            <li><strong>Save up to 7%</strong> on project costs with real-time tracking</li>
+            <li><strong>Go live in 1-2 weeks</strong> — not months like traditional ERPs</li>
+            <li><strong>Mobile-first design</strong> — your site team can use it from day one</li>
+          </ul>
+          <p>Your dedicated point of contact, <strong>${ownerShort}</strong>, will reach out shortly to understand your needs and schedule a quick demo.</p>
+          <p>In the meantime, feel free to explore our platform!</p>`,
+          'https://www.onsiteteams.com', 'Explore Onsite Teams',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'demo_booked':
+      return {
+        subject: `Your Onsite Teams Demo is Confirmed!`,
+        html: emailWrap(
+          `Demo Confirmed! 🎉`,
+          `<p>Hi ${firstName},</p>
+          <p>Great news — your demo with <strong>${ownerShort}</strong> has been scheduled!</p>
+          ${demoLink ? `<p><strong>Join Link:</strong> <a href="${demoLink}" style="color:#6366f1;">${demoLink}</a></p>` : ''}
+          <p style="background:#f0f9ff;padding:16px;border-radius:6px;border-left:4px solid #1a0b50;">
+            <strong>What to expect:</strong><br>
+            • A 15-20 minute walkthrough of Onsite Teams<br>
+            • Customized to ${company}'s needs<br>
+            • Live Q&A with our product expert
+          </p>
+          <p>If you need to reschedule, just reply to this email or call ${ownerShort} directly.</p>`,
+          demoLink, 'Join Demo',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'demo_done':
+      return {
+        subject: `Thanks for the Demo — Here's What's Next, ${firstName}`,
+        html: emailWrap(
+          `Thanks for Your Time, ${firstName}!`,
+          `<p>Hi ${firstName},</p>
+          <p>It was great showing you how Onsite Teams can help ${company}. Here's a quick recap:</p>
+          <ul style="padding-left:20px;">
+            <li><strong>Project Management</strong> — DPR automation, real-time progress tracking</li>
+            <li><strong>Material & Inventory</strong> — Reduce wastage, track every kg</li>
+            <li><strong>Workforce</strong> — GPS attendance, automated salary processing</li>
+            <li><strong>Financial</strong> — RA bills, budgeting, GST-compliant invoicing</li>
+          </ul>
+          <p>Companies like yours typically see <strong>7% cost savings</strong> within the first 3 months.</p>
+          <p><strong>Next steps:</strong></p>
+          <ol style="padding-left:20px;">
+            <li>I'll send you a customized quotation</li>
+            <li>We can set up a pilot on one of your projects</li>
+            <li>Go live in just 1-2 weeks!</li>
+          </ol>
+          <p>Have questions? Just reply to this email — I'm here to help.</p>`,
+          'https://www.onsiteteams.com/onsite-pricing', 'View Pricing',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'natc':
+      return {
+        subject: `We Tried Reaching You — Onsite Teams`,
+        html: emailWrap(
+          `We Tried Calling You, ${firstName}`,
+          `<p>Hi ${firstName},</p>
+          <p>I tried reaching you by phone but couldn't connect. No worries — I understand you're busy managing projects!</p>
+          <p>I wanted to discuss how <strong>Onsite Teams</strong> can help ${company}:</p>
+          <ul style="padding-left:20px;">
+            <li>Reduce cost overruns by up to <strong>7%</strong></li>
+            <li>Replace Excel + WhatsApp chaos with one platform</li>
+            <li>Get live visibility across all your sites</li>
+          </ul>
+          <p>Would any of these times work for a quick 15-minute call?</p>
+          <p style="background:#fef3c7;padding:16px;border-radius:6px;border-left:4px solid #f59e0b;">
+            Simply reply with a convenient time, and I'll call you!
+          </p>`,
+          null, null,
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'user_not_attend':
+      return {
+        subject: `We Missed You — Let's Reschedule Your Demo`,
+        html: emailWrap(
+          `We Missed You, ${firstName}!`,
+          `<p>Hi ${firstName},</p>
+          <p>It looks like we missed you at the scheduled demo. No problem at all — we know construction schedules can be unpredictable!</p>
+          <p>I'd love to reschedule at a time that works better for you. The demo takes just <strong>15-20 minutes</strong> and could save ${company} lakhs every year.</p>
+          ${demoLink ? `<p>You can book directly using this link:</p>` : `<p>Just reply with your preferred time and I'll set it up.</p>`}`,
+          demoLink || null, demoLink ? 'Reschedule Demo' : null,
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'prospect_nurture':
+      return {
+        subject: `Construction Companies Are Saving 7% on Costs — Here's How`,
+        html: emailWrap(
+          `Are Cost Overruns Eating Your Margins, ${firstName}?`,
+          `<p>Hi ${firstName},</p>
+          <p>Did you know that <strong>10-30% cost overruns</strong> are the #1 problem in Indian construction? Most companies lose money they don't even know about — material wastage, labor fraud, delayed billing.</p>
+          <p><strong>Here's what Onsite Teams customers report:</strong></p>
+          <ul style="padding-left:20px;">
+            <li>📉 <strong>7% average cost reduction</strong> in the first quarter</li>
+            <li>⏱️ <strong>15+ hours saved per week</strong> on reporting and coordination</li>
+            <li>📱 <strong>Real-time visibility</strong> across all project sites</li>
+          </ul>
+          <p>Would you like to see how this could work for ${company}? I can arrange a quick demo or send you a case study.</p>`,
+          'https://www.onsiteteams.com', 'See How It Works',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'vhp_hp_followup':
+      return {
+        subject: `Quick Question About Your Decision, ${firstName}`,
+        html: emailWrap(
+          `Following Up, ${firstName}`,
+          `<p>Hi ${firstName},</p>
+          <p>I wanted to check in — after our demo, is there anything holding you back from getting started with Onsite Teams?</p>
+          <p>I ask because the sooner ${company} starts, the sooner you'll see:</p>
+          <ul style="padding-left:20px;">
+            <li>✅ Real-time project tracking across all sites</li>
+            <li>✅ Automated DPRs and RA bills</li>
+            <li>✅ Zero material leakage with inventory tracking</li>
+          </ul>
+          <p style="background:#f0fdf4;padding:16px;border-radius:6px;border-left:4px solid #22c55e;">
+            <strong>Quick start offer:</strong> We can set up a pilot on just <em>one project</em> — zero risk, full impact. Go live in 1-2 weeks.
+          </p>
+          <p>Want me to send you a quotation? Just reply "yes" and I'll have it ready today.</p>`,
+          null, null,
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'quote_followup':
+      return {
+        subject: `Following Up on Your Onsite Teams Proposal`,
+        html: emailWrap(
+          `Any Questions About the Proposal, ${firstName}?`,
+          `<p>Hi ${firstName},</p>
+          <p>I wanted to follow up on the quotation I shared for ${company}. Have you had a chance to review it?</p>
+          <p>A few things to keep in mind:</p>
+          <ul style="padding-left:20px;">
+            <li>💰 Our pricing is <strong>10-20x more affordable</strong> than global ERPs like Procore</li>
+            <li>🚀 Implementation takes just <strong>1-2 weeks</strong></li>
+            <li>📱 Mobile-first — your site workers can start using it immediately</li>
+            <li>🔒 ISO certified with enterprise-grade security</li>
+          </ul>
+          <p>If you have any questions about pricing, features, or implementation — I'm just a reply away!</p>`,
+          'https://www.onsiteteams.com/onsite-pricing', 'View Plans & Pricing',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'onboarding_welcome':
+      return {
+        subject: `Welcome Aboard, ${firstName}! 🎉 Your Onsite Teams Journey Starts Now`,
+        html: emailWrap(
+          `Welcome to the Onsite Family! 🎉`,
+          `<p>Hi ${firstName},</p>
+          <p>Congratulations! ${company} is now part of the <strong>Onsite Teams</strong> family — joining 10,000+ companies building smarter.</p>
+          <p><strong>What happens next:</strong></p>
+          <ol style="padding-left:20px;">
+            <li><strong>Setup call</strong> — Our team will reach out within 24 hours to begin onboarding</li>
+            <li><strong>Configuration</strong> — We'll customize the platform for your projects</li>
+            <li><strong>Training</strong> — Your team gets hands-on training (usually 2-3 sessions)</li>
+            <li><strong>Go live</strong> — Start tracking projects in 1-2 weeks!</li>
+          </ol>
+          <p style="background:#f0f9ff;padding:16px;border-radius:6px;border-left:4px solid #1a0b50;">
+            <strong>Your success manager</strong> will be your dedicated contact throughout the onboarding process. Expect a call soon!
+          </p>
+          <p>Welcome aboard — let's build something great together!</p>`,
+          'https://www.onsiteteams.com', 'Get Started',
+          sender.name, sender.replyTo
+        )
+      };
+
+    case 'not_interested':
+      return {
+        subject: `Thank You for Considering Onsite Teams, ${firstName}`,
+        html: emailWrap(
+          `Thank You, ${firstName}`,
+          `<p>Hi ${firstName},</p>
+          <p>Thank you for taking the time to explore Onsite Teams. I understand the timing may not be right for ${company} at the moment.</p>
+          <p>Just so you know — our door is always open. Construction technology is evolving fast, and when you're ready, we'll be here to help you:</p>
+          <ul style="padding-left:20px;">
+            <li>Streamline project management across all sites</li>
+            <li>Reduce costs and eliminate wastage</li>
+            <li>Get real-time visibility into every project</li>
+          </ul>
+          <p>Feel free to reach out anytime — even if it's just to ask a question or get an industry insight.</p>
+          <p>Wishing you and ${company} all the best! 🙏</p>`,
+          null, null,
+          sender.name, sender.replyTo
+        )
+      };
+
+    default:
+      return null;
+  }
+}
+
+// === MAIN POLLING LOGIC ===
+const TWENTY_MIN_MS = 20 * 60 * 1000;
+const cutoff = new Date(now.getTime() - TWENTY_MIN_MS);
+const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}T${pad(cutoff.getHours())}:${pad(cutoff.getMinutes())}:${pad(cutoff.getSeconds())}+05:30`;
+
+// Query recently modified leads with email addresses
+const changedLeads = await qPage(
+  `SELECT id, Full_Name, Company, Phone, Email, Lead_Status, Sales_Stage, Leads_Owner, Modified_Time FROM Leads WHERE Modified_Time >= '${cutoffStr}' AND Email is not null AND Email != '' ORDER BY Modified_Time DESC`,
+  500
+);
+
+const emailItems = [];
+let sent = 0, skipped = 0, noTemplate = 0;
+
+for (const lead of changedLeads) {
+  if (!lead.Email || !lead.Email.includes('@')) continue;
+
+  const status = lead.Lead_Status || '';
+  const stage = lead.Sales_Stage || '';
+
+  // Determine template
+  let templateKey = STATUS_TO_TEMPLATE[status];
+  if (!templateKey && STAGE_TO_TEMPLATE[stage]) {
+    templateKey = STAGE_TO_TEMPLATE[stage];
+  }
+  if (!templateKey) { noTemplate++; continue; }
+
+  // Dedup check
+  const alreadySent = await sbCheckSent(lead.id, templateKey, status);
+  if (alreadySent) { skipped++; continue; }
+
+  // Render
+  const sender = getSender(lead, templateKey);
+  const rendered = renderTemplate(templateKey, lead, sender);
+  if (!rendered) continue;
+
+  // Queue for Gmail Send node — _useTaniya routes to Taniya's Gmail credential
+  const useTaniya = (templateKey === 'welcome' || templateKey === 'onboarding_welcome');
+  emailItems.push({
+    to: lead.Email,
+    subject: rendered.subject,
+    html: rendered.html,
+    fromName: sender.name,
+    replyTo: sender.replyTo,
+    _useTaniya: useTaniya,
+    // Metadata for logging
+    _leadId: lead.id,
+    _leadEmail: lead.Email,
+    _leadName: lead.Full_Name || '',
+    _company: lead.Company || '',
+    _leadStatus: status,
+    _templateKey: templateKey,
+    _fromEmail: sender.replyTo,
+    _fromName: sender.name,
+  });
+  sent++;
+}
+
+// Log all sends to Supabase (pre-log as 'sending' — Gmail node handles actual delivery)
+for (const item of emailItems) {
+  await sbLogSent({
+    lead_id: item._leadId,
+    lead_email: item._leadEmail,
+    lead_name: item._leadName,
+    company: item._company,
+    lead_status: item._leadStatus,
+    template_key: item._templateKey,
+    from_email: item._fromEmail,
+    from_name: item._fromName,
+    subject: item.subject,
+    status: 'sent'
+  });
+}
+
+// If no emails to send, return a summary item (Gmail node won't fire)
+if (emailItems.length === 0) {
+  return [{ json: { status: 'no_emails', checked: changedLeads.length, skipped, noTemplate, cutoff: cutoffStr } }];
+}
+
+// Return email items for Gmail Send node
+return emailItems.map(item => ({ json: item }));
+"""
+
+# === AUTO 11: DEMO REMINDER EMAILS (daily 10 AM) ===
+AUTO_11_JS = r"""
+// === AUTO 11: DEMO REMINDER EMAILS ===
+const SB_URL = '%SUPABASE_URL%';
+const SB_KEY = '%SUPABASE_KEY%';
+const SB_HEADERS = {'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+
+const REP_EMAILS = {
+  'Dhruv': 'dhruv.tomar@onsiteteams.com', 'Bhavya': 'bhavya.j@onsiteteams.com',
+  'Anjali': 'anjali.b@onsiteteams.com', 'Sunil': 'sunil.kumar@onsiteteams.com',
+  'Amit U': 'amit.u@onsiteteams.com', 'Mohan': 'mohan.c@onsiteteams.com',
+  'Gayatri': 'gayatri.surlkar@onsiteteams.com', 'Shailendra': 'shailendra.g@onsiteteams.com',
+  'Amit Kumar': 'amit.k@onsiteteams.com', 'Hitangi': 'hitangi.a@onsiteteams.com',
+  'Shruti': 'shruti.a@onsiteteams.com', 'Ravi': 'ravi.gupta@onsiteteams.com',
+  'Arthi': 'aparthivarsha@onsiteteams.com', 'Kiran': 'k.kiran@onsiteteams.com',
+  'Yogyata': 'yogyata.airi@onsiteteams.com'
+};
+
+const DEMO_LINKS = {
+  'Anjali': 'https://meet.google.com/hmc-pzdo-jxx',
+  'Gayatri': 'https://meet.google.com/gir-uyss-veq',
+  'Bhavya': 'https://meet.google.com/vfk-iust-xrj',
+  'Shailendra': 'https://meet.google.com/rkm-kphu-tta',
+  'Hitangi': 'https://meet.google.com/bpg-wqbb-fbz',
+  'Mohan': 'https://meet.google.com/pzr-egje-ffc',
+  'Amit U': 'https://meet.google.com/ezu-osvu-zsf',
+  'Amit Kumar': 'https://meet.google.com/qsg-gcwi-qrq',
+  'Sunil': 'https://meet.google.com/hay-bcrj-uea',
+};
+
+// Dedup helpers
+async function sbCheckSent(leadId, templateKey, leadStatus) {
+  try {
+    const resp = await http({method:'GET',
+      url:`${SB_URL}/rest/v1/email_sent_log?lead_id=eq.${leadId}&template_key=eq.${encodeURIComponent(templateKey)}&lead_status=eq.${encodeURIComponent(leadStatus)}&select=id&limit=1`,
+      headers:{...SB_HEADERS, 'Prefer':''}});
+    const data = typeof resp === 'string' ? JSON.parse(resp) : resp;
+    return Array.isArray(data) && data.length > 0;
+  } catch(e) { return false; }
+}
+
+async function sbLogSent(obj) {
+  try {
+    await http({method:'POST', url:`${SB_URL}/rest/v1/email_sent_log`,
+      headers:SB_HEADERS, body:JSON.stringify(obj)});
+  } catch(e) { /* non-critical */ }
+}
+
+// Tomorrow's date range
+const tomorrow = new Date(now.getTime() + 86400000);
+const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth()+1)}-${pad(tomorrow.getDate())}`;
+
+// Get leads with demo booked (status = '6. Demo booked')
+const demoLeads = await qPage(
+  `SELECT id, Full_Name, Company, Phone, Email, Leads_Owner, Lead_Status FROM Leads WHERE Lead_Status = '6. Demo booked' AND Email is not null AND Email != ''`,
+  500
+);
+
+const emailItems = [];
+
+for (const lead of demoLeads) {
+  if (!lead.Email || !lead.Email.includes('@')) continue;
+
+  // Dedup: only one demo_reminder per lead
+  const alreadySent = await sbCheckSent(lead.id, 'demo_reminder', '6. Demo booked');
+  if (alreadySent) continue;
+
+  const firstName = (lead.Full_Name || 'there').split(' ')[0];
+  const ownerRaw = String(lead.Leads_Owner || '').trim();
+  const ownerShort = CRM_OWNER_MAP[ownerRaw] || ownerRaw;
+  const repEmail = REP_EMAILS[ownerShort] || 'taniya.malhotra@onsiteteams.com';
+  const demoLink = DEMO_LINKS[ownerShort] || '';
+
+  const subject = `Reminder: Your Onsite Teams Demo is Tomorrow!`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#f1f5f9;padding:20px 0;">
+  <div style="background:linear-gradient(135deg,#1a0b50 0%,#2d1670 100%);padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+    <img src="https://www.onsiteteams.com/_next/image?url=%2Fimages%2Flogo-white.webp&w=384&q=75" alt="Onsite Teams" height="36" style="height:36px;">
+  </div>
+  <div style="background:#ffffff;padding:32px 28px;border-radius:0 0 8px 8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <h2 style="color:#1a0b50;margin:0 0 16px;font-size:20px;">Your Demo is Tomorrow! ⏰</h2>
+    <div style="color:#334155;line-height:1.7;font-size:15px;">
+      <p>Hi ${firstName},</p>
+      <p>Just a friendly reminder — your <strong>Onsite Teams demo</strong> with <strong>${ownerShort}</strong> is scheduled for tomorrow!</p>
+      ${demoLink ? `<p><strong>Join Link:</strong> <a href="${demoLink}" style="color:#6366f1;">${demoLink}</a></p>` : ''}
+      <p style="background:#f0f9ff;padding:16px;border-radius:6px;border-left:4px solid #1a0b50;">
+        <strong>Quick tips for the demo:</strong><br>
+        • Have your current project list handy<br>
+        • Think about 1-2 pain points you want solved<br>
+        • The demo takes just 15-20 minutes
+      </p>
+      <p>If you need to reschedule, just reply to this email. See you tomorrow!</p>
+    </div>
+    ${demoLink ? `<div style="text-align:center;margin:24px 0;"><a href="${demoLink}" style="display:inline-block;background:#c73e5a;color:#ffffff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:15px;">Join Demo Tomorrow</a></div>` : ''}
+  </div>
+  <div style="padding:20px 24px;text-align:center;font-size:12px;color:#94a3b8;">
+    <p style="margin:4px 0;">${ownerShort} - Onsite Teams | ${repEmail}</p>
+    <p style="margin:4px 0;"><a href="https://www.onsiteteams.com" style="color:#6366f1;text-decoration:none;">onsiteteams.com</a></p>
+  </div>
+</div></body></html>`;
+
+  emailItems.push({
+    to: lead.Email,
+    subject,
+    html,
+    fromName: `${ownerShort} - Onsite Teams`,
+    replyTo: repEmail,
+    _leadId: lead.id, _leadEmail: lead.Email, _leadName: lead.Full_Name || '',
+    _company: lead.Company || '', _leadStatus: '6. Demo booked',
+    _templateKey: 'demo_reminder', _fromEmail: repEmail, _fromName: `${ownerShort} - Onsite Teams`,
+  });
+}
+
+// Log to Supabase
+for (const item of emailItems) {
+  await sbLogSent({
+    lead_id: item._leadId, lead_email: item._leadEmail, lead_name: item._leadName,
+    company: item._company, lead_status: item._leadStatus, template_key: item._templateKey,
+    from_email: item._fromEmail, from_name: item._fromName, subject: item.subject, status: 'sent'
+  });
+}
+
+if (emailItems.length === 0) {
+  return [{ json: { status: 'no_reminders', checked: demoLeads.length, date: tomorrowStr } }];
+}
+
+return emailItems.map(item => ({ json: item }));
+"""
+
+# === AUTO 12: FIREFLIES MEETING NOTES → ZOHO CRM ===
+# Webhook receives Fireflies event, fetches transcript, matches to Zoho lead, updates CRM.
+AUTO_12_JS = r"""
+// === AUTO 12: FIREFLIES → ZOHO CRM ===
+const body = $input.first().json.body || $input.first().json;
+let transcriptId = body?.data?.transcriptId || body?.transcriptId || '';
+const meetingId = body?.meetingId || body?.data?.meetingId || '';
+
+const FF_KEY = '%FIREFLIES_API_KEY%';
+
+// Fetch full transcript details from Fireflies GraphQL API
+async function ffQuery(query, variables) {
+  const resp = await http({
+    method: 'POST',
+    url: 'https://api.fireflies.ai/graphql',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${FF_KEY}` },
+    body: JSON.stringify({ query, variables: variables || {} }),
+  });
+  return typeof resp === 'string' ? JSON.parse(resp) : resp;
+}
+
+// If no transcriptId but we have meetingId, look up the transcript
+if (!transcriptId && meetingId) {
+  try {
+    const lookup = await ffQuery(`
+      query {
+        transcripts(limit: 10) {
+          id title date
+        }
+      }
+    `);
+    const allTranscripts = lookup?.data?.transcripts || [];
+    const match = allTranscripts.find(t => t.id === meetingId);
+    if (match) {
+      transcriptId = match.id;
+    }
+  } catch (e) {
+    // Lookup failed — fall through to meetingId fallback
+  }
+}
+
+// If we still have no transcriptId, try using meetingId directly as transcript ID
+if (!transcriptId && meetingId) {
+  transcriptId = meetingId;
+}
+
+if (!transcriptId) {
+  return [{ json: { status: 'no_transcript_id', body, meetingId } }];
+}
+
+// Get transcript details
+const result = await ffQuery(`
+  query($id: String!) {
+    transcript(id: $id) {
+      id title date duration organizer_email
+      participants
+      summary {
+        action_items overview shorthand_bullet keywords
+      }
+    }
+  }
+`, { id: transcriptId });
+
+const tr = result?.data?.transcript;
+if (!tr) {
+  return [{ json: { status: 'transcript_not_found', transcriptId } }];
+}
+
+// Parse meeting title to extract rep name — "Onsite App Demo (Gayatri)" or "Onsite<>CompanyName"
+const title = tr.title || '';
+const durationMin = Math.round(tr.duration || 0);
+const meetDate = tr.date ? new Date(tr.date).toISOString().split('T')[0] : TODAY;
+
+// Extract rep name from title patterns
+let repName = '';
+const repMatch = title.match(/Demo\s*\(([^)]+)\)/i) || title.match(/Demo[-\s]*([A-Za-z]+)/i);
+if (repMatch) repName = repMatch[1].trim();
+
+// Reverse-map Google Meet link code to rep name (each rep has a static Meet link)
+if (!repName) {
+  const MEET_CODE_TO_REP = {
+    'hmc-pzdo-jxx': 'Anjali',
+    'gir-uyss-veq': 'Gayatri',
+    'vfk-iust-xrj': 'Bhavya',
+    'rkm-kphu-tta': 'Shailendra',
+    'bpg-wqbb-fbz': 'Hitangi',
+    'pzr-egje-ffc': 'Mohan',
+    'ezu-osvu-zsf': 'Amit U',
+    'qsg-gcwi-qrq': 'Amit Kumar',
+    'hay-bcrj-uea': 'Sunil',
+  };
+  // Fireflies titles often contain the Meet code, e.g. "Meet – bpg-wqbb-fbz" or "meet.google.com/bpg-wqbb-fbz"
+  const titleLower = title.toLowerCase();
+  for (const [code, rep] of Object.entries(MEET_CODE_TO_REP)) {
+    if (titleLower.includes(code)) { repName = rep; break; }
+  }
+}
+
+// Get participant emails — split into Onsite team vs external (potential lead)
+const participants = tr.participants || [];
+const onsiteEmailDomains = ['gittigo.com', 'onsiteteams.com'];
+const isOnsiteEmail = (e) => e && onsiteEmailDomains.some(d => e.toLowerCase().includes(d));
+const externalEmails = participants.filter(e => e && !isOnsiteEmail(e));
+const teamEmails = participants.filter(e => isOnsiteEmail(e));
+
+// Strategy: If rep still unknown (Calendly = unique Meet link each time),
+// identify rep from their @onsiteteams.com participant email
+if (!repName && teamEmails.length > 0) {
+  const EMAIL_TO_REP = {
+    'dhruv.tomar@onsiteteams.com': 'Dhruv',
+    'bhavya.j@onsiteteams.com': 'Bhavya',
+    'anjali.b@onsiteteams.com': 'Anjali',
+    'sunil.kumar@onsiteteams.com': 'Sunil',
+    'amit.u@onsiteteams.com': 'Amit U',
+    'mohan.c@onsiteteams.com': 'Mohan',
+    'gayatri.surlkar@onsiteteams.com': 'Gayatri',
+    'shailendra.g@onsiteteams.com': 'Shailendra',
+    'amit.k@onsiteteams.com': 'Amit Kumar',
+    'hitangi.a@onsiteteams.com': 'Hitangi',
+    'shruti.a@onsiteteams.com': 'Shruti',
+    'ravi.gupta@onsiteteams.com': 'Ravi',
+    'aparthivarsha@onsiteteams.com': 'Arthi',
+    'k.kiran@onsiteteams.com': 'Kiran',
+    'yogyata.airi@onsiteteams.com': 'Yogyata',
+    'taniya.malhotra@onsiteteams.com': 'Taniya',
+  };
+  for (const te of teamEmails) {
+    const match = EMAIL_TO_REP[te.toLowerCase()];
+    // Skip non-sales emails (Dhruv = AI engineer, Taniya = marketing, onsitedemo = bot)
+    if (match && match !== 'Dhruv' && match !== 'Taniya') { repName = match; break; }
+  }
+  // If only Dhruv/Taniya found, still use them as fallback
+  if (!repName) {
+    for (const te of teamEmails) {
+      const match = EMAIL_TO_REP[te.toLowerCase()];
+      if (match) { repName = match; break; }
+    }
+  }
+}
+
+// Build meeting notes for CRM
+const overview = tr.summary?.overview || '';
+const actionItems = tr.summary?.action_items || '';
+const keywords = (tr.summary?.keywords || []).join(', ');
+const bullets = tr.summary?.shorthand_bullet || '';
+
+// Format a concise CRM note
+let crmNote = `\n--- MEETING NOTES (${meetDate}) ---\n`;
+crmNote += `Meeting: ${title}\n`;
+crmNote += `Duration: ${durationMin} min\n`;
+if (repName) crmNote += `Rep: ${repName}\n`;
+if (keywords) crmNote += `Topics: ${keywords}\n`;
+crmNote += `\n`;
+
+if (overview) {
+  // Clean markdown formatting for plain text CRM field
+  const cleanOverview = overview.replace(/\*\*/g, '').replace(/- /g, '• ');
+  crmNote += `SUMMARY:\n${cleanOverview}\n\n`;
+}
+
+if (actionItems) {
+  const cleanActions = actionItems.replace(/\*\*/g, '').replace(/- /g, '• ').trim();
+  crmNote += `ACTION ITEMS:\n${cleanActions}\n`;
+}
+
+crmNote += `\n--- End Meeting Notes ---`;
+
+// Try to match external participant emails to Zoho leads
+const matchedLeads = [];
+
+// Strategy 1: Match by participant email
+for (const email of externalEmails) {
+  const leads = await qPage(
+    `SELECT id, Full_Name, Company, Email, Phone, Lead_Status, Sales_Stage, Description, Leads_Owner FROM Leads WHERE Email = '${email.replace(/'/g, "''")}'`,
+    10
+  );
+  matchedLeads.push(...leads);
+}
+
+// Strategy 2: If title has company name "Onsite<>CompanyName", search by company
+if (matchedLeads.length === 0) {
+  const companyMatch = title.match(/Onsite\s*<>\s*(.+?)(?:\s*['"]|$)/i);
+  if (companyMatch) {
+    const companyName = companyMatch[1].trim();
+    const leads = await qPage(
+      `SELECT id, Full_Name, Company, Email, Phone, Lead_Status, Sales_Stage, Description, Leads_Owner FROM Leads WHERE Company like '%${companyName.replace(/'/g, "''").replace(/%/g, '')}%' AND Lead_Status not in ('Junk Lead', '11. Rejected')`,
+      10
+    );
+    matchedLeads.push(...leads);
+  }
+}
+
+// Strategy 3: If we have a rep name, search for RECENTLY MODIFIED Demo Booked leads (last 4 hours)
+// Only auto-update if exactly 1 match. If multiple, send WhatsApp asking rep to confirm.
+let strategy3Ambiguous = false;
+if (matchedLeads.length === 0 && repName) {
+  const primaryOwner = CRM_PRIMARY[repName];
+  if (primaryOwner) {
+    const ownerFilter = `Leads_Owner = '${primaryOwner}'`;
+    const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+    const cutoff4h = `${fourHoursAgo.getFullYear()}-${pad(fourHoursAgo.getMonth()+1)}-${pad(fourHoursAgo.getDate())}T${pad(fourHoursAgo.getHours())}:${pad(fourHoursAgo.getMinutes())}:00+05:30`;
+    const leads = await qPage(
+      `SELECT id, Full_Name, Company, Email, Phone, Lead_Status, Sales_Stage, Description, Leads_Owner FROM Leads WHERE (${ownerFilter}) AND Lead_Status in ('6. Demo booked', '7. Demo done') AND Modified_Time >= '${cutoff4h}' ORDER BY Modified_Time DESC`,
+      10
+    );
+    if (leads.length === 1) {
+      matchedLeads.push(leads[0]);
+    } else if (leads.length > 1) {
+      strategy3Ambiguous = true;
+      // Don't auto-update — ask rep via WhatsApp which lead
+      const repPhone = REPS[repName] || ALL_TEAM[repName];
+      if (repPhone) {
+        let askMsg = `📝 Fireflies recorded your demo (${durationMin} min) but I couldn't identify which lead it was.\n\nRecent leads:\n`;
+        leads.slice(0, 5).forEach((l, i) => {
+          askMsg += `${i+1}. ${l.Full_Name} — ${l.Company || '?'}\n`;
+        });
+        askMsg += `\nReply with the number and I'll save the meeting notes to their CRM record.\n— Onsite Pulse`;
+        await wa(repPhone, askMsg, repName);
+      }
+    }
+  }
+}
+
+// Update matched leads in Zoho CRM — add as a Note (not Description)
+const updates = [];
+const uniqueLeadIds = [...new Set(matchedLeads.map(l => l.id))];
+
+for (const leadId of uniqueLeadIds.slice(0, 5)) {
+  const lead = matchedLeads.find(l => l.id === leadId);
+  const noteTitle = `Demo Notes — ${meetDate} — ${title}`;
+
+  try {
+    const t = await getToken();
+    await http({
+      method: 'POST',
+      url: `https://www.zohoapis.in/crm/v7/Leads/${leadId}/Notes`,
+      headers: { Authorization: `Zoho-oauthtoken ${t}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [{ Note_Title: noteTitle, Note_Content: crmNote }] }),
+    });
+    updates.push({ leadId, name: lead.Full_Name, company: lead.Company, status: 'updated' });
+  } catch (e) {
+    updates.push({ leadId, name: lead.Full_Name, status: 'failed', error: e.message });
+  }
+}
+
+// Also notify the rep via WhatsApp if we identified them
+if (repName && updates.length > 0) {
+  const repPhone = REPS[repName] || ALL_TEAM[repName];
+  if (repPhone) {
+    const okUpdates = updates.filter(u => u.status === 'updated');
+    let leadLines = '';
+    for (const u of okUpdates) {
+      const lead = matchedLeads.find(l => l.id === u.leadId);
+      const phone = lead?.Phone || lead?.Mobile || '';
+      leadLines += `• ${u.name} (${u.company || '?'})${phone ? ' | ' + phone : ''}\n`;
+    }
+    // Extract top 3 action items from transcript
+    let actionsSnippet = '';
+    if (actionItems) {
+      const lines = actionItems.split('\n').filter(l => l.trim() && !l.startsWith('**'));
+      actionsSnippet = lines.slice(0, 3).map(l => l.replace(/\*\*/g, '').trim()).join('\n');
+      if (actionsSnippet) actionsSnippet = `\nKey Actions:\n${actionsSnippet}\n`;
+    }
+    const msg = `📝 Meeting notes auto-saved!\n\nMeeting: ${title}\nDuration: ${durationMin} min\nTopics: ${keywords || 'N/A'}\n\nCRM updated for:\n${leadLines}${actionsSnippet}\n— Onsite Pulse`;
+    await wa(repPhone, msg, repName);
+  }
+}
+
+return [{ json: {
+  status: strategy3Ambiguous ? 'ambiguous_asked_rep' : 'processed',
+  transcriptId,
+  title,
+  duration: durationMin,
+  repName,
+  externalEmails,
+  matchedLeads: uniqueLeadIds.length,
+  updates,
+} }];
+"""
+
+# === AUTOMATION 13: Follow-Up Reminder (5 min before exact time) ===
+AUTO_13_JS = r"""
+// === AUTOMATION 13: Follow-Up Reminder — 5 min before ===
+// Runs every 5 min, 8 AM - 8 PM IST Mon-Sat
+// Sends personalized WhatsApp alert to rep whose follow-up is 5 min away
+
+function fmtTime(dt) {
+  if (!dt) return '';
+  const m = String(dt).match(/T(\d{2}):(\d{2})/);
+  if (!m) return '';
+  let h = parseInt(m[1]), mn = m[2];
+  const ap = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${mn} ${ap}`;
+}
+
+function getDealOwner(l) {
+  const raw = String(l.Leads_Owner || '').trim();
+  return CRM_OWNER_MAP[raw] || raw || 'Unassigned';
+}
+
+const ALL_PHONES = {...REPS, ...PRE_SALES};
+function findRep(shortName) {
+  if (!shortName || shortName === 'Team' || shortName === 'Unassigned') return null;
+  if (TEST_MODE) return {phone: TEST_PHONE, name: shortName + ' [TEST]'};
+  if (ALL_PHONES[shortName]) return {phone: ALL_PHONES[shortName], name: shortName};
+  return null;
+}
+
+// Current IST time
+const istNow = new Date(now.getTime() + 5.5 * 3600000);
+const istHour = istNow.getHours();
+
+// Only during business hours
+if (istHour < 8 || istHour >= 20) {
+  return [{ json: { skipped: true, reason: 'outside business hours' } }];
+}
+
+// Window: 5 min to 10 min from now (catches follow-ups ~5 min away)
+const winStart = new Date(istNow.getTime() + 5 * 60000);
+const winEnd = new Date(istNow.getTime() + 10 * 60000 - 1000); // -1s to avoid overlap
+
+const fmtISO = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+05:30`;
+
+const startStr = fmtISO(winStart);
+const endStr = fmtISO(winEnd);
+
+// Query follow-ups in this window (exclude demo booked — those get a separate 10-min reminder)
+const leads = await qPage(
+  `SELECT Company, Full_Name, Phone, Lead_Task, Sales_Stage, Lead_Status, Leads_Owner FROM Leads WHERE Lead_Task between '${startStr}' and '${endStr}' AND Lead_Status not in ('6. Demo booked', '12. Subscribed', '11. Rejected', '10. Not Interested (Not Potential)', 'Junk Lead')`
+);
+
+if (leads.length === 0) {
+  return [{ json: { skipped: true, followups: 0, window: `${startStr} → ${endStr}` } }];
+}
+
+// Group by owner
+const byOwner = {};
+leads.forEach(l => {
+  const o = getDealOwner(l);
+  if (!byOwner[o]) byOwner[o] = [];
+  byOwner[o].push(l);
+});
+
+let sent = 0;
+for (const [owner, ownerLeads] of Object.entries(byOwner)) {
+  const rep = findRep(owner);
+  if (!rep) continue;
+
+  let msg = `*${rep.name}, follow-up in 5 min!*\n\n`;
+  ownerLeads.forEach((l, i) => {
+    const co = l.Company || l.Full_Name || '?';
+    const time = fmtTime(l.Lead_Task);
+    const st = l.Sales_Stage || l.Lead_Status || '';
+    const contact = l.Phone || '';
+    msg += `${i+1}. *${co}* — ${time}`;
+    if (st) msg += ` (${st})`;
+    if (contact) msg += `\n   ${contact}`;
+    msg += '\n';
+  });
+  msg += `\n_Onsite Pulse_`;
+  await wa(rep.phone, msg, rep.name);
+  sent++;
+}
+
+return [{ json: { sent, total: leads.length, window: `${startStr} → ${endStr}` } }];
+"""
+
+# === AUTOMATION 14: Demo Reminder (10 min before demo starts) ===
+AUTO_14_JS = r"""
+// === AUTOMATION 14: Demo Reminder — 10 min before ===
+// Runs every 5 min, 8 AM - 8 PM IST Mon-Sat
+// Sends WhatsApp alert to rep whose demo is 10 min away
+
+function fmtTime(dt) {
+  if (!dt) return '';
+  const m = String(dt).match(/T(\d{2}):(\d{2})/);
+  if (!m) return '';
+  let h = parseInt(m[1]), mn = m[2];
+  const ap = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${mn} ${ap}`;
+}
+
+function getDealOwner(l) {
+  const raw = String(l.Leads_Owner || '').trim();
+  return CRM_OWNER_MAP[raw] || raw || 'Unassigned';
+}
+
+const ALL_PHONES = {...REPS, ...PRE_SALES};
+function findRep(shortName) {
+  if (!shortName || shortName === 'Team' || shortName === 'Unassigned') return null;
+  if (TEST_MODE) return {phone: TEST_PHONE, name: shortName + ' [TEST]'};
+  if (ALL_PHONES[shortName]) return {phone: ALL_PHONES[shortName], name: shortName};
+  return null;
+}
+
+// Current IST time
+const istNow = new Date(now.getTime() + 5.5 * 3600000);
+const istHour = istNow.getHours();
+
+if (istHour < 8 || istHour >= 20) {
+  return [{ json: { skipped: true, reason: 'outside business hours' } }];
+}
+
+// Window: 10 min to 15 min from now (catches demos ~10 min away)
+const winStart = new Date(istNow.getTime() + 10 * 60000);
+const winEnd = new Date(istNow.getTime() + 15 * 60000 - 1000);
+
+const fmtISO = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+05:30`;
+
+const startStr = fmtISO(winStart);
+const endStr = fmtISO(winEnd);
+
+// Query demo booked leads with Lead_Task (demo time) in this window
+const leads = await qPage(
+  `SELECT Company, Full_Name, Phone, Email, Lead_Task, Sales_Stage, Lead_Source, Leads_Owner FROM Leads WHERE Lead_Status = '6. Demo booked' AND Demo_Done_Date is null AND Lead_Task between '${startStr}' and '${endStr}'`
+);
+
+if (leads.length === 0) {
+  return [{ json: { skipped: true, demos: 0, window: `${startStr} → ${endStr}` } }];
+}
+
+// Group by owner
+const byOwner = {};
+leads.forEach(l => {
+  const o = getDealOwner(l);
+  if (!byOwner[o]) byOwner[o] = [];
+  byOwner[o].push(l);
+});
+
+let sent = 0;
+for (const [owner, ownerLeads] of Object.entries(byOwner)) {
+  const rep = findRep(owner);
+  if (!rep) continue;
+
+  let msg = `*${rep.name}, demo in 10 min!*\n\n`;
+  ownerLeads.forEach((l, i) => {
+    const co = l.Company || l.Full_Name || '?';
+    const time = fmtTime(l.Lead_Task);
+    const contact = l.Phone || l.Email || '';
+    const source = l.Lead_Source || '';
+    msg += `${i+1}. *${co}* — ${time}`;
+    if (source) msg += ` (${source})`;
+    if (contact) msg += `\n   ${contact}`;
+    msg += '\n';
+  });
+  msg += `\nPrepare your demo setup & check CRM notes!\n_Onsite Pulse_`;
+  await wa(rep.phone, msg, rep.name);
+  sent++;
+}
+
+// Also notify managers if any demos are happening
+if (leads.length > 0) {
+  const repNames = [...new Set(leads.map(l => getDealOwner(l)))].join(', ');
+  const mgrMsg = `*${leads.length} demo${leads.length > 1 ? 's' : ''} starting in ~10 min*\nReps: ${repNames}\n\n`;
+  let details = '';
+  leads.forEach(l => {
+    const co = l.Company || l.Full_Name || '?';
+    const owner = getDealOwner(l);
+    const time = fmtTime(l.Lead_Task);
+    details += `• ${co} (${owner}) — ${time}\n`;
+  });
+  await waAll(MGR, mgrMsg + details + `\n_Onsite Pulse_`);
+}
+
+return [{ json: { sent, total: leads.length, window: `${startStr} → ${endStr}` } }];
 """
 
 # === WORKFLOW DEFINITIONS ===
@@ -1730,9 +3274,9 @@ WORKFLOWS = {
     },
     "3": {
         "name": "Onsite: Daily Scorecard",
-        "cron": "15 9 * * *",  # Daily 9:15 AM IST
+        "cron": "30 9 * * 1-6",  # Daily 9:30 AM IST, Mon-Sat
         "js": AUTO_3_JS,
-        "description": "Daily 9:15 AM — MTD demos, sales, pipeline summary",
+        "description": "Daily 9:30 AM — Morning kickoff template + MTD scorecard",
     },
     "4": {
         "name": "Onsite: CRM Hygiene Report",
@@ -1771,6 +3315,39 @@ WORKFLOWS = {
         "webhook_path": "pulse-chat",
         "js": AUTO_9_JS,
         "description": "Webhook — Web chat interface for team to query their CRM data",
+    },
+    "10": {
+        "name": "Onsite: Auto Email Pipeline",
+        "cron": "*/15 8-20 * * 1-6",  # Every 15 min, 8 AM - 8 PM IST, Mon-Sat
+        "js": AUTO_10_JS,
+        "email": True,  # Dual Gmail: Taniya (welcome/onboarding) + Dhruv (rep emails)
+        "description": "Every 15 min Mon-Sat — Pipeline emails on Zoho CRM status changes",
+    },
+    "11": {
+        "name": "Onsite: Demo Reminder Emails",
+        "cron": "0 10 * * 1-6",  # Daily 10 AM IST, Mon-Sat
+        "js": AUTO_11_JS,
+        "email": True,
+        "description": "Daily 10 AM — Reminder emails for upcoming demos",
+    },
+    "12": {
+        "name": "Onsite: Fireflies Meeting Notes",
+        "webhook": True,
+        "webhook_path": "fireflies-notes",
+        "js": AUTO_12_JS,
+        "description": "Webhook — Fireflies transcription → Zoho CRM lead notes + WhatsApp notification",
+    },
+    "13": {
+        "name": "Onsite: Follow-Up Reminder (5 min)",
+        "cron": "*/5 8-20 * * 1-6",  # Every 5 min, 8 AM - 8 PM IST, Mon-Sat
+        "js": AUTO_13_JS,
+        "description": "Every 5 min Mon-Sat — WhatsApp reminder 5 min before each follow-up time",
+    },
+    "14": {
+        "name": "Onsite: Demo Reminder (10 min)",
+        "cron": "*/5 8-20 * * 1-6",  # Every 5 min, 8 AM - 8 PM IST, Mon-Sat
+        "js": AUTO_14_JS,
+        "description": "Every 5 min Mon-Sat — WhatsApp reminder 10 min before each demo starts",
     },
 }
 
@@ -1821,6 +3398,7 @@ def build_workflow_json(num: str) -> dict:
         "%SUPABASE_URL%": os.environ.get("SUPABASE_URL", ""),
         "%SUPABASE_KEY%": os.environ.get("SUPABASE_KEY", ""),
         "%OPENROUTER_KEY%": os.environ.get("OPENROUTER_KEY", ""),
+        "%FIREFLIES_API_KEY%": os.environ.get("FIREFLIES_API_KEY", ""),
     }
     for placeholder, value in _env_replacements.items():
         js_code = js_code.replace(placeholder, value)
@@ -1880,6 +3458,126 @@ def build_workflow_json(num: str) -> dict:
                 "Run Automation": {
                     "main": [
                         [{"node": "Respond", "type": "main", "index": 0}]
+                    ]
+                },
+            },
+            "settings": {
+                "executionOrder": "v1",
+                "timezone": "Asia/Kolkata",
+                "availableInMCP": True,
+            },
+        }
+
+    # Email workflow: Schedule → Code → IF → Gmail Taniya / Gmail Rep
+    # Taniya's credential sends welcome + onboarding emails
+    # Dhruv's credential sends all other rep emails (with Reply-To set to actual rep)
+    if wf.get("email"):
+        gmail_params = {
+            "sendTo": "={{ $json.to }}",
+            "subject": "={{ $json.subject }}",
+            "emailType": "html",
+            "message": "={{ $json.html }}",
+            "options": {
+                "replyTo": "={{ $json.replyTo }}",
+                "senderName": "={{ $json.fromName }}",
+            },
+        }
+        return {
+            "name": wf["name"],
+            "nodes": [
+                {
+                    "parameters": {
+                        "rule": {
+                            "interval": [
+                                {"field": "cronExpression", "expression": wf["cron"]}
+                            ]
+                        }
+                    },
+                    "name": "Schedule",
+                    "type": "n8n-nodes-base.scheduleTrigger",
+                    "typeVersion": 1.3,
+                    "position": [0, 0],
+                    "id": str(uuid.uuid4()),
+                },
+                {
+                    "parameters": {
+                        "mode": "runOnceForAllItems",
+                        "jsCode": js_code,
+                    },
+                    "name": "Run Automation",
+                    "type": "n8n-nodes-base.code",
+                    "typeVersion": 2,
+                    "position": [300, 0],
+                    "id": str(uuid.uuid4()),
+                },
+                {
+                    "parameters": {
+                        "conditions": {
+                            "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                            "conditions": [
+                                {
+                                    "id": str(uuid.uuid4()),
+                                    "leftValue": "={{ $json._useTaniya }}",
+                                    "rightValue": True,
+                                    "operator": {
+                                        "type": "boolean",
+                                        "operation": "true",
+                                    },
+                                }
+                            ],
+                            "combinator": "and",
+                        },
+                    },
+                    "name": "Is Taniya?",
+                    "type": "n8n-nodes-base.if",
+                    "typeVersion": 2,
+                    "position": [600, 0],
+                    "id": str(uuid.uuid4()),
+                },
+                {
+                    "parameters": gmail_params,
+                    "name": "Gmail Taniya",
+                    "type": "n8n-nodes-base.gmail",
+                    "typeVersion": 2.1,
+                    "position": [900, -100],
+                    "id": str(uuid.uuid4()),
+                    "credentials": {
+                        "gmailOAuth2": {
+                            "id": "iCNfKJ9SVwZmUwua",
+                            "name": "taniya.malhotra@onsiteteams.com",
+                        }
+                    },
+                },
+                {
+                    "parameters": gmail_params,
+                    "name": "Gmail Rep",
+                    "type": "n8n-nodes-base.gmail",
+                    "typeVersion": 2.1,
+                    "position": [900, 100],
+                    "id": str(uuid.uuid4()),
+                    "credentials": {
+                        "gmailOAuth2": {
+                            "id": "arJIUR0ESDgNcuov",
+                            "name": "dhruv.tomar_updated",
+                        }
+                    },
+                },
+            ],
+            "connections": {
+                "Schedule": {
+                    "main": [
+                        [{"node": "Run Automation", "type": "main", "index": 0}]
+                    ]
+                },
+                "Run Automation": {
+                    "main": [
+                        [{"node": "Is Taniya?", "type": "main", "index": 0}]
+                    ]
+                },
+                "Is Taniya?": {
+                    "main": [
+                        [{"node": "Gmail Taniya", "type": "main", "index": 0}],
+                        [{"node": "Gmail Rep", "type": "main", "index": 0}],
                     ]
                 },
             },

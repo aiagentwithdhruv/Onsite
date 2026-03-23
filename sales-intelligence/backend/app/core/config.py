@@ -21,7 +21,12 @@ class Settings(BaseSettings):
     # Telegram (alerts delivery — priority)
     telegram_bot_token: str = ""
 
-    # WhatsApp (Meta Cloud API — direct, no BSP)
+    # WhatsApp — Gallabox (primary, already paid)
+    gallabox_api_key: str = ""
+    gallabox_api_secret: str = ""
+    gallabox_channel_id: str = ""
+
+    # WhatsApp — Meta Cloud API (direct, future)
     whatsapp_cloud_token: str = ""
     whatsapp_phone_number_id: str = ""
 

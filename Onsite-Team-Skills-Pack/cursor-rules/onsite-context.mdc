@@ -1,0 +1,14 @@
+---
+description: Onsite Teams company and product context — use for any Onsite-related work
+alwaysApply: true
+---
+
+# Onsite Context
+
+**Company:** Onsite Teams (Abeyaantrix) — construction management SaaS. Noida. India, UAE, global.
+
+**Product:** Project/Material/Labor/Finance/Procurement/Quality/Design/Reporting. Pricing: Business ₹12K/user/yr, Business+ ₹15K, Enterprise ₹12L. International $200/$250/$15K.
+
+**Data:** Zoho CRM → CSV. Revenue = `annual_revenue` (parse "Rs."). **Never** use `Revenue` (it's a score). Attribution = `sale_done_date`.
+
+**Departments:** Sales (reps, pipeline), Marketing (campaigns, sources), Pre-Sales (demo booking), Support (Gallabox WA, Ravi), Product, Finance, Data/Analytics. Use the matching department skill for deep analysis.

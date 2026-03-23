@@ -1,0 +1,11 @@
+---
+description: Marketing analysis — campaigns, ads, lead sources, ROI
+globs: "**/marketing/**/*,**/departments/marketing/**/*,**/*campaign*"
+alwaysApply: false
+---
+
+# Onsite Marketing
+
+- **Attribution:** Revenue by `sale_done_date` + campaign/source. Not lead_assigned_time or demo_date.
+- **Fields:** campaign_name, Adset_name, ad_name, lead_source, lead_source_type.
+- **Patterns:** Campaign performance = leads (lead_assigned_time) → demos → sales (sale_done_date) → revenue (annual_revenue). Channel ROI = revenue per lead_source. Creative = ad_name → revenue.

@@ -51,3 +51,21 @@ async def trigger_generate_intelligence_briefs(x_cron_secret: str | None = Heade
     _check_cron_secret(x_cron_secret)
     result = generate_and_save_intelligence_briefs()
     return {"ok": True, **result}
+
+
+@router.post("/friday-review")
+async def trigger_friday_review(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
+    """Friday 6 PM: Team Overview + Rep Scorecards + Hygiene Report Card via WhatsApp."""
+    _check_cron_secret(x_cron_secret)
+    from app.services.weekly_reports import send_friday_reports
+    result = await send_friday_reports()
+    return {"ok": True, **result}
+
+
+@router.post("/monday-kickoff")
+async def trigger_monday_kickoff(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
+    """Monday 8 AM: Stale Pipeline + Quick Wins per rep via WhatsApp."""
+    _check_cron_secret(x_cron_secret)
+    from app.services.weekly_reports import send_monday_reports
+    result = await send_monday_reports()
+    return {"ok": True, **result}

@@ -1,0 +1,17 @@
+---
+description: TypeScript, React, Python, and testing standards for Onsite
+globs: "**/*.ts,**/*.tsx,**/*.py,**/*.test.*,**/*.spec.*"
+alwaysApply: false
+---
+
+# Onsite Coding Standards
+
+**TypeScript/React:** Functional components, hooks, full typing (no any). Log and rethrow errors with cause. Async/await; handle loading and error in UI.
+
+**Python:** Type hints, Pydantic for API. No secrets in code; use env. Specific exceptions; log before raise when useful.
+
+**CSV/Data:** UTF-8 (BOM if Excel). Validate headers and required columns. Use consistent date/revenue parsers (see onsite-data-analytics).
+
+**Tests:** Unit test parsing and business rules. Name: test_<what>_<expected>. Fixtures small and realistic; no production data.
+
+**Security:** No hardcoded keys. Validate/sanitize uploads; limit size/rows.

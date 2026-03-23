@@ -1,0 +1,11 @@
+---
+description: Sales analysis — reps, pipeline, demos, revenue; use with CSV/CRM work
+globs: "**/*.csv,**/sales/**/*,**/departments/sales/**/*"
+alwaysApply: false
+---
+
+# Onsite Sales
+
+- **Revenue:** Only `annual_revenue` (strip "Rs."). Never `Revenue` (score). Attribution = `sale_done_date`.
+- **Reps:** `deal_owner`. Names exact: Anjali Bajaj, Sunil Demo, Bhavya Pattegudde Janappa, Mohan C, Gayatri Surlkar, Shailendra Gour, Amit Balasaheb Udagatti, Hitangi, Amit Kumar, Desi Yulia.
+- **Metrics:** Demos = demo_date + deal_owner. Sales = sale_done_date + deal_owner. Revenue = sum annual_revenue for those sales. Pipeline = by lead_status, no sale_done_date.

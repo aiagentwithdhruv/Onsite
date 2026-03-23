@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-03-21T15:25:57.797126",
+  "account": "akshansh@onsitesteam.com",
+  "region": "us",
+  "total_leads": 24,
+  "daily_limit": 5,
+  "sent": 5,
+  "errors": 0,
+  "dry_run": false,
+  "results": [
+    {
+      "status": "sent",
+      "to": "jprueter@cmgincservices.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "jekeller@blockcompanies.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "kenny@kmrtexas.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "amiron@mfein.com",
+      "from": "akshansh@onsitesteam.com"
+    },
+    {
+      "status": "sent",
+      "to": "mmonroe@allenharrisonco.com",
+      "from": "akshansh@onsitesteam.com"
+    }
+  ]
+}
