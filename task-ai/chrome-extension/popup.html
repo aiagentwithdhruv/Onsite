@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Onsite AI Helper</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 18px 16px;
+      width: 300px;
+      background: #0b0626;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #d94568, #a52d47);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(199, 62, 90, 0.3);
+    }
+    .logo svg { width: 16px; height: 16px; color: white; }
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 10.5px;
+      margin-top: 3px;
+      line-height: 1;
+    }
+    .status {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .ok {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+    .warn {
+      background: rgba(234, 179, 8, 0.08);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      color: #fde68a;
+    }
+    .info {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+    }
+    .meta {
+      font-size: 10px;
+      opacity: 0.55;
+      margin-top: 4px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .btn {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.85);
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .btn:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .btn.danger { color: #fda4af; }
+    .btn.primary {
+      background: linear-gradient(135deg, #c73e5a, #a52d47);
+      color: white;
+      border-color: transparent;
+      text-align: center;
+      font-weight: 600;
+    }
+    .footer {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke-linecap="round" />
+        <rect x="9" y="3" width="6" height="4" rx="1" stroke-linecap="round" />
+        <path d="M9 12h6M9 16h4" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div>
+      <div class="title">Onsite AI Helper</div>
+      <div class="subtitle">Auto-connects Task AI to Onsite</div>
+    </div>
+  </div>
+
+  <div id="status" class="status info">Checking…</div>
+
+  <div class="actions">
+    <button class="btn primary" id="open-bot">Open Task AI</button>
+    <button class="btn" id="refresh">↻ Re-sync from Onsite tab</button>
+    <button class="btn danger" id="clear">Clear stored token</button>
+  </div>
+
+  <div class="footer">
+    Token stored on your device only.<br/>Never sent to third parties.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

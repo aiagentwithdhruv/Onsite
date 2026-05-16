@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Onsite AI Helper",
+  "version": "0.1.0",
+  "description": "Auto-connects Onsite Task AI to your logged-in Onsite session. No token pasting required.",
+
+  "permissions": ["storage"],
+
+  "host_permissions": [
+    "https://web.onsiteteams.com/*",
+    "https://*.onsiteteams.com/*",
+    "https://*.onsiteteams.in/*",
+    "http://localhost:3001/*",
+    "http://localhost:3000/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://web.onsiteteams.com/*"],
+      "js": ["onsite-reader.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:3001/task-bot*",
+        "http://localhost:3000/task-bot*",
+        "https://*.onsiteteams.com/task-bot*",
+        "https://*.onsiteteams.in/task-bot*",
+        "https://onsite-hub.vercel.app/task-bot*"
+      ],
+      "js": ["taskbot-injector.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Onsite AI Helper"
+  }
+}
