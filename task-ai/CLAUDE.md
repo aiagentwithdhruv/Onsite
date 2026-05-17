@@ -35,6 +35,12 @@ End-user customers (builders, contractors, site engineers) type or speak in plai
 | Always-on chat persistence | ✅ Live | `task_ai_messages` Supabase table, scoped by user_id |
 | Chat history sidebar + rename | ✅ Live | 🕐 icon in header; pencil to rename; renamed title becomes bot's project anchor |
 | Per-session project context anchor | ✅ Live | Chat title pinned into bot's system prompt as "current project" |
+| **AI auto-suggests chat rename** | ✅ Live | Banner appears when project name is clear + title is null |
+| **Cross-chat resume suggestions** | ✅ Live | Welcome screen shows recent chats; active chat shows keyword-matched past chats |
+| **Visual stats card (`task_stats`)** | ✅ Live | 2x2 stat grid + progress bars for "how many" / "breakdown" questions |
+| **Direct Anthropic API** | ✅ Live (gated) | Auto-enables when `ANTHROPIC_API_KEY` is set; OpenRouter fallback |
+| **Leaf check in dep chain proposals** | ✅ Live | System prompt enforces is_leaf=true verification before chain proposal |
+| **Training-data JSONL export** | ✅ Live | `/api/task-bot/export-training-data` + button on admin page |
 | Thumbs feedback for training data | ✅ Live | 👍/👎 on each reply → `task_ai_messages.feedback` |
 | Admin dashboard | ✅ Live | `/task-bot/admin` — 24h KPIs, per-tool, errors |
 | Hindi voice input | ✅ Live | EN↔हिं toggle next to mic |

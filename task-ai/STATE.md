@@ -88,16 +88,19 @@ These can be deleted in Onsite UI if needed for clean state.
 
 ---
 
-## Open TODO (from Dhruv's testing feedback)
+## Open TODO
 
-- **AI auto-suggest chat rename** — when conversation has a clear project focus + chat title is null, surface a small "💡 Rename this chat to 'Interior Project'?" banner above the last reply
-- **Cross-chat suggestions** — if user mentions a topic that matches a past chat title/preview, surface those chats as one-click "resume" chips
-- **Visual data (tables, pie charts)** — for aggregate questions like "how many tasks have deps?", return a structured chart card alongside the text reply
-- **Switch OpenRouter → direct Anthropic API** — eliminate Google Vertex / Amazon Bedrock provider hops; needs ANTHROPIC_API_KEY from Dhruv
-- **Pre-check leaf status before proposing dep chains** — when bot proposes "1.1 → 1.2 → 1.3", verify each is_leaf=true BEFORE asking for confirmation; today bot can suggest a chain it can't actually create (Image 77/78)
-- **JSON-format training-prompt export** — pipe successful turns (with feedback=positive) into a fine-tuning-ready JSONL export
+(None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-17 (batch 7)** — All 6 open TODOs shipped in one batch:
+  - AI auto-suggests chat rename (banner above latest reply when project is clear + title is null)
+  - Welcome screen shows top 3 recent chats as "Resume" cards; active chats get a "Related past chats" chip row when keywords match
+  - New `get_project_stats` tool + `task_stats` card with 2x2 stat grid and progress bars
+  - Direct Anthropic API support gated on `ANTHROPIC_API_KEY` env (OpenRouter fallback)
+  - System prompt drilled with leaf-vs-parent check before proposing dep chains
+  - JSONL training-data export at `/api/task-bot/export-training-data` + admin button (positive-feedback or long-clean sessions only)
 
 - **2026-05-17 (post-compact, batch 6)** — Collapsible tree + server cache:
   - MsgText now parses outline into a tree, renders with click-to-expand chevrons
