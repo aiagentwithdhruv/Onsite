@@ -90,6 +90,7 @@ These can be deleted in Onsite UI if needed for clean state.
 
 ## Recent Changes
 
+- **2026-05-17 (post-compact)** — P0 #1 fix: progress card now resolves real task name. Tries multiple response paths first (`monkey_patch_billing_activity_name`, nested `billing_activity.name`, etc.); if all empty, follows up with `GET /apis/v3/detail/billingactivity/<id>` using the `billing_activity_id` from the response. Final fallback: "Task" string (was: always "task" lowercase when patch field was empty).
 - **2026-05-17 02:00** — `location_id` made optional in `record_task_progress` tool (was breaking UX). Default to empty string.
 - **2026-05-17 01:30** — End-to-end test through chatbot UI successful (after fixing token misread).
 - **2026-05-17 01:00** — Initial MVP shipped (page + API route + AppShell bypass).
