@@ -81,6 +81,25 @@ Onsite/onsite-hub/src/
     └── AppShell.tsx                ← Modified: skips auth for /task-bot routes
 ```
 
+## ⚠️ REPO SPLIT — commit to the right one (never mix)
+
+| What you're committing | Goes to | URL |
+|------------------------|---------|-----|
+| Page UI changes (page.tsx) | **onsite-hub** repo | github.com/aiagentwithdhruv/onsite-hub |
+| Backend route (route.ts, activity.ts) | **onsite-hub** repo | same |
+| AppShell, Chrome ext page-side changes | **onsite-hub** repo | same |
+| Env vars `.env.local` (NOT committed) | onsite-hub locally | — |
+| Docs (this file, MEMORY, PRD, HLD, LLD, ROADMAP, ADRs) | **Onsite** repo, under `task-ai/` | github.com/aiagentwithdhruv/Onsite/tree/main/task-ai |
+| Chrome extension files (manifest, content scripts, popup) | **Onsite** repo, under `task-ai/chrome-extension/` | same |
+| DB migrations (`database/*.sql`) | **Onsite** repo, under `task-ai/database/` | same |
+| Test reports + bug tracker | **Onsite** repo, under `task-ai/` | same |
+
+**Both repos are PRIVATE.** Verify before any push: `gh repo view aiagentwithdhruv/<repo> --json visibility`.
+
+When publishing a feature that touches both (e.g., code + docs), do TWO separate commits — one in each repo — with messages that cross-reference each other.
+
+---
+
 This product's docs live separately at:
 ```
 Onsite/task-ai/
