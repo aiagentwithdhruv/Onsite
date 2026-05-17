@@ -26,13 +26,21 @@ End-user customers (builders, contractors, site engineers) type or speak in plai
 | Capability | Status | Notes |
 |------------|--------|-------|
 | Chat UI (text + voice) | ✅ Live | localhost:3001/task-bot |
-| Bearer token auth | ✅ Working | Manual paste, JWT validated by Onsite |
-| Create task dependency | ✅ Production-verified | 2 real dependencies created in Soul Space project |
-| Record task progress | ✅ Production-verified | "+3 numbers" entry created on Electrical panel Setup |
-| Update / delete dependency | ❌ Blocked | Need API specs from Akshansh |
-| Add / update task | ❌ Blocked | Need API specs |
-| List tasks / sub-activities | ❌ Blocked | Need API specs |
-| Multi-language UI | ❌ Not built | i18n planned for Phase 2 |
+| Bearer token auth (JWT) | ✅ Live | Auto-bridge via Chrome ext, manual paste fallback |
+| 10 tools (deps + progress + list) | ✅ Live | create / update / delete dep, log / delete progress, list_companies / projects / tasks / subactivities / dependencies |
+| Hierarchical task tree (1, 1.1, 1.2…) | ✅ Live | Server emits `outline` field, frontend renders as collapsible tree |
+| Tasks show inline dep count + % done + duration | ✅ Live | list_tasks enriches each task; matches Onsite UI columns |
+| Smart model routing (Haiku → Sonnet) | ✅ Live | Sonnet for action-verb + entity-name messages, Haiku for reads |
+| Server cache (5-min TTL, per-user) | ✅ Live | list_companies / projects / tasks. Auto-invalidated on mutations |
+| Always-on chat persistence | ✅ Live | `task_ai_messages` Supabase table, scoped by user_id |
+| Chat history sidebar + rename | ✅ Live | 🕐 icon in header; pencil to rename; renamed title becomes bot's project anchor |
+| Per-session project context anchor | ✅ Live | Chat title pinned into bot's system prompt as "current project" |
+| Thumbs feedback for training data | ✅ Live | 👍/👎 on each reply → `task_ai_messages.feedback` |
+| Admin dashboard | ✅ Live | `/task-bot/admin` — 24h KPIs, per-tool, errors |
+| Hindi voice input | ✅ Live | EN↔हिं toggle next to mic |
+| Hallucination guard + force-recall | ✅ Live | Server detects "deleted!" without tool call, forces retry |
+| Undo on dependency cards | ✅ Live | Routes to bot's delete_task_dependency |
+| Multi-language replies | ✅ Live | Bot responds in user's language register |
 | Deployed to Vercel | ❌ Local only | Push pending Dhruv's approval |
 
 ---
@@ -145,22 +153,28 @@ Company (Dhruv Construction)
 
 ---
 
-## API Surface (read [API-SPECS.md](API-SPECS.md))
+## API Surface — Onsite endpoints
 
-**We have specs for (built):**
-- `POST /apis/v3/add/taskdependency` — create dependency
-- `POST /apis/v3/add/billingprogresshistory` — log progress
+**Discovered + wired into the bot (no Akshansh needed):**
+- `GET  /apis/v3/list/company`
+- `GET  /apis/v3/list/project?company_id=…`
+- `GET  /apis/v3/list/billingactivity?workorder_id=…` (list tasks)
+- `GET  /apis/v3/list/billingsubactivity?billing_activity_id=…`
+- `GET  /apis/v3/list/taskdependency?company_id=…` — response wrapper varies: `taskdependencies` | `task_dependencies` | `dependencies` | `data` — try all
+- `GET  /apis/v3/detail/project/progressorder/<id>` — resolves project → workorder
+- `GET  /apis/v3/detail/billingactivity/<id>`
+- `POST /apis/v3/add/taskdependency`
+- `POST /apis/v3/add/billingprogresshistory`
+- `PATCH /apis/v3/edit/taskdependency`
+- `DELETE /apis/v3/delete/taskdependency/<id>`
+- `DELETE /apis/v3/delete/billingprogresshistory/<id>`
 
-**We need specs for (to build):**
-- `POST /apis/v3/list/billingactivity` — list tasks (for name-based UX)
-- `POST /apis/v3/list/billingsubactivity` — list locations under a task
-- `POST /apis/v3/update/taskdependency` — change dependency type/lag
-- `POST /apis/v3/delete/taskdependency` — remove a dependency
-- `POST /apis/v3/add/billingactivity` — create new task or sub-task
-- `POST /apis/v3/update/billingactivity` — edit task metadata
-- `POST /apis/v3/edit/progress/billingactivity/mark-start` — mark task started (already observed in network)
-
-Ask Akshansh for the missing 7 in one message — same format as the original taskdependency spec.
+**Internal endpoints (our backend):**
+- `POST /api/task-bot` — main chat (messages, token, baseUrl, session_title, model)
+- `POST /api/task-bot/chat-log` — write a single turn to Supabase (always-on)
+- `POST /api/task-bot/feedback` — 👍/👎 on an assistant message
+- `POST /api/task-bot/sessions` — list / load / rename chat sessions
+- `POST /api/task-bot/admin-stats` — 24h metrics for `/task-bot/admin`
 
 ---
 

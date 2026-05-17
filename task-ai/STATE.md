@@ -88,7 +88,39 @@ These can be deleted in Onsite UI if needed for clean state.
 
 ---
 
+## Open TODO (from Dhruv's testing feedback)
+
+- **AI auto-suggest chat rename** — when conversation has a clear project focus + chat title is null, surface a small "💡 Rename this chat to 'Interior Project'?" banner above the last reply
+- **Cross-chat suggestions** — if user mentions a topic that matches a past chat title/preview, surface those chats as one-click "resume" chips
+- **Visual data (tables, pie charts)** — for aggregate questions like "how many tasks have deps?", return a structured chart card alongside the text reply
+- **Switch OpenRouter → direct Anthropic API** — eliminate Google Vertex / Amazon Bedrock provider hops; needs ANTHROPIC_API_KEY from Dhruv
+- **Pre-check leaf status before proposing dep chains** — when bot proposes "1.1 → 1.2 → 1.3", verify each is_leaf=true BEFORE asking for confirmation; today bot can suggest a chain it can't actually create (Image 77/78)
+- **JSON-format training-prompt export** — pipe successful turns (with feedback=positive) into a fine-tuning-ready JSONL export
+
 ## Recent Changes
+
+- **2026-05-17 (post-compact, batch 6)** — Collapsible tree + server cache:
+  - MsgText now parses outline into a tree, renders with click-to-expand chevrons
+  - Trees with >20 total nodes start fully collapsed (parents-only view)
+  - Collapsed parents show "· N items · M total" inline preview
+  - 5-min in-process cache for list_companies / projects / tasks
+  - Cache auto-invalidates on any successful create/update/delete
+  - Saves Onsite API calls + LLM tokens on repeated lookups
+
+- **2026-05-17 (post-compact, batch 5)** — Hierarchical tree + dep enrichment:
+  - list_tasks builds full parent-child tree (sorted by order_index), emits `outline` field
+  - Each task line includes inline `🔗 N deps · X% done · Yd` markers
+  - Aggregate counts: total_leaves, total_with_dependencies, total_without_dependencies
+  - list_dependencies now fans out across all 25 companies (was hardcoded to first only — root cause of "0 deps" hallucination)
+  - Tries multiple response shapes: taskdependencies / task_dependencies / dependencies / data
+  - New delete_task_progress tool (Onsite UI supports it; bot now can too)
+  - Smart model routing: Sonnet 4.6 on action-verb + entity-name messages, Haiku 4.5 elsewhere
+
+- **2026-05-17 (post-compact, batch 4)** — Chat rename + session-scoped context:
+  - New table `task_ai_session_meta` (session_id, user_id, title, project_context) — migration 004
+  - History drawer: hover → pencil icon → inline rename
+  - Saved title becomes bot's system-prompt anchor: "User named this chat X — treat unspecified references as X"
+  - Header shows session title in violet when set
 
 - **2026-05-17 (post-compact, batch 3)** — Thumbs feedback for training data:
   - Each assistant message has 👍/👎 below it (after first turn)
