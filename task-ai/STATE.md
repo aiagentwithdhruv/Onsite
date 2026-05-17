@@ -90,6 +90,19 @@ These can be deleted in Onsite UI if needed for clean state.
 
 ## Recent Changes
 
+- **2026-05-17 (post-compact, batch 2)** — UI polish + P1/P2/P3 ship:
+  - New suggestion cards with custom SVG icons + colored accents
+  - Glassmorphism on setup screen + decorative background blurs
+  - ThinkingIndicator with pulsing avatar + 5-stage rotating status
+  - Mobile breakpoints — no horizontal scroll on 375px
+  - Hindi voice toggle (EN ↔ हिं) next to mic — stored in sessionStorage
+  - Header SAVE toggle for opt-in chat persistence
+  - Undo button on dependency cards (uses bot multi-turn loop)
+  - Retry button on error cards
+  - New `/api/task-bot/chat-log` endpoint writes to `task_ai_messages` (Supabase, RLS-protected, service-role-only)
+  - Migration 003: `task_ai_messages` table with feedback column, training-data ready
+- **2026-05-17 (post-compact)** — P0 #2 + #4: force re-call on hallucinated success + multi-action completion check. Guard injects synthetic user message demanding Claude either fire tool or admit failure. Max 1 forced recall.
+- **2026-05-17 (post-compact)** — P0 #3: `list_dependencies` pair-filter ("between A and B"). Tool spec accepts `ba_id_2`; system prompt instructs bot to resolve both names via `list_tasks` first.
 - **2026-05-17 (post-compact)** — P0 #1 fix: progress card now resolves real task name. Tries multiple response paths first (`monkey_patch_billing_activity_name`, nested `billing_activity.name`, etc.); if all empty, follows up with `GET /apis/v3/detail/billingactivity/<id>` using the `billing_activity_id` from the response. Final fallback: "Task" string (was: always "task" lowercase when patch field was empty).
 - **2026-05-17 02:00** — `location_id` made optional in `record_task_progress` tool (was breaking UX). Default to empty string.
 - **2026-05-17 01:30** — End-to-end test through chatbot UI successful (after fixing token misread).
