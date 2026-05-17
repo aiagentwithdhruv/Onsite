@@ -90,6 +90,17 @@ These can be deleted in Onsite UI if needed for clean state.
 
 ## Recent Changes
 
+- **2026-05-17 (post-compact, batch 3)** — Thumbs feedback for training data:
+  - Each assistant message has 👍/👎 below it (after first turn)
+  - New `/api/task-bot/feedback` writes to `task_ai_messages` with `feedback` column
+  - Smoke-tested: row writes confirmed via curl + Supabase REST GET
+  - Click → "Thanks — your 👍 helps the AI learn."
+- **2026-05-17 (post-compact, batch 2.5)** — Admin dashboard at `/task-bot/admin`:
+  - 24h totals, success rate, p50/p95 latency
+  - Per-tool breakdown with success-rate bars + avg latency
+  - Last 20 errors with codes + timestamps
+  - Gated by `TASK_AI_ADMIN_USERS` env allowlist (open if unset)
+  - 30s auto-refresh
 - **2026-05-17 (post-compact, batch 2)** — UI polish + P1/P2/P3 ship:
   - New suggestion cards with custom SVG icons + colored accents
   - Glassmorphism on setup screen + decorative background blurs
