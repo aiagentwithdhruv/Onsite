@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-17 02:30 IST
+**Last updated:** 2026-05-17 evening (batch 9 shipped — end-to-end chat-screen rebuild)
 
 ---
 
@@ -93,6 +93,20 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-17 (batch 9, post-compact)** — End-to-end chat-screen rebuild matching the design package (oniste-task-ai bundle from Claude Design / screens-chat.jsx):
+  - DependencyCard: emerald-gradient header, 22px gradient row badges (deep-violet → mid-violet), vertical emerald→violet connector with the type pill riding it, footer with copy + Undo pill chips
+  - ProgressCard: violet-gradient header, sectioned TASK / ADDED+TOTAL grid / italic NOTE on slate-50 bg
+  - TaskStatsCard: full primary-gradient header, 2×2 stat grid with internal slate dividers (was tinted ring tiles), progress-mix bar rows
+  - ErrorCard: rose-gradient header + "!" badge + rose pill "Try again"
+  - Chat header: back · sparkle · "Onsite AI · <Project>" one-line title + LIVE pill + auto-saved + Sandbox/Live env chip + 36px icon-btns
+  - Task tree: parent rows get 90deg violet→pink gradient bg + right-aligned duration tag; sub-rows show right-aligned 🔗N + N% via new `extractTaskMeta()` parser (`🔗N · X% · Yd` markers from backend)
+  - Suggested-next chips: `.suggest-chip` style — gradient soft bg, deep primary text, violet border, right-arrow icon, 12.5px
+  - Input bar: pill style, 40px circular icon-btns + EN/हिं middle chip + textarea (rounded-[20px]) + gradient circular send button
+  - Thinking indicator: sparkle + 3-dot bubble (rounded-bl-md) with rotating stage label on the side
+  - Setup screen: glowing sparkle hero, segmented Sandbox/Production with status dots, dark code-block token-help reveal, Shield trust line
+  - Welcome block: keeps bot intro bubble; adds "Resume a past chat" row + "Try one of these" labeled 2×2 grid with tinted icon backgrounds
+  - Commit: onsite-hub@5c11e02
 
 - **2026-05-17 (batch 7)** — All 6 open TODOs shipped in one batch:
   - AI auto-suggests chat rename (banner above latest reply when project is clear + title is null)
