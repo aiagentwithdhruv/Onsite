@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-19 (batch 19 shipped — plan-tier upsell for gated endpoints + list_progress_history)
+**Last updated:** 2026-05-19 (batch 20 — 3-tier routing locked: Gemini 3 Flash → Haiku → Sonnet, ~50× cheaper)
 
 ---
 
@@ -93,6 +93,16 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-19 (batch 20)** — 3-tier model routing locked (commit `d66f893`).
+  - **A/B-tested across 14 prompts** (`task-ai/scripts/3way-haiku-g2-g3.mjs`):
+    - Gemini 3 Flash Preview: 14/14, 8× cheaper than Haiku ✅ NEW DEFAULT
+    - Haiku 4.5: 14/14, baseline — now escalation tier
+    - Sonnet 4.6: 14/14, 3× more expensive — now final retry only
+    - Gemini 2.0 Flash: 11/14 (fails Hindi + memory recall) — REJECTED
+  - **Escalation ladder**: Gemini fails → Haiku → Sonnet. Hallucination guard + completion check route tier-by-tier instead of jumping straight to Sonnet.
+  - **Expected cost cut**: ~8× on top of Haiku-first commit. Total ~50× vs original Sonnet-heavy routing.
+  - **Override path**: `TASK_BOT_MODEL` env. If Gemini preview SKU gets deprecated, flip to Haiku in one var.
 
 - **2026-05-19 (batches 15-19)** — Bot reliability + product polish:
   - `3fa0238` — Three new tools: add_task / add_subactivity / search_tasks. record_task_progress now returns progress_history_id. New RULE 0.5 (remember last action).
