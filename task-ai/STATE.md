@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-19 (batch 14 shipped — desktop 3-column layout + lifetime stats + sidebar search)
+**Last updated:** 2026-05-19 (batch 19 shipped — plan-tier upsell for gated endpoints + list_progress_history)
 
 ---
 
@@ -93,6 +93,15 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-19 (batches 15-19)** — Bot reliability + product polish:
+  - `3fa0238` — Three new tools: add_task / add_subactivity / search_tasks. record_task_progress now returns progress_history_id. New RULE 0.5 (remember last action).
+  - `a1e1f13` — Multi-project disambiguation (RULE 0.6 + ambiguous flag in list_projects result). App-version headers attempted on add_task/add_subactivity.
+  - `3978777` — Optimistic sidebar insert on "+ New chat" (no refresh needed). Honest error message instead of looping retries.
+  - `3ce8c08` — Widened progress_history_id field search across 7 response shapes × 11 field-name variants. Server-logs response shape when nothing matches.
+  - `8597e16` — list_progress_history tool. New RULE 0.56 forbids fake -N delete reversals. Suppressed red 400 card for server-gated features.
+  - `74e98e2` — Plan-tier upsell language for gated endpoints ("Upgrade to Enterprise / add in Onsite app" instead of API jargon).
+  - Chrome extension v0.2.0: manifest now whitelists `*.trycloudflare.com` and `*.ngrok.io` so tunnel-based testing works without manual token paste.
 
 - **2026-05-19 (batch 14)** — Desktop polish round 3 (commits `4030087` + `7b51811`):
   - **AT A GLANCE rail switched to Option B** — four lifetime "via AI" tiles (Time saved, Deps, Progress logs, Actions) with a one-line "This chat · N turns" footer. All four read the same scope so it tells one consistent story.

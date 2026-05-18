@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Onsite AI Helper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Auto-connects Onsite Task AI to your logged-in Onsite session. No token pasting required.",
 
   "permissions": ["storage"],
@@ -11,7 +11,10 @@
     "https://*.onsiteteams.com/*",
     "https://*.onsiteteams.in/*",
     "http://localhost:3001/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://*.trycloudflare.com/*",
+    "https://*.ngrok.io/*",
+    "https://*.ngrok-free.app/*"
   ],
 
   "background": {
@@ -30,7 +33,10 @@
         "http://localhost:3000/task-bot*",
         "https://*.onsiteteams.com/task-bot*",
         "https://*.onsiteteams.in/task-bot*",
-        "https://onsite-hub.vercel.app/task-bot*"
+        "https://onsite-hub.vercel.app/task-bot*",
+        "https://*.trycloudflare.com/task-bot*",
+        "https://*.ngrok.io/task-bot*",
+        "https://*.ngrok-free.app/task-bot*"
       ],
       "js": ["taskbot-injector.js"],
       "run_at": "document_start"
