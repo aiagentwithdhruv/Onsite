@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-19 (batch 20 — 3-tier routing locked: Gemini 3 Flash → Haiku → Sonnet, ~50× cheaper)
+**Last updated:** 2026-05-19 (batch 21 — reverted to Haiku default after Gemini failed real-world Arohan test)
 
 ---
 
@@ -93,6 +93,12 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-19 (batch 21)** — Reverted default to Haiku 4.5 (commit `01f3757`).
+  - Gemini 3 Flash Preview failed real Arohan project test: first workorder probe returned empty → Gemini gave up + told user "no active workorder" instead of trying fan-out path. Mocked 14-test A/B (14/14 pass) didn't catch this real-world failure mode.
+  - **Active routing**: Haiku 4.5 default → Sonnet 4.6 escalation. Same as pre-batch-20.
+  - **Cost trade-off accepted**: ~8× more per token vs Gemini, but correctness > cost on a demo-stage product.
+  - A/B scripts still in repo for future re-testing. Gemini accessible via `TASK_BOT_MODEL` env var if needed.
 
 - **2026-05-19 (batch 20)** — 3-tier model routing locked (commit `d66f893`).
   - **A/B-tested across 14 prompts** (`task-ai/scripts/3way-haiku-g2-g3.mjs`):

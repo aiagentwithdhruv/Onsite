@@ -24,25 +24,24 @@ READ FIRST (in order)
 REPO STATE
 ═══════════════════════════════════════════════════════════════
 
-aiagentwithdhruv/onsite-hub @ d66f893  (code — clean)
-aiagentwithdhruv/Onsite    @ c54b20c  (docs — needs STATE.md push)
+aiagentwithdhruv/onsite-hub @ 01f3757  (code — Haiku default)
+aiagentwithdhruv/Onsite    @ (latest)  (docs synced through batch 21)
 
 ═══════════════════════════════════════════════════════════════
-MODEL ROUTING (3-tier, locked 2026-05-19, validated 14/14)
+MODEL ROUTING (locked 2026-05-19, post-production-test)
 ═══════════════════════════════════════════════════════════════
 
-TIER 1 default:     google/gemini-3-flash-preview   8× cheaper than Haiku
-TIER 2 escalation:  anthropic/claude-haiku-4-5       proven
-TIER 3 final:       anthropic/claude-sonnet-4-6      rare retry
+TIER 1 default:     anthropic/claude-haiku-4-5    proven on real production
+TIER 2 escalation:  anthropic/claude-sonnet-4-6   when Haiku hallucinates
 
-Override: TASK_BOT_MODEL env var (flip to Haiku if Gemini preview
-SKU gets deprecated/repriced).
+IMPORTANT: Gemini 3 Flash Preview was the default for ~30 minutes
+(commit d66f893) but failed on real Arohan project test — gave up
+when first workorder probe returned empty instead of trying
+fan-out. Reverted to Haiku in commit 01f3757. Mocked A/B passed
+14/14 but didn't capture real-world multi-step persistence.
 
-A/B-validated via Onsite/task-ai/scripts/3way-haiku-g2-g3.mjs:
-- Gemini 3 Flash: 14/14, $0.00027/prompt
-- Haiku 4.5:      14/14, $0.00213/prompt (baseline)
-- Sonnet 4.6:     14/14, $0.00640/prompt
-- Gemini 2.0:     11/14 (fails Hindi) — REJECTED
+Gemini still accessible via TASK_BOT_MODEL env var if we re-test.
+A/B scripts in Onsite/task-ai/scripts/ unchanged.
 
 ═══════════════════════════════════════════════════════════════
 TOOLSET (14 tools)
