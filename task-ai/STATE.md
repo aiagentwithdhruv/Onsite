@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-17 evening (batch 9 shipped — end-to-end chat-screen rebuild)
+**Last updated:** 2026-05-19 (batch 14 shipped — desktop 3-column layout + lifetime stats + sidebar search)
 
 ---
 
@@ -93,6 +93,33 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-19 (batch 14)** — Desktop polish round 3 (commits `4030087` + `7b51811`):
+  - **AT A GLANCE rail switched to Option B** — four lifetime "via AI" tiles (Time saved, Deps, Progress logs, Actions) with a one-line "This chat · N turns" footer. All four read the same scope so it tells one consistent story.
+  - **myStats live-refresh fix** — was only refreshing on dashboard view, so rail stayed at 0. Now refreshes on auth, on view change, AND after every tool call. Numbers bump up live as user works.
+  - **Sidebar search** — `Search chats…` input filters Recent chats by title + preview. Counter shows matched/total, clear button, empty state.
+  - **Desktop header cleanup** — removed duplicate clock (history) + sign-out + new-chat icons from chat & dashboard headers on lg+ (sidebar already has them). Mobile keeps them all.
+
+- **2026-05-19 (batch 13)** — Right-rail tap-to-paste tips (commit `5dbe648`):
+  - Project-aware tip list — switches between "For <project>" (when anchored) and "Try one of these" (generic onboarding).
+  - Each tip is a button that pastes into the chat input + focuses the textarea with caret at end. Doesn't auto-send.
+  - Pro Tip card at bottom (chained-command example) also tap-to-paste.
+
+- **2026-05-19 (batch 12)** — Living logo + sidebar rename/delete + Best Tips card (commit `70fec00`):
+  - Sparkle avatar gently breathes + glows + twinkles (respects prefers-reduced-motion).
+  - Desktop sidebar chat rows get hover-reveal rename (pencil) + delete (trash). Inline rename input + Yes/No confirm for delete.
+  - Dashboard's "Continue a past chat" removed on desktop (sidebar shows the list); replaced with a 2×2 "Best tips" card grid. Mobile keeps the past-chat list.
+
+- **2026-05-19 (batch 11)** — Desktop 3-column layout shipped (commit `77470ee`):
+  - Left sidebar (272px, lg+, persistent): brand · "+ New chat" · Dashboard/Chat nav · Recent chats list · user card.
+  - Main pane (flex-1): dashboard turns into 4-up stat grid + 4-column suggestion grid; chat keeps a centered 3xl reading column inside.
+  - Right context rail (280px, chat only, lg+): project anchor · stats · tips.
+  - Mobile (< lg) renders single-column exactly as before.
+
+- **2026-05-19 (batch 10)** — get_project_stats + hallucination guard refinements (commits `c6f98d0` / `38f5435`):
+  - **Hallucination guard tightened** — was misfiring on innocent "tell me tasks" queries (regex matched "12% done" in list output). Now requires first-person action claims ("✅ Done!", "I created", "Successfully logged") to trigger a forced recall.
+  - **Stat card labels** — `Total / Leaf / With Deps / Without Deps` → `Main / Sub / Leaf / With Deps` (matches Onsite UI's task tree).
+  - **Multi-workorder aggregation** — get_project_stats now tries `/list/progressorder` and `/list/workorder` first, falls back to single-workorder via `/detail/progressorder`. Sums tasks/leaves/deps across every workorder for the project. Card title shows ` · N workorders` when >1.
 
 - **2026-05-17 (batch 9, post-compact)** — End-to-end chat-screen rebuild matching the design package (oniste-task-ai bundle from Claude Design / screens-chat.jsx):
   - DependencyCard: emerald-gradient header, 22px gradient row badges (deep-violet → mid-violet), vertical emerald→violet connector with the type pill riding it, footer with copy + Undo pill chips
