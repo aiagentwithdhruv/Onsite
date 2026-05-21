@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-19 (batch 21 — reverted to Haiku default after Gemini failed real-world Arohan test)
+**Last updated:** 2026-05-22 (V3 architecture lock + compact system online)
 
 ---
 
@@ -93,6 +93,29 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-22 (V3 ARCHITECTURE LOCK + COMPACT SYSTEM)** — Major doc cycle:
+  - **Capability changed:** Architecture V3 finalized as canonical source of truth. Compact system added for session-handoff durability.
+  - **Files created (10):**
+    - `task-ai/BRD-V3.md` (business requirements)
+    - `task-ai/PRD-V3.md` (12 phases, 25 tools)
+    - `task-ai/ARCHITECTURE-V3.md` (master architecture — adds §13 Alerts, §14 Domain features, §15 Observability/Security, §16 Demo tenant, §17 Tool catalogue)
+    - `task-ai/HLD-V3.md` (component contracts, data flows, scaling, anti-patterns)
+    - `task-ai/LLD-V3.md` (migrations 011-018, API contracts, tool specs)
+    - `task-ai/compact/README.md`
+    - `task-ai/compact/PRE-COMPACT-PROMPT.md`
+    - `task-ai/compact/POST-COMPACT-PROMPT.md`
+    - `task-ai/compact/SNAPSHOT-2026-05-22-1500.md` (V3-lock snapshot)
+    - `task-ai/compact/SNAPSHOT-2026-05-22-1700.md` (this one, capturing the compact-system itself)
+  - **Files modified (2):** `task-ai/CLAUDE.md` rewritten to point at V3 doc set; `task-ai/MEMORY.md` rewritten with 35 entries (M-01–M-35).
+  - **Commits landed (onsite-hub):** none this session segment (last is `445aa76` deploy script).
+  - **In progress (uncommitted in Onsite repo):** all 10 V3 + compact files + CLAUDE.md + MEMORY.md edits — needs `git add task-ai/ && git commit && git push` to land on GitHub.
+  - **New env vars:** none (the 12+ envs listed in LLD-V3.md §7 are planned, not yet set).
+  - **Migrations applied:** none new (010 still latest applied to `xcvrdjhnvngfzczumquq`).
+  - **Decisions locked:** all 6 sign-off decisions (Next.js until 50K DAU, no Ollama self-host, KG after RAG, best labeling UI, direct keys + OpenRouter fallback, Razorpay later); plus embedding=gemini-embedding-2, voice browser=Gemini 3.1 Flash native audio, voice phone=OpenAI gpt-4o-mini-realtime (QH-locked), vision=2-pass Gemini Flash→Pro, multimodal-RAG-System as primary RAG lift, 10 alert rules, 10 domain features unlocked, Sentry+Langfuse+Posthog observability stack, demo tenant from day 1.
+  - **Phase status:** Pre-Phase 0. Phase 0 demo polish queued as the next concrete action.
+
+
 
 - **2026-05-19 (batch 21)** — Reverted default to Haiku 4.5 (commit `01f3757`).
   - Gemini 3 Flash Preview failed real Arohan project test: first workorder probe returned empty → Gemini gave up + told user "no active workorder" instead of trying fan-out path. Mocked 14-test A/B (14/14 pass) didn't catch this real-world failure mode.
