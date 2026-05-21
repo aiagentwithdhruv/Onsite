@@ -2,7 +2,7 @@
 
 > Living document. Last source of truth for "what works right now."
 
-**Last updated:** 2026-05-22 (V3 architecture lock + compact system online)
+**Last updated:** 2026-05-22 evening (Phase 0-10 E2E shipped)
 
 ---
 
@@ -93,6 +93,24 @@ These can be deleted in Onsite UI if needed for clean state.
 (None as of 2026-05-17 evening — all batches 1-7 shipped. Next: live testing → polish.)
 
 ## Recent Changes
+
+- **2026-05-22 evening (PHASE 0-10 E2E SHIPPED)** — End-to-end implementation of every V3 phase that has no external blocker. All committed on `feat/pwa-whatsapp-wave` branch in onsite-hub.
+  - **Phase 0 (`9dad6d7`)** — observability skeleton. Sentry + Langfuse + Posthog wrappers. All no-op without env. `traceLLM` wraps each Claude iteration; `captureError` on 500. `instrumentation.ts` for Sentry Node runtime.
+  - **Phase 1 (`<new sha>`)** — persistent memory tier. Migration 011 (memory_entries + match_memory_entries RPC, HNSW vector idx, RLS). `src/lib/memory/{embeddings,repository}.ts` using gemini-embedding-2 @ 1536-dim. `save_memory` + `recall_memory` agent tools. REST routes at /api/task-bot/memory/{save,recall}.
+  - **Phase 2 (`8a78195`)** — semantic cache + per-tenant cost cap. `src/lib/agent/cache.ts` (Upstash, exact + semantic ≥0.95). `src/lib/agent/cost_cap.ts` (IST day-bucketed, default ₹200/tenant/day, hard refuse on overflow). Wired into route.ts.
+  - **Phase 3 (`<new sha>`)** — heartbeat. `src/lib/heartbeat/{scanner,delivery,decay}.ts`. `/api/task-bot/heartbeat/tick` (CRON_SECRET-gated). `vercel.json` schedule `0 * * * *`. Decay runs 3am IST.
+  - **Phase 4 (`<new sha>`)** — Python action runner. `src/lib/agent/python_runner.ts` (spawn python3, 30s timeout, 512KB output cap, secrets stripped). 3 whitelisted scripts: export_csv / weekly_summary / calc_critical_path. `execute_script` agent tool.
+  - **Phase 5 (`<new sha>`)** — hybrid RAG. Migration 013 (rag_documents + rag_chunks, HNSW vector + GIN tsvector + RLS, `match_rag_chunks` RRF RPC). `src/lib/rag/{chunker,ingest,query}.ts`. Tools + REST: `/api/task-bot/rag/{ingest,query}`, `rag_query` agent tool.
+  - **Phase 5.5 (`<new sha>`)** — vision document AI. Migration 012 (documents). `src/lib/vision/{schemas,validators,extract}.ts` — 8 doc types, GSTIN+sum validators, Gemini Flash → Pro 2-pass. `/api/task-bot/vision/analyze-document`.
+  - **Phase 7 (`951dfaf`)** — training labels + golden-set eval. Migration 014 (training_labels + golden_set). `/api/task-bot/training/label` POST+GET. `scripts/eval-golden.mjs` CI eval harness.
+  - **Phase 8 (`2799faf`)** — support state machine. Migration adds support_phase + support_context columns to task_ai_session_meta. `src/lib/agent/support_phase.ts` with TRIAGE → INVESTIGATE → RESOLVE → CONFIRM → CLOSED. `/api/task-bot/support/phase`.
+  - **Phase 10 (`<new sha>`)** — alerts (10 rules) + domain (weather + geo + vendor scores). Migration 016 (alert_rules, alert_log w/ dedup_hash unique idx, webhooks, webhook_deliveries, progress_geo, vendor_scores, weather_cache, all RLS-protected). 10 alert rules in `src/lib/alerts/rules.ts`. `src/lib/domain/{weather,geo}.ts`. `/api/task-bot/alerts/log`.
+  - **Phases SKIPPED (need external)**: 6 (voice — ElevenLabs + Twilio + QH config), 9 (mobile Capacitor — Apple Dev), 11 (Razorpay — deferred per locked decision), 12 (KG — deferred per locked decision).
+  - **Migrations applied to xcvrdjhnvngfzczumquq**: 011 (memory), 011a (match RPC), 012 (documents), 013 (rag), 014 (training), 015 (support_phase), 016 (alerts + domain). All in supabase/migrations/ + mirrored in database/.
+  - **Production build**: `npm run build` passes — 31 pages compiled, 16 new API routes registered. No TS errors. Build warnings about @sentry/nextjs's `import-in-the-middle` peer dep are known/harmless.
+  - **Dev server**: PID conflict on 3001 (another @agentron/web project owns it). onsite-hub running on **3002** for this session. Update tunnel + .env.local if/when re-deploying.
+  - **Phases NOT yet wired into the chat UI**: vision-document upload (need frontend file picker), alert panel (need polling component), heartbeat surfacing (need /welcome banner). All endpoints exist; UI integration is a separate ~3 hour task.
+  - **New env vars in `.env.example`**: ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, SENTRY_DSN, LANGFUSE_*, POSTHOG_*, UPSTASH_REDIS_REST_*, TASK_AI_DAILY_COST_CAP_INR, DEMO_TENANT, OPENWEATHERMAP_API_KEY, GEMINI_EMBEDDING_MODEL, VISION_FLASH_MODEL, VISION_PRO_MODEL, CRON_SECRET.
 
 - **2026-05-22 (V3 ARCHITECTURE LOCK + COMPACT SYSTEM)** — Major doc cycle:
   - **Capability changed:** Architecture V3 finalized as canonical source of truth. Compact system added for session-handoff durability.

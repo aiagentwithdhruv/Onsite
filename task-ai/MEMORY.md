@@ -125,6 +125,18 @@ Photo metadata can be edited or stripped. Server-side validation against project
 ### M-35. Weather API caching matters
 OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/month — within free tier IF cached. **Cache per project location for 6h** in Redis. Without cache, you'll burn through free tier in days.
 
+### M-36. Port 3001 owned by @agentron/web — onsite-hub uses 3002
+2026-05-22 dev session: Next.js task-bot startup failed silently while onsite-hub processes existed but didn't bind. Root cause: `@agentron/web` (separate project, `next-server v15.5.12`, PID 3669 since 1:42 PM) already owned port 3001. **Apply:** Always check `lsof -i :3001` before starting onsite-hub dev. If contested, use `--port 3002`. Update the tunnel + `.env.local` `BASE_URL` accordingly. Long term: assign each AIwithDhruv project a stable dev port (onsite-hub=3001, quothit=3010, angelina=3020 etc).
+
+### M-37. Sentry instrumentation peer-dep warning is harmless
+2026-05-22: First `npm run dev` after installing `@sentry/nextjs` printed `⚠ Package import-in-the-middle can't be external` from `@fastify/otel` and `@prisma/instrumentation` nested deps. Not from our code. **Apply:** Ignore. If Sentry traces stop working we'll add `import-in-the-middle@3.0.1` as a direct dep. Don't try to fix proactively — adds 100+ packages to the lockfile.
+
+### M-38. Cost-cap = char-count / 4 estimate until streaming lands
+2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
+
+### M-39. Embedding model env var is `gemini-embedding-001` for now
+Per M-01 the V3 doctrine is `gemini-embedding-2`. Per the actual `ai.google.dev` model list as of Apr 2026, the API name is `gemini-embedding-001` (the marketing 2.0 announcement uses the same identifier in the v1beta endpoint). **Apply:** Code reads model name from `GEMINI_EMBEDDING_MODEL` env var (default `gemini-embedding-001`). When Google publishes a separate `gemini-embedding-2` identifier OR confirms the rebrand, flip the env. Vectors written today at 1536-dim Matryoshka are intended to be forward-compatible with `gemini-embedding-2` per Google's published roadmap.
+
 ---
 
 ## Where to find more
