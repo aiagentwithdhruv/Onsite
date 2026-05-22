@@ -134,6 +134,20 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-40. Position numbers as UUIDs — Onsite silently 200s, bot fakes success
+
+**2026-05-22:** Haiku 4.5 passed `"3.1"` as `billing_sub_activity_id` (the tree position of Coupler under Drilling) and `"3"` as `billing_activity_id`. Onsite's `/apis/v3/...` endpoints returned **HTTP 200** on those bad IDs — either by writing to an orphan record nobody can see, or by silently 404ing. Bot then reported `"✅ Done! +2 meter logged"` while the actual Onsite UI still showed `0/1 numbers, NotStarted, No Progress Update Added` for the real Coupler.
+
+This is a **prompt-following lapse** by Haiku — system prompt RULE -1 explicitly forbids using list positions as IDs, but the model still slipped under phrasing like "on drilling mark 1 progress" right after a numbered-list reply.
+
+The existing hallucination guard (M-23) didn't catch it because it looks for "I created X" claims with NO tool firing — here a tool DID fire, just with the wrong ID.
+
+**Apply:**
+1. **Hard UUID guard at the tool boundary** in route.ts (shipped 2026-05-22 commit). Validates every ID-shaped arg against `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` BEFORE the fetch. Returns a structured error forcing the bot to call `list_*` to resolve the real UUID.
+2. Guard covers: `primary_ba_id`, `secondary_ba_id`, `billing_sub_activity_id`, `billing_activity_id`, `progress_history_id`, `dep_id`, `ba_id`, `ba_id_2`, `project_id`, `company_id`, `workorder_id`.
+3. Logs every trip as `[task-bot] UUID guard tripped iter=… field=… value=…` so you can grep `/tmp/onsite-hub-dev.log` for it.
+4. **Trust no LLM output for IDs** — even when the system prompt is explicit. The bug surface is too wide; defense at the API boundary is the only durable fix.
+
 ### M-39. Embedding model env var is `gemini-embedding-001` for now
 Per M-01 the V3 doctrine is `gemini-embedding-2`. Per the actual `ai.google.dev` model list as of Apr 2026, the API name is `gemini-embedding-001` (the marketing 2.0 announcement uses the same identifier in the v1beta endpoint). **Apply:** Code reads model name from `GEMINI_EMBEDDING_MODEL` env var (default `gemini-embedding-001`). When Google publishes a separate `gemini-embedding-2` identifier OR confirms the rebrand, flip the env. Vectors written today at 1536-dim Matryoshka are intended to be forward-compatible with `gemini-embedding-2` per Google's published roadmap.
 
