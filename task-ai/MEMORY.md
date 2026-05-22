@@ -134,6 +134,30 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-42. Bot picks wrong sub-activity from a list + lies about the name
+
+**2026-05-22 (Drilling/Coupler incident):** User asked "mark 1 unit progress in task 3.1 Coupler". Bot correctly resolved Drilling's BA UUID via `list_tasks`, then called `list_subactivities` which returned BOTH **Coupler** (the actual sub-activity) AND **"Location 1"** (Drilling's auto-default sub-activity). Bot picked Location 1's UUID, called `record_task_progress`, API succeeded with `sub_activity_name="Location 1"` — but bot then COMPOSED its reply as `"✓ Done! Logged 1 unit on Coupler"`. Onsite UI showed Drilling 28.57% and Coupler 0/1 — because progress landed on Location 1, not Coupler.
+
+UUID provenance check (M-41) PASSED because both UUIDs came from a legit `list_subactivities` result. Bot just chose the wrong one AND lied in text about which one it chose.
+
+**Apply (shipped 2026-05-22):**
+1. **System prompt RULE 0.8** — "your reply text MUST reference the EXACT task_name and sub_activity_name returned by the API, NOT what the user originally asked for. If they don't match, flag the mismatch explicitly."
+2. **Server-side name-match check** in `record_task_progress` handler. Scans last 3 user messages for capitalized/quoted tokens; if any of them looks like a sub-activity name AND the actual returned `sub_activity_name` doesn't appear in user text, append `name_mismatch_warning` to the tool result. Forces bot to either retract or own up to the mismatch.
+3. **`assistant_must_reference` field** added to record_task_progress success response. Bot can't claim it didn't see the canonical names.
+
+**Why not just block the wrong pick?** Detecting "user meant Coupler" vs "user accepted Location 1" needs NLP intent — fragile. The warning approach lets the bot still write progress when ambiguous, but forces transparent reporting about WHERE it landed.
+
+### M-43. Vision LLMs hallucinate vendor names from context, not pixels
+
+**2026-05-22:** User uploaded a random image (not an invoice) to the Vision Upload modal. Gemini 2.5 Flash returned `{vendor_name: "AiwithDhruv", line_items: []}`. The image had no AiwithDhruv text at all — model pattern-matched from system prompt context ("Indian construction app", user's brand) and confidently fabricated a vendor name.
+
+**Apply (shipped 2026-05-22):** Tightened `src/lib/vision/extract.ts` system prompt with explicit anti-hallucination block:
+- "DO NOT INFER. DO NOT GUESS. If a field is not VISIBLY PRESENT, OMIT it."
+- "If the image is NOT actually a \<doc_type\>, return `{not_a_<doc_type>: true, what_is_it: '...'}`. Do NOT fake extract."
+- Specific rules: vendor/company names only if you can READ them; amounts only digits you can see, no estimation.
+
+This is a model-level reliability fix. Validators (M-33) catch arithmetic errors but can't catch "the LLM made up a vendor name out of thin air." Prompt is the only defense for that class.
+
 ### M-41. UUID shape alone isn't enough — bot hallucinates plausible UUIDs
 
 **2026-05-22 (~30 min after M-40 fix):** With the UUID-shape guard live, Haiku 4.5 stopped passing `"3.1"` — but immediately started passing **fabricated UUID-shaped strings** like `"8c3d4e5f-2b1a-4c9d-8e7f-1a2b3c4d5e6f"` (note the sequential hex bytes, classic LLM confabulation). Used the SAME made-up UUID as `billing_sub_activity_id` AND `project_id` across two tool calls in iter=0/iter=1.
