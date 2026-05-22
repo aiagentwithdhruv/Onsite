@@ -134,6 +134,48 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-44. Typed UUID provenance — BA UUIDs ≠ sub-activity UUIDs
+
+**2026-05-23:** Even with shape (M-40) and provenance (M-41) guards, the model can still mix UUID *types*. A Billing Activity UUID and a Sub-Activity UUID look identical to a regex but mean different things to Onsite. If the bot grabs a UUID from a `list_tasks` result and passes it as `billing_sub_activity_id`, Onsite's API will reject it — but only after the round-trip, wasting tokens and risking partial-state writes for transactional tools.
+
+**Apply (shipped 2026-05-23):**
+- Server-side walks each `(assistant w/ tool_calls → tool result)` pair in `workingMessages`, tags every UUID in the result with the SOURCE tool's entity type via `TOOL_TO_TYPE` map:
+  - `list_companies` → `company`
+  - `list_projects` → `project`
+  - `list_tasks` / `search_tasks` → `ba`
+  - `list_subactivities` → `sub_activity`
+  - `list_dependencies` → `dep`
+  - `list_progress_history` → `progress`
+- Each ID-shaped arg field is mapped to its EXPECTED type via `FIELD_TO_TYPE`:
+  - `billing_sub_activity_id` → expects `sub_activity`
+  - `billing_activity_id` / `ba_id` / `primary_ba_id` / `secondary_ba_id` → expects `ba`
+  - `project_id` → expects `project`
+  - `company_id` → expects `company`
+  - `progress_history_id` → expects `progress`
+  - `dep_id` → expects `dep`
+- Guard fires when the UUID exists in a DIFFERENT type bucket than expected. Error message names both the actual and expected types + the resolver tool to call.
+- Only fires when we KNOW the source type. UUIDs from user paste (typed nowhere) fall through to the looser M-41 provenance check — they're accepted on conversation presence alone.
+
+**Why this matters:** the three guards now stack:
+1. M-40 shape — rejects `"3.1"`, `"the-raft-work-ba-id"`, etc.
+2. M-41 provenance — rejects fabricated UUID-shaped strings
+3. M-44 typed — rejects right-shape, real-but-wrong-type UUIDs
+
+Together they make "the bot fired the wrong tool args" virtually impossible — every failure mode now produces a structured server error the bot must address.
+
+### M-45. Memory dedup at save — same fact, repeated, doesn't help recall
+
+**2026-05-23:** When system-prompt RULE 0.7 instructs the bot to "proactively save memories", it tends to save the SAME fact (e.g. `topic=name, content=Dhruv`) once per session — accumulating 5 identical rows by week's end. Each adds noise to recall (same fact returned 5×) and bloats the embedding index.
+
+**Apply (shipped 2026-05-23):** `saveMemory` now pre-checks for an existing row in the same tenant + type with a similar topic (case-insensitive ILIKE). If found, the dedup heuristic compares normalized content:
+- Exact match (after lowercasing + whitespace collapse) → UPDATE existing row
+- Substring containment in either direction (5+ chars) → UPDATE existing row
+- Otherwise → INSERT new row
+
+When deduped, the existing row's content + tags + importance + embedding + `updated_at` are refreshed. Returns `{id, deduped: true}` so callers can distinguish.
+
+Trade-off: small overhead per save (one extra SELECT). Worth it — memory hygiene compounds.
+
 ### M-42. Bot picks wrong sub-activity from a list + lies about the name
 
 **2026-05-22 (Drilling/Coupler incident):** User asked "mark 1 unit progress in task 3.1 Coupler". Bot correctly resolved Drilling's BA UUID via `list_tasks`, then called `list_subactivities` which returned BOTH **Coupler** (the actual sub-activity) AND **"Location 1"** (Drilling's auto-default sub-activity). Bot picked Location 1's UUID, called `record_task_progress`, API succeeded with `sub_activity_name="Location 1"` — but bot then COMPOSED its reply as `"✓ Done! Logged 1 unit on Coupler"`. Onsite UI showed Drilling 28.57% and Coupler 0/1 — because progress landed on Location 1, not Coupler.
