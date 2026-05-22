@@ -134,6 +134,20 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-41. UUID shape alone isn't enough — bot hallucinates plausible UUIDs
+
+**2026-05-22 (~30 min after M-40 fix):** With the UUID-shape guard live, Haiku 4.5 stopped passing `"3.1"` — but immediately started passing **fabricated UUID-shaped strings** like `"8c3d4e5f-2b1a-4c9d-8e7f-1a2b3c4d5e6f"` (note the sequential hex bytes, classic LLM confabulation). Used the SAME made-up UUID as `billing_sub_activity_id` AND `project_id` across two tool calls in iter=0/iter=1.
+
+**Root cause:** When the model is asked for an ID it doesn't have, regex-shape validation lets the model "satisfy" the constraint by inventing UUID-shaped garbage. The shape is necessary but not sufficient.
+
+**Apply (shipped 2026-05-22 same session):**
+- **UUID provenance check** at the dispatcher boundary. Build `KNOWN_UUIDS` set by scanning ALL prior message text (user + assistant + tool result) for the UUID regex pattern. Every ID-shaped tool arg must already be in `KNOWN_UUIDS` to be accepted.
+- A real UUID can only enter the conversation via (a) a user paste, or (b) a prior tool result. The model cannot conjure one that wasn't shown to it.
+- Triggers error: `"<uuid>" looks like a UUID, but has NEVER appeared in any prior tool result or user message. You almost certainly fabricated it. Call list_* to get the REAL UUID.`
+- Defense in depth on top of M-40 shape guard. Both run on every tool call.
+
+**Why this works:** LLMs can mimic the SHAPE of a UUID (32 hex chars + dashes) but can't guess the actual contents that match a real database row. By keeping a ledger of UUIDs the model has been told about, we anchor it to ground truth without needing schema knowledge of every endpoint.
+
 ### M-40. Position numbers as UUIDs — Onsite silently 200s, bot fakes success
 
 **2026-05-22:** Haiku 4.5 passed `"3.1"` as `billing_sub_activity_id` (the tree position of Coupler under Drilling) and `"3"` as `billing_activity_id`. Onsite's `/apis/v3/...` endpoints returned **HTTP 200** on those bad IDs — either by writing to an orphan record nobody can see, or by silently 404ing. Bot then reported `"✅ Done! +2 meter logged"` while the actual Onsite UI still showed `0/1 numbers, NotStarted, No Progress Update Added` for the real Coupler.
