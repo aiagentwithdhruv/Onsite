@@ -134,6 +134,28 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-47. Project anchor — one project per chat, server-enforced, slashes cost
+
+**2026-05-23:** Every chat used to re-do `list_companies → list_projects` on every single turn. Two problems: (a) burning Onsite API budget, (b) giving the LLM repeated opportunities to fabricate UUIDs (M-41) or pick the wrong company UUID (M-44). Also the user explicitly asked: "make the onboarding fixed, not random — every new chat should anchor to one project and stay there."
+
+**Apply (shipped 2026-05-23):**
+
+1. Migration 017 added `project_anchor JSONB` column to `task_ai_session_meta`. Stores `{project_id, project_name, company_id, company_name, anchored_at}`.
+
+2. **Onboarding flow (anchor-null state):** RULE 0.4 in system prompt locks the bot to ONE action — ask "which project?" + accept user's reply + call `list_projects(search_query=name)` once. No other tools allowed.
+
+3. **Auto-anchor:** when `list_projects` returns exactly ONE match during onboarding (no anchor + session_id + unambiguous match), server auto-persists the anchor + auto-renames the session title to the project name. No bot action needed. Tool result includes `chat_locked_to_project: {tell_user: "..."}` so the bot's reply acknowledges the lock.
+
+4. **Anchored state:** RULE 0.4 swaps to a different prompt fragment that injects the anchor as hardcoded facts. Bot uses the IDs directly — NO list_companies / list_projects every turn. If user mentions a different project name, bot refuses to switch and suggests `+ New chat`.
+
+5. **M-46 partial revert (cost):** Sonnet-as-default-for-writes was costing $0.15-0.18/call × multi-iter = unsustainable. Reverted to Haiku-only default. What makes Haiku safe NOW: the anchor short-circuits multi-step resolution. Haiku doesn't need to chase list_companies → list_projects → list_tasks → list_subactivities anymore — the first three IDs come from the anchor, only the leaf needs lookup. Guards (M-40/41/44) still catch fabrication.
+
+**Why this works for cost:** Per write turn:
+- Before anchor: list_companies + list_projects + list_tasks + list_subactivities + record = ~5 Haiku iters + occasional Sonnet escalation = ₹0.30+
+- After anchor: list_tasks (cached) + list_subactivities + record = ~3 Haiku iters = ₹0.05
+
+**Net: 6× cheaper, and more reliable because anchor removes the entire UUID-resolution failure surface.**
+
 ### M-46. Write-tool turns belong on Sonnet, not Haiku — and the UI shouldn't show recovery as failure
 
 **2026-05-23 (Earth Work incident):** User said `"Log progress on Earth Work, 50 units"`. Haiku 4.5 fabricated SHA256-hash IDs (`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`), placeholder strings (`"dhruv-construction"`), 8e3e-pattern fake UUIDs (`c9b7c8f2-8e3e-4e3e-8e3e-8e3e8e3e8e3e`) across three different retry iterations. All caught by M-40/M-41/M-44 guards. Bot eventually got to the right Onsite UUID at iter=4 — but `MAX_ITERATIONS=8` ran out before it could complete the write. User saw an "I tried several steps but couldn't complete that fully" reply + a red error card from the FIRST failed iteration. **Looked like a total failure when the system was actually self-correcting.**
