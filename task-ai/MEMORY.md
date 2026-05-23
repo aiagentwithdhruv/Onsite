@@ -134,6 +134,22 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-46. Write-tool turns belong on Sonnet, not Haiku — and the UI shouldn't show recovery as failure
+
+**2026-05-23 (Earth Work incident):** User said `"Log progress on Earth Work, 50 units"`. Haiku 4.5 fabricated SHA256-hash IDs (`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`), placeholder strings (`"dhruv-construction"`), 8e3e-pattern fake UUIDs (`c9b7c8f2-8e3e-4e3e-8e3e-8e3e8e3e8e3e`) across three different retry iterations. All caught by M-40/M-41/M-44 guards. Bot eventually got to the right Onsite UUID at iter=4 — but `MAX_ITERATIONS=8` ran out before it could complete the write. User saw an "I tried several steps but couldn't complete that fully" reply + a red error card from the FIRST failed iteration. **Looked like a total failure when the system was actually self-correcting.**
+
+**Three compounding bugs, three fixes (shipped same day):**
+
+1. **Haiku misroutes write-turns.** Detect action verbs (`log progress`, `record progress`, `mark`, `create dep`, `delete`, `update`, `add task`, `undo`, plus Hindi equivalents) in the user's latest message and start the turn on Sonnet 4.6 instead. Haiku still handles read-only turns (cost preserved). Net: write success on first try, fewer total LLM calls than the Haiku-retry-then-escalate path.
+
+2. **Error card message was hardcoded to "position number"** — fired for fabricated-UUID and wrong-type violations too. Now tracks `violationKind: 'shape' | 'fabricated' | 'wrong_type'` and renders type-specific copy. User sees "Bot tried to use a made-up UUID" vs "Bot used a UUID from the wrong list" vs "Bot passed an invalid ID."
+
+3. **UUID-guard trips are recovery steps, not failures.** They shouldn't render to the user. Card now only emits when the FINAL state is failure — if a later iter succeeded, the leftover error card is cleared. UI only shows what actually matters.
+
+4. **`MAX_ITERATIONS` 8 → 12.** UUID-guard recoveries can chew 4 list_* calls before the write succeeds (companies → projects → tasks → subactivities). 8 was too tight; 12 gives breathing room without runaway loops.
+
+**Apply:** trust the multi-guard recovery loop. The bot WILL fabricate IDs occasionally — that's the LLM. Defense in depth (M-40/41/44 + Sonnet-for-writes + larger iter budget) makes it self-heal.
+
 ### M-44. Typed UUID provenance — BA UUIDs ≠ sub-activity UUIDs
 
 **2026-05-23:** Even with shape (M-40) and provenance (M-41) guards, the model can still mix UUID *types*. A Billing Activity UUID and a Sub-Activity UUID look identical to a regex but mean different things to Onsite. If the bot grabs a UUID from a `list_tasks` result and passes it as `billing_sub_activity_id`, Onsite's API will reject it — but only after the round-trip, wasting tokens and risking partial-state writes for transactional tools.
