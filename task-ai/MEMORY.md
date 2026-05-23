@@ -134,6 +134,33 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-50. Fuzzy project search — typos must still match
+
+**2026-05-24:** User typed "soul projecs" (typo for "soul projects"). `list_projects` did exact substring match → returned ZERO → bot said "no projects found." Soul Space Project obviously exists.
+
+**Apply (shipped 2026-05-24):** Two-stage matching:
+1. Exact substring first (fast path, preserves prior clean-query behavior)
+2. If zero matches → tokenize (significant tokens ≥3 chars) → score each project by token-substring matches (1.0 each) + 5-char-stem matches (0.5 each) → sort by score → return matches with score > 0
+
+So `"soul projecs"` → tokens `["soul", "projecs"]` → Soul Space Project scores 1.0 (soul) + 0.5 (proje stem of projecs) = 1.5 → match.
+
+Catches: "eppc peb", "arrohan", "soul projecs", "interior projec" — all typos that previously returned zero.
+
+### M-49. Anchored chits always go to DeepSeek + DeepSeek provider pinning
+
+**2026-05-24:** After M-48 added 3-tier routing (gpt-4o-mini for trivial, DeepSeek for the rest), the anchored "hi" was STILL returning generic "Hey! How can I assist you today?" — because pickModel routed short messages to gpt-4o-mini even when an anchor was set. gpt-4o-mini saw the 150-line anchored prompt fragment but doesn't follow long RULE 0.9 instructions reliably — just emits a quick generic ack.
+
+Also discovered: DeepSeek V4 Pro cost varied **6× across providers** on OpenRouter (Alibaba Cloud $0.024/call vs SiliconFlow $0.0036/call) — completely undermining the M-48 cost math.
+
+**Apply (shipped 2026-05-24):**
+1. `pickModel(messages, hasAnchor)` — if `hasAnchor=true`, ALL turns (including "hi") route to DEFAULT_MODEL (DeepSeek V4 Pro). Only truly fresh chats (no anchor) use FAST_MODEL.
+2. `provider: { order: ['SiliconFlow', 'DeepSeek', 'Together', 'Nebius'], sort: 'price', allow_fallbacks: true }` added to every OpenRouter call when model starts with `deepseek/`. Brings cost back to listed price.
+3. Log line now includes `{anchored: true/false}` so routing is observable.
+
+**Also shipped same day:** RULE 0.9 in `project_anchor.ts` — bot MUST reference `${anchor.project_name}` on vague openers ("hi", "what can we do", "let's work"), surface useful facts (progress %, recent activity), and suggest the obvious next step after every successful action. Forbidden: "How can I assist you?" with no anchor reference.
+
+**Client seed greeting** updated to match RULE 0.4 wording: "Hey 👋 I'm Onsite AI. Which project are we working on today?" — was previously generic "I can create task dependencies..."
+
 ### M-48. 3-tier model stack — GPT-4o-mini fast, DeepSeek V4 Pro default, Haiku escalation
 
 **2026-05-23 hard bench confirmed:** DeepSeek V4 Pro matches Haiku 4.5 on 8/8 multi-step UUID-fidelity tests (including update + delete + Hindi write) at 2.7× lower cost. GPT-4o-mini is 2× faster than Haiku on trivial replies at 7× lower cost but missed 1/8 on RULE 0.65. Sonnet 4.6 retired entirely (cost was ~$0.18/call × multi-iter = unsustainable).
