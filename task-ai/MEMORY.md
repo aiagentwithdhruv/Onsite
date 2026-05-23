@@ -134,6 +134,41 @@ OpenWeatherMap free tier = 1M calls/mo. At 1 lakh users × 1 lookup/day = 100K/m
 ### M-38. Cost-cap = char-count / 4 estimate until streaming lands
 2026-05-22 Phase 2: route.ts wraps `callClaude` with `recordSpend` but the underlying `/v1/messages` and OpenRouter call don't return token usage in the result chain. Used `Math.ceil(charCount / 4)` as a token estimate — works ±30% which is plenty for budget enforcement at ₹200/day. **Apply:** When Phase 2.5 adds streaming, plumb true `usage.input_tokens` / `usage.output_tokens` from the Anthropic response and replace estimates. Don't over-engineer this until streaming is needed for UX.
 
+### M-48. 3-tier model stack — GPT-4o-mini fast, DeepSeek V4 Pro default, Haiku escalation
+
+**2026-05-23 hard bench confirmed:** DeepSeek V4 Pro matches Haiku 4.5 on 8/8 multi-step UUID-fidelity tests (including update + delete + Hindi write) at 2.7× lower cost. GPT-4o-mini is 2× faster than Haiku on trivial replies at 7× lower cost but missed 1/8 on RULE 0.65. Sonnet 4.6 retired entirely (cost was ~$0.18/call × multi-iter = unsustainable).
+
+**Apply (shipped 2026-05-23):**
+
+3-tier routing in `pickModel()`:
+- **FAST_MODEL** = `openai/gpt-4o-mini` — greetings, yes/no, acks ("hi", "thanks", "ok", "haan")
+- **DEFAULT_MODEL** = `deepseek/deepseek-v4-pro` — every read + write turn; multi-step UUID work
+- **ESCALATION_MODEL** = `anthropic/claude-haiku-4-5` — when DeepSeek slips on a UUID guard (M-40/41/44)
+- **COMPLEX_MODEL** = `anthropic/claude-sonnet-4-6` — last-resort, max 1/turn, almost never fires
+- All env-overridable: `TASK_BOT_FAST_MODEL` / `TASK_BOT_MODEL` / `TASK_BOT_ESCALATION_MODEL` / `TASK_BOT_COMPLEX_MODEL`
+
+Classifier rules (route to FAST_MODEL only when ALL hold):
+- ≤5 words AND ≤80 chars
+- Matches `TRIVIAL_PATTERNS` (hi/hello/thanks/ok/yes/no/haan/namaste/got it/...) OR ≤3 words with no domain/action signal
+- No action verbs (log/record/mark/create/delete/update/add/show/list/...)
+- No domain words (project/task/dep/coupler/drilling/...)
+- No numbers (numbers signal quantity → write turn)
+
+Anything else → DEFAULT_MODEL (DeepSeek V4 Pro).
+
+**Cost at 100K turns/month:**
+- Before (all-Haiku): ~$1200/mo
+- After (3-tier): ~$244/mo
+- **Net: ~5× cheaper** (~₹80K/mo saved)
+
+**Why this stack works:**
+- DeepSeek V4 Pro proved 8/8 on hard tests = same correctness as Haiku at 1/3 cost. Slightly slower (2.1s vs 1.6s) but still <2.2s.
+- GPT-4o-mini's 1 miss (RULE 0.65) doesn't matter because we only route to it for chitchat that doesn't need tools.
+- Haiku as escalation means worst-case cost still bounded (DeepSeek slip → 1 Haiku retry max).
+- Sonnet stays bannable — code path exists but virtually never triggers.
+
+**Pricing table in `cost_cap.ts` updated** with deepseek-v4-pro ($0.435 in/$0.87 out per M tokens), gpt-4o-mini ($0.15/$0.60 per M), accurate INR conversion.
+
 ### M-47. Project anchor — one project per chat, server-enforced, slashes cost
 
 **2026-05-23:** Every chat used to re-do `list_companies → list_projects` on every single turn. Two problems: (a) burning Onsite API budget, (b) giving the LLM repeated opportunities to fabricate UUIDs (M-41) or pick the wrong company UUID (M-44). Also the user explicitly asked: "make the onboarding fixed, not random — every new chat should anchor to one project and stay there."
