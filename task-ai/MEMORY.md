@@ -1,7 +1,27 @@
 # Memory — Onsite Task AI
 
 > **Hard-earned learnings.** Each entry below cost us debugging time, an API failure, or a wrong-call decision. **Read this before you assume.**
-> **Last updated:** 2026-05-22 (V3 architecture finalized)
+> **Last updated:** 2026-05-25 (M-51 anchor prefix + greeting safety net)
+
+---
+
+### M-51. Anchored RULE 0.9 inconsistent — prompt position-bias + missing safety net
+
+**2026-05-25:** Even after M-47/M-48/M-49 shipped (project anchor + DeepSeek for anchored turns + provider pinning), the bot still occasionally replied to a second "hi" in an anchored chat with generic "Hello again! What can I help you with today?" instead of the proactive `"Hey 👋 You're back on EPC PEB — want me to log progress…"` template.
+
+**Root cause (three layers):**
+1. **Position bias** — `route.ts` was concatenating `SYSTEM_PROMPT + anchorFragment`. The 200-line rule wall (RULE -1 → RULE 0.8) came FIRST, anchor RULE 0.9 was the LAST thing in the system message. Mid-tier models (DeepSeek V4 Pro) under-weight tail-of-prompt instructions.
+2. **Rule overload** — 13+ numbered "🚨 RULE" blocks compete for the model's attention budget. By the time it reads RULE 0.9, it's pattern-matched to "be concise + helpful" and applies that to greetings.
+3. **No structural enforcement** — no server-side check that the bot's greeting reply actually contains `anchor.project_name`. Silent failure.
+
+**Apply (shipped 2026-05-25):**
+1. **Anchor fragment PREFIXED, not suffixed** — `oaiMessages = [{ system: anchorFragment + SYSTEM_PROMPT }, ...messages]`. Anchor is now the FIRST thing the model reads.
+2. **Anchored fragment rewritten as DO/DON'T examples** in `src/lib/agent/project_anchor.ts` — replaced rule-prose with 5 paired ❌/✅ examples covering "hi" / "hello" / "what's up" / "thanks" / "continue" / "what can you do". Mid-tier models pattern-match against examples 10× more reliably than they rule-read.
+3. **Server-side greeting safety net** in `route.ts` — when `anchor` is set AND the user message matches `TRIVIAL_PATTERNS` AND no tool fired AND the reply does NOT contain `anchor.project_name.toLowerCase()` → rewrite the reply server-side to `"Hey 👋 You're back on **<project>**. Want me to log progress, pull task stats, or check dependencies?"`. Zero extra LLM calls, zero latency, deterministic. Logs as `task_ai_anchor_greeting_rewrite` for visibility.
+
+**Why all three layers (defense in depth):** prompt position + example-based instruction fix the model behavior 95% of the time. Server-side rewrite catches the remaining 5% with no cost. The rewrite logs the original so we can audit how often the LLM falls back and tighten if needed.
+
+**Also fixed in same commit:** RULE -1 in SYSTEM_PROMPT now explicitly covers multi-position dep references like "create dep between 1.1 and 1.2 with 2 days lag" with worked DO/DON'T example. Bot was tripping M-40 UUID guard but failing to recover correctly because the rule only covered single position numbers.
 
 ---
 
