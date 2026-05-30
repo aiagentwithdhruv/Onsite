@@ -1,0 +1,3 @@
+# Raw financial data — customer PII + employee comp. Keep local, do NOT commit.
+data/
+*.csv
