@@ -24,8 +24,11 @@ DEFAULT_FILE = "data/sales_2026.csv"
 
 # Rep name normalization — the sheet has the same person under multiple spellings,
 # which splits their true total. Canonical name on the left key's value.
-# EDIT THIS MAP as Dhruv confirms identities. Amit/Amit Kumar kept SEPARATE
-# until confirmed they're the same person.
+# EDIT THIS MAP as Dhruv confirms identities.
+# CONFIRMED 2026-05-30 (Dhruv): "Amit" and "Amit Kumar" are TWO DIFFERENT people.
+#   "Amit"       -> Amit Udagatti (Amit U)
+#   "Amit Kumar" -> Amit Mishra
+# They stay separate; we only relabel the sheet's ambiguous spellings to real names.
 NAME_MAP = {
     "k kiran": "Kiran",
     "kiran": "Kiran",
@@ -35,6 +38,8 @@ NAME_MAP = {
     "muneera": "Muneera",
     "ayushh kumar": "Ayushh",
     "ayushh": "Ayushh",
+    "amit": "Amit Udagatti",
+    "amit kumar": "Amit Mishra",
     # case variants collapse automatically via .lower() lookup below
 }
 
@@ -113,6 +118,16 @@ def person(rows, name):
         print(f"  {r.get('Payment Date',''):12} {r.get('Company Name','')[:30]:30} {fmt(num(r['Amount']))}")
 
 
+# Desi ledger — payments she has ALREADY sent to Onsite (confirmed receipts).
+# 2026-04-23: $867.79 via card (Razorpay pay_SgsBdGmwUkqtWy) = Rp15,225,000.
+DESI_PAYMENTS_IDR = [
+    ("2026-04-23", 15_225_000, "$867.79 card, Razorpay pay_SgsBdGmwUkqtWy"),
+]
+# Salary months counted in the current reconciliation (Jan–Jun 2026 = 6 months).
+DESI_SALARY_MONTHS = 6
+DESI_SALARY_IDR_PER_MONTH = 3_000_000
+
+
 def desi_reconcile():
     """Match Desi's IDR debit file against her INR sales in the main sheet."""
     path = "data/desi_debit_to_onsite.csv"
@@ -129,10 +144,18 @@ def desi_reconcile():
             collected += price
             print(f"  {r[0]:12} {r[1][:24]:24} Rp{price:,.0f}")
     commission = collected * 0.10
-    print(f"\n  Total collected:  Rp{collected:,.0f}  (~{fmt(collected/IDR_PER_INR)})")
-    print(f"  Desi commission (10%): Rp{commission:,.0f}  (~{fmt(commission/IDR_PER_INR)})")
-    print(f"  Salary: 3,000,000 IDR/mo (~INR 16,000/mo)")
-    print(f"  -> Net to send to Onsite = collected - commission - salary")
+    salary = DESI_SALARY_MONTHS * DESI_SALARY_IDR_PER_MONTH
+    owed = collected - commission - salary
+    paid = sum(p[1] for p in DESI_PAYMENTS_IDR)
+    outstanding = owed - paid
+    print(f"\n  Total collected:       Rp{collected:,.0f}  (~{fmt(collected/IDR_PER_INR)})")
+    print(f"  Desi commission (10%): Rp{commission:,.0f}")
+    print(f"  Salary ({DESI_SALARY_MONTHS} mo x 3M):    Rp{salary:,.0f}")
+    print(f"  = Owed to Onsite:      Rp{owed:,.0f}")
+    for d, amt, note in DESI_PAYMENTS_IDR:
+        print(f"  PAID {d}: Rp{amt:,.0f}  ({note})")
+    print(f"  >> OUTSTANDING:        Rp{outstanding:,.0f}  (~{fmt(outstanding/IDR_PER_INR)})")
+    print(f"  Blocker: Desi waiting on Onsite INVOICE to compute tax + pay remaining.")
     print(f"  NOTE: main-sheet Desi amounts are in INR; this file is what Desi physically collected in IDR.")
 
 

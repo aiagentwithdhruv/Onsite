@@ -71,13 +71,25 @@ python3 artha.py --file data/sales_all_history.csv summary   # all-time
 ## Desi's compensation model (Indonesia / SE Asia)
 
 Desi Yulia handles Indonesian clients. She collects payment in **IDR** to her BCA account, then:
-- **10% commission** on every sale she collects (e.g. Rp70.28M collected → Rp7.03M commission)
+- **10% commission** on every sale she collects
 - **Salary: 3,000,000 IDR/month ≈ ₹16,000 INR/month** (we standardize to INR)
 - **Sends the rest to Onsite:** `net = collected − commission − salary`
 
 **Currency standard:** our books are in **INR**. The main sheet's Desi amounts are already INR.
 Her debit file is in IDR. Rate from her own sheet: 15,225,000 IDR = 867.79 USD (≈17,544 IDR/USD);
 her 3M IDR salary ≈ ₹16k → ~187.5 IDR/INR. **Confirm the standard rate with Dhruv** (`IDR_PER_INR` in artha.py).
+
+### Ledger status (reconciled 2026-06-10 — Artha matches her sheet exactly)
+- Collected (Jan–May, 15 payments): **Rp74,785,000**
+- Less commission 10% (Rp7,478,500) + salary Jan–Jun (Rp18,000,000) → **owed Rp49,306,500**
+- **PAID 2026-04-23: Rp15,225,000** = $867.79 card (Razorpay `pay_SgsBdGmwUkqtWy`, receipt confirmed)
+- **OUTSTANDING: Rp34,081,500 ≈ ₹1.82L** — re-verified line-by-line vs her sheet (Jun 10), exact match.
+- **Payment plan agreed (WhatsApp):** 2 USD installments via Razorpay link — **#1: $1,000 by 15 June** (friend's CC), #2: remainder. Her quote "$1,869 total" uses ~18,235 IDR/USD; at the April rate (17,544) it's $1,943 → **anchor the debt in IDR (Rp34,081,500)**, convert each installment at transfer-day rate.
+- **Blocker: she's waiting on the PAYMENT LINK** (Sunil hasn't replied) + the invoice for her tax calc → ACTION: send $1,000 Razorpay link + invoice.
+- Payments tracked in `DESI_PAYMENTS_IDR` in artha.py — append future transfers there.
+
+### ✅ Old mystery SOLVED (Jun 10): main-sheet Desi ₹12.8L vs her file ~₹4L
+The gap was a **data-entry typo on the main sheet**: Anzas/PT Cipta Artha entered as **₹953,851** instead of ~₹9,330 (9538,51 pasted without decimal) → +₹9.44L phantom revenue. Plus: 2 High Gate rows entered as IDR TEXT not INR numbers, 1 missing payment (10/02 Manuel Rp4.75M), 1 wrong region (30/05 Andrew tagged India instead of SEA). **Main sheet needs these 4 fixes** — until then company/SEA revenue is overstated by ~₹9.4L.
 
 ---
 

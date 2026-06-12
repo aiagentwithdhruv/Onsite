@@ -121,6 +121,13 @@
 
 ### 1. Quotation Generator (COMPLETE & IN PRODUCTION)
 
+> ⚠️ **OPEN ISSUE (2026-06-12): POST endpoint broken — team can't generate quotes.**
+> Diagnosed: GET to the Apps Script `/exec` works ("API is running") but POST (the form-submit path, `data=<json>` form-encoded) returns Google's "Page not found". Classic causes: (a) script authorization revoked — happens when the owning Google account's password changes; (b) bad re-deploy where `doPost` didn't register.
+> **Fix (needs Dhruv's browser):** script.google.com → open project → run any function once to re-grant auth → Deploy → Manage deployments → ✏️ edit the EXISTING deployment → New version → Deploy. NEVER create a new deployment — new URL would break every rep's saved HTML (URL is baked into the 70KB file).
+> **Access model:** there is NO hosted URL for the form — reps open a saved local/shared copy of `quotation-generator.html`. Backend URL inside: `AKfycbwN27...GX-/exec`.
+> **Known flaw found during diagnosis:** the form's 10-second fallback shows "✅ Email sent successfully" even when the POST failed — reps think quotes sent when they didn't. Fix after the endpoint is restored.
+> Verify fix with: `curl -s -L -X POST <exec-url> --data-urlencode 'data={"action":"healthcheck"}'` → should return structured output, not a Google error page.
+
 **Files:**
 - `quotation-generator.html` — Sales team web form (70KB)
 - `QuotationGenerator.gs` — Google Apps Script backend (40KB)

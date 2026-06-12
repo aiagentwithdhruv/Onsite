@@ -291,3 +291,55 @@ Each entry follows this format:
 51. **Formula cells** (starting with "=") in numeric columns should return empty — openpyxl data_only=True doesn't always resolve them
 52. **Material Stock upload REQUIRES Material Library first** — Onsite validates every Material Name against the library. If the material doesn't exist in library, upload fails with "Material 'X' does not exist in library". **Upload order: Library CSV → then Stock CSV.**
 53. **BOQ → Material Estimation** is a new workflow: parse BOQ line items → classify by trade/work type → apply CPWD/DSR consumption norms → output Material Library CSV + Material Stock CSV. Script: `boq_material_estimator.py`
+
+---
+
+## 2026-04-20 — BOQ-Upload-Template-Filled.csv (Ravi Gupta, Substation/Switchyard BOQ)
+
+**Type:** BOQ (170 rows → 166 after fix)
+**Context:** Sales rep Ravi forwarded file frustrated — "Ye Claude ne aur kachra bna diya" (previous attempt made it worse). WhatsApp group complaint: long descriptions in Item Name column, prompt understanding was unclear, Excel view pane looked wrong.
+
+**Issues found (6 new patterns):**
+
+- Issue: Original CSV had **duplicate serial `1`** appearing 8 times (once under each section A-H, since each section restarts numbering from 1) → Fix: Global renumbering — each section gets its own prefix (1.1, 1.2, 2.1, 2.2, etc.), original numbers discarded
+- Issue: **Excel `#NAME?` error** in cell (row 7 had `=1.1` formula that broke, stored as `#NAME?` string in CSV) → Fix: Detect `#NAME?` literal, replace with placeholder "Earthwork (sub-variants below)", preserve the 5 sub-items underneath
+- Issue: **`Na/Nb/Nc` pattern without plain `N`** — e.g. "5a, 5b, 5c" existed but no standalone "5" row. Previous fix treated them as sub-items of non-existent parent → Fix: When first `Na` encountered for unseen N, promote to main item (next item_n), subsequent Nb/Nc become siblings at item level. Track `seen_nums_in_section` set.
+- Issue: **Weird mixed serial suffixes** — `2.1 b` (decimal + space + letter), `3a.` (number + letter + period), `1.A` (number + dot + uppercase letter), `2A.` (number + uppercase + period) → Fix: Separate regex classifier for each pattern type (`numletter`, `numdotletter`, `decletter`, `decimal`)
+- Issue: **Long paragraph descriptions (500-1500 chars) dumped into Item Name column B** — user's actual complaint. Caused unreadable grid view → Fix: Any Item Name > 70 chars → generate short name via `short_name()` function (strips "Providing and ", "-do- as above", "Earthwork in excavation" prefixes, truncates at first natural boundary like ". " or " including " or " etc."), move full text to Notes column J
+- Issue: **Roman numeral description rows** (i, ii, iii, iv under CONCRETE section) interleaved with numbered items caused serial collisions → Fix: Roman numerals become description-only rows using `N.01`, `N.02` ... `N.09` format (per existing SKILL rule). Main items continue using `N.1`, `N.2` sequentially.
+
+**New patterns:**
+54. **Global renumbering for section-reset BOQs** — if the SAME serial number repeats across different sections, the original numbering is section-local. Always strip original numbers and renumber globally as `sec.item.subitem`
+55. **Excel formula errors (`#NAME?`, `#REF!`, `#VALUE!`)** in CSVs must be detected as literal strings and replaced with placeholder — preserve the row (for its children) but flag name for manual review
+56. **Orphan sub-letters pattern** — `Na, Nb, Nc` without a plain `N` parent row means the author treated them as sibling variants (e.g. different concrete grades). First letter-suffix promotes to main item, rest become siblings.
+57. **Short Item Name generation rules** (construction BOQs):
+    - Strip leading "Providing and " / "Supplying and " / "Supply and "
+    - Normalize "-Do- as per item no X above" → "-do- "
+    - "Providing and Laying" → "Laying"
+    - "Providing and Fixing" → "Fixing"
+    - "Providing and Applying" → "Applying"
+    - "Earthwork in excavation" → "Earthwork excavation"
+    - Trim at first " including ", " etc.", ". ", ";", or " as per "
+    - Target 40-85 char length
+58. **Unit name casing** — Onsite accepts both "CUM" and "cum", but input files often mix CUM/Cum/cum/CuM. Pass through lowercase normalization: `unit.lower()` before validation
+59. **Ravi Gupta's review pattern** — he reviews uploads in Excel preview pane. If Item Name column is wider than ~60 chars, he flags it as wrong format. This is a SOCIAL signal, not a technical one — match his visual expectation.
+60. **The `-do-` reference trap** — rows with "Do as per item no 4 above" or "-Do- but for..." reference other items. Don't try to expand the reference — keep as literal short name ("-do- but for M30 grade"). The reader understands.
+
+**Output:** `/Users/apple/Downloads/BOQ-Upload-Template-Filled-FIXED.csv` (51KB, 166 rows, 8 sections, 0 letters/duplicates/.10-issues)
+**Time:** ~20 min (2 iteration passes to catch short-name truncation issue)
+**Script reusable:** YES — pattern works for any multi-section BOQ with Excel formula errors
+
+## 2026-06-12 — Lot 5 - LUTUNKU TI.s .xlsx (Bill 4.7 Farm Structures / Milking Shade)
+
+**Source:** 80-sheet Ugandan QS tender workbook. Converted sheet "Original BOQ from Client" (Item letter | Description | Unit | Qty | Rate UGX | Amount format).
+**Output:** `BOQ_Lot5_Lutunku_FarmStructures_Onsite.csv` — 99 rows (57 items + 42 sections). Value matched source Amount column EXACTLY (UGX 30,325,327). 0 validation errors.
+
+**Lessons (now baked into `convert_qs_boq.py` — REUSE THAT SCRIPT):**
+1. **Stage detection by boundary, not keyword** — "WALLING" appears both as a level-1 stage AND a sub-group in the same sheet. The reliable rule: a header row immediately after "TOTAL CARRIED TO ELEMENT SUMMARY" = new stage.
+2. **QS noise rows** (TOTAL CARRIED / COLLECTION / brought forward / preamble) must be stripped — they look like headers but are accounting artifacts.
+3. **QS unit abbreviations:** CM→cum, SM→sqm, LM→RMT, NO→nos, KG→kg, ITEM→Item. Hard-stop on unmapped units, never guess.
+4. **Mixed serial depth is accepted** by Onsite upload (items at `1.1` and `1.2.1` in same file) — the approved reference file does it.
+5. **Always validate value-sum vs the source's own Amount column** — catches dropped rows and bad parses in one number.
+6. Original item letters (A,B,C) → Notes column for tender traceability.
+
+**Scope note:** only Bill 4.7/Milking Shade converted. The workbook has 80+ other bill sheets (St. Kizito 3.x, Lutunku 4.x blocks, Day Works 5) if the client needs more.
