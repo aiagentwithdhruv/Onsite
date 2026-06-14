@@ -826,7 +826,7 @@
             <span>Discount</span>
             <span id="summaryDiscount">-₹0</span>
           </div>
-          <div class="summary-row">
+          <div class="summary-row" id="summaryGstRow">
             <span>GST (18%)</span>
             <span id="summaryGst">₹8,100</span>
           </div>
@@ -1380,7 +1380,8 @@
       const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
 
       const afterDiscount = subtotal + addonsTotal - discountAmt;
-      const gst = afterDiscount * 0.18;
+      const isInternational = selectedRegion === 'international';
+      const gst = isInternational ? 0 : afterDiscount * 0.18; // International: no tax
       const total = afterDiscount + gst;
 
       // Update UI
@@ -1397,6 +1398,7 @@
         document.getElementById('summaryDiscountRow').style.display = 'none';
       }
 
+      document.getElementById('summaryGstRow').style.display = isInternational ? 'none' : 'flex';
       document.getElementById('summaryGst').textContent = `${c}${Math.round(gst).toLocaleString()}`;
       document.getElementById('summaryTotal').textContent = `${c}${Math.round(total).toLocaleString()}`;
     }
@@ -1698,9 +1700,10 @@
       const discountPct = parseFloat(data.discount) || 0;
       const discountAmt = (subtotal + addonsTotal) * (discountPct / 100);
       const afterDiscount = subtotal + addonsTotal - discountAmt;
-      const gst = afterDiscount * 0.18;
+      const isInternational = data.region === 'international';
+      const gst = isInternational ? 0 : afterDiscount * 0.18; // International: no tax
       const total = afterDiscount + gst;
-      
+
       const validDate = new Date();
       validDate.setDate(validDate.getDate() + parseInt(data.validDays));
       
@@ -1846,7 +1849,7 @@
     <div class="totals">
       <div class="totals-row"><span>Sub-Total</span><span>${c}${(subtotal + addonsTotal).toLocaleString()}</span></div>
       ${discountAmt > 0 ? `<div class="totals-row"><span>Discount (${discountPct}%)</span><span class="highlight">-${c}${discountAmt.toLocaleString()}</span></div>` : ''}
-      <div class="totals-row"><span>GST (18%)</span><span>${c}${Math.round(gst).toLocaleString()}</span></div>
+      ${isInternational ? '' : `<div class="totals-row"><span>GST (18%)</span><span>${c}${Math.round(gst).toLocaleString()}</span></div>`}
       <div class="totals-row total"><span>PAYABLE AMOUNT</span><span>${c}${Math.round(total).toLocaleString()}</span></div>
     </div>
     
